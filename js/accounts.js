@@ -363,17 +363,14 @@ async function populateDetails(record) {
   document.getElementById('protectedCustomerName').textContent = record.customerName || '-';
   document.getElementById('protectedMobileNo').textContent = record.mobileNo || '-';
   document.getElementById('protectedModel').textContent = record.model || '-';
+  document.getElementById('protectedVariant').textContent = record.variant || '-';
+  document.getElementById('protectedColour').textContent = record.colour || '-';
   document.getElementById('protectedDeliveryDate').textContent = record.deliveryDate || '-';
   document.getElementById('protectedReceiptNo1').textContent = record.receiptNo1 || '-';
   document.getElementById('protectedReceipt1Amount').textContent = record.receipt1Amount ? '₹' + record.receipt1Amount : '-';
   document.getElementById('protectedSalesRemark').textContent = record.salesRemark || 'N/A';
   
-  // LOAD VARIANTS FROM PRICEMASTER
-  await loadVariantsFromPriceMaster(record.model);
-  
-  // Editable sales fields (set after variants loaded)
-  document.getElementById('variant').value = record.variant || '';
-  document.getElementById('colour').value = record.colour || '';
+  // Editable sales fields
   document.getElementById('discount').value = record.discount || '';
   document.getElementById('finalPrice').value = record.finalPrice || '';
   
@@ -657,8 +654,7 @@ async function handleUpdate(e) {
   
   const data = {
     receiptNo: currentReceiptNo,
-    variant: document.getElementById('variant').value,
-    colour: document.getElementById('colour').value,
+    // variant and colour are read-only (from sales)
     discount: document.getElementById('discount').value,
     finalPrice: document.getElementById('finalPrice').value,
     financierName: financierValue,
@@ -780,12 +776,14 @@ async function calculatePrice() {
   breakdown.style.display = 'block';
   
   try {
-    // Get model and variant from form
-    const model = document.getElementById('protectedModel').textContent;
-    const variant = document.getElementById('variant').value;
+    // Get model and variant from PROTECTED fields (not editable)
+    const model = document.getElementById('protectedModel').textContent.trim();
+    const variant = document.getElementById('protectedVariant').textContent.trim();
     
-    if (!model || !variant) {
-      breakdown.innerHTML = '<div style="text-align: center; padding: 20px; color: #e74c3c;">❌ Model/Variant not found</div>';
+    console.log('🔍 Calculating price for:', model, variant);
+    
+    if (!model || model === '-' || !variant || variant === '-') {
+      breakdown.innerHTML = '<div style="text-align: center; padding: 20px; color: #e74c3c;">❌ Model/Variant not found. Please load a record first.</div>';
       return;
     }
     
