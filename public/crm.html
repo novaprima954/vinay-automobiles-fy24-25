@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="HandheldFriendly" content="true">
+  <meta name="MobileOptimized" content="width">
+  <meta name="robots" content="noindex, nofollow">
+  <title>CRM - Vinay Automobiles</title>
+  <link rel="stylesheet" href="css/common.css">
+  <style>
+    /* Mobile-First CRM Styles */
+    body {
+      padding: 0;
+      margin: 0;
+    }
+
+    .crm-container {
+      max-width: 100%;
+      margin: 0;
+      padding-bottom: 70px; /* Space for bottom nav */
+    }
+
+    /* Header */
+    .crm-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .header-title {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .header-user {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    /* Dashboard Cards */
+    .dashboard-cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      padding: 20px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: all 0.3s;
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .stat-card:active {
+      transform: scale(0.95);
+    }
+
+    .stat-card-icon {
+      font-size: 36px;
+      margin-bottom: 10px;
+    }
+
+    .stat-card-label {
+      font-size: 12px;
+      color: #666;
+      font-weight: 600;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+    }
+
+    .stat-card-count {
+      font-size: 32px;
+      font-weight: 700;
+      color: #333;
+    }
+
+    .stat-card.new { border-left: 5px solid #2196F3; }
+    .stat-card.hot { border-left: 5px solid #F44336; }
+    .stat-card.available { border-left: 5px solid #FF9800; }
+    .stat-card.converted { border-left: 5px solid #4CAF50; }
+
+    /* Urgent Follow-ups */
+    .urgent-section {
+      margin: 0 20px 20px 20px;
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .urgent-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+      color: #F44336;
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .urgent-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .urgent-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      background: #FFF3E0;
+      border-radius: 10px;
+      border-left: 4px solid #FF9800;
+    }
+
+    .urgent-info {
+      flex: 1;
+    }
+
+    .urgent-name {
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 3px;
+    }
+
+    .urgent-details {
+      font-size: 13px;
+      color: #666;
+    }
+
+    .btn-call {
+      background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn-call:active {
+      transform: scale(0.95);
+    }
+
+    /* Add Lead Button */
+    .add-lead-btn {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      font-size: 30px;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      cursor: pointer;
+      z-index: 90;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .add-lead-btn:active {
+      transform: scale(0.9);
+    }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      z-index: 100;
+    }
+
+    .nav-item {
+      flex: 1;
+      text-align: center;
+      padding: 5px;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: none;
+      background: none;
+    }
+
+    .nav-item.active {
+      color: #667eea;
+    }
+
+    .nav-icon {
+      font-size: 24px;
+      margin-bottom: 3px;
+    }
+
+    .nav-label {
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* Tabs Content */
+    .tab-content {
+      display: none;
+      padding: 20px;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Lead Card */
+    .lead-card {
+      background: white;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-left: 4px solid #667eea;
+    }
+
+    .lead-card.hot { border-left-color: #F44336; }
+    .lead-card.new { border-left-color: #2196F3; }
+    .lead-card.available { border-left-color: #FF9800; }
+
+    .lead-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .lead-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #333;
+    }
+
+    .lead-status {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .status-hot { background: #FFEBEE; color: #F44336; }
+    .status-new { background: #E3F2FD; color: #2196F3; }
+    .status-available { background: #FFF3E0; color: #FF9800; }
+
+    .lead-details {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+
+    .lead-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .btn-action {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-action:active {
+      transform: scale(0.95);
+    }
+
+    .btn-primary-action {
+      background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+      color: white;
+    }
+
+    .btn-secondary-action {
+      background: #f0f0f0;
+      color: #333;
+    }
+
+    .btn-claim {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+
+    .empty-icon {
+      font-size: 60px;
+      margin-bottom: 15px;
+    }
+
+    /* Messages */
+    .message {
+      padding: 12px 20px;
+      margin: 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      text-align: center;
+      display: none;
+    }
+
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      font-size: 16px;
+      color: #666;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Responsive */
+    @media (min-width: 768px) {
+      .crm-container {
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      .dashboard-cards {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="crm-container">
+    <!-- Header -->
+    <div class="crm-header">
+      <div class="header-top">
+        <div class="header-title">🎯 CRM Dashboard</div>
+        <div class="header-user" id="currentUser">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Status Message -->
+    <div id="statusMessage" class="message"></div>
+
+    <!-- Dashboard Tab -->
+    <div id="dashboardTab" class="tab-content active">
+      <!-- Dashboard Cards -->
+      <div class="dashboard-cards">
+        <div class="stat-card new" onclick="switchTab('myLeads')">
+          <div class="stat-card-icon">🆕</div>
+          <div class="stat-card-label">My New</div>
+          <div class="stat-card-count" id="myNewCount">0</div>
+        </div>
+
+        <div class="stat-card hot" onclick="switchTab('myLeads')">
+          <div class="stat-card-icon">🔥</div>
+          <div class="stat-card-label">My Hot</div>
+          <div class="stat-card-count" id="myHotCount">0</div>
+        </div>
+
+        <div class="stat-card available" onclick="switchTab('available')">
+          <div class="stat-card-icon">📦</div>
+          <div class="stat-card-label">Available</div>
+          <div class="stat-card-count" id="availableCount">0</div>
+        </div>
+
+        <div class="stat-card converted">
+          <div class="stat-card-icon">✅</div>
+          <div class="stat-card-label">Converted</div>
+          <div class="stat-card-count" id="convertedCount">0</div>
+        </div>
+      </div>
+
+      <!-- Urgent Follow-ups -->
+      <div class="urgent-section" id="urgentSection" style="display: none;">
+        <div class="urgent-header">
+          <span>🔔</span>
+          <span>URGENT FOLLOW-UPS TODAY</span>
+        </div>
+        <div class="urgent-list" id="urgentList"></div>
+      </div>
+    </div>
+
+    <!-- Available Leads Tab -->
+    <div id="availableTab" class="tab-content">
+      <div class="loading" id="availableLoading">
+        <div class="spinner"></div>
+        <div>Loading available leads...</div>
+      </div>
+      <div id="availableLeads"></div>
+    </div>
+
+    <!-- My Leads Tab -->
+    <div id="myLeadsTab" class="tab-content">
+      <div class="loading" id="myLeadsLoading">
+        <div class="spinner"></div>
+        <div>Loading your leads...</div>
+      </div>
+      <div id="myLeads"></div>
+    </div>
+
+    <!-- Add Lead Button -->
+    <button class="add-lead-btn" onclick="addNewLead()">➕</button>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+      <button class="nav-item active" onclick="switchTab('dashboard')" id="navDashboard">
+        <div class="nav-icon">🏠</div>
+        <div class="nav-label">Home</div>
+      </button>
+      <button class="nav-item" onclick="switchTab('available')" id="navAvailable">
+        <div class="nav-icon">📦</div>
+        <div class="nav-label">Available</div>
+      </button>
+      <button class="nav-item" onclick="switchTab('myLeads')" id="navMyLeads">
+        <div class="nav-icon">📋</div>
+        <div class="nav-label">My Leads</div>
+      </button>
+      <button class="nav-item" onclick="goBack()">
+        <div class="nav-icon">←</div>
+        <div class="nav-label">Back</div>
+      </button>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/crm.js"></script>
+</body>
+</html>

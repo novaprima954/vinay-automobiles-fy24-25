@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="HandheldFriendly" content="true">
+  <meta name="MobileOptimized" content="width">
+  <title>Sales Entry - Vinay Automobiles</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* Additional Sales Form Styles */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 15px;
+    }
+    
+    @media (min-width: 481px) {
+      .form-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    .form-section {
+      margin-top: 25px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 10px;
+    }
+    
+    .form-section h2 {
+      color: #667eea;
+      font-size: 18px;
+      margin-bottom: 15px;
+      font-weight: 700;
+    }
+    
+    .section-divider {
+      margin: 25px 0 10px;
+      padding: 12px;
+      background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+      border-radius: 8px;
+      font-weight: 700;
+      color: #667eea;
+      text-align: center;
+      font-size: 15px;
+    }
+    
+    .optional-note {
+      text-align: center;
+      color: #666;
+      font-size: 13px;
+      font-style: italic;
+      margin: 8px 0 15px;
+    }
+    
+    .totals-display {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 15px;
+    }
+    
+    .totals-display h3 {
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 16px;
+      text-align: center;
+    }
+    
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #ddd;
+      font-size: 14px;
+    }
+    
+    .total-row:last-child {
+      border-bottom: 2px solid #667eea;
+      font-weight: 700;
+      color: #667eea;
+      font-size: 16px;
+      margin-top: 5px;
+      padding-top: 15px;
+    }
+    
+    .whatsapp-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .whatsapp-modal.show {
+      display: flex;
+    }
+    
+    .whatsapp-content {
+      background: white;
+      border-radius: 15px;
+      padding: 30px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      animation: slideUp 0.3s ease-out;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(50px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .whatsapp-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .whatsapp-icon {
+      font-size: 60px;
+      margin-bottom: 10px;
+    }
+    
+    .whatsapp-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 8px;
+    }
+    
+    .whatsapp-message {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 10px;
+      white-space: pre-line;
+      font-size: 14px;
+      line-height: 1.8;
+      margin-bottom: 20px;
+      font-family: monospace;
+      border: 2px solid #e0e0e0;
+    }
+    
+    .whatsapp-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .btn-whatsapp {
+      flex: 1;
+      padding: 16px;
+      background: #25D366;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .btn-whatsapp:hover {
+      background: #20BA5A;
+      transform: translateY(-2px);
+    }
+    
+    .btn-whatsapp:active {
+      transform: scale(0.97);
+    }
+    
+    .btn-close-modal {
+      padding: 16px 24px;
+      background: #f8f9fa;
+      color: #666;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .btn-close-modal:hover {
+      background: #e9ecef;
+    }
+    
+    input[readonly], select[disabled] {
+      background: #f0f0f0;
+      cursor: not-allowed;
+      color: #666;
+    }
+    
+    .required {
+      color: #e74c3c;
+      font-weight: bold;
+    }
+    
+    #otherFinancierInput {
+      display: none;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body class="sales-page">
+  
+  <!-- WhatsApp Modal -->
+  <div class="whatsapp-modal" id="whatsappModal">
+    <div class="whatsapp-content">
+      <div class="whatsapp-header">
+        <div class="whatsapp-icon">✅</div>
+        <div class="whatsapp-title">Sale Saved Successfully!</div>
+        <p>Would you like to share this on WhatsApp?</p>
+      </div>
+      
+      <div class="whatsapp-message" id="whatsappMessage"></div>
+      
+      <div class="whatsapp-buttons">
+        <button class="btn-whatsapp" onclick="shareOnWhatsApp()">
+          📱 Share on WhatsApp
+        </button>
+        <button class="btn-close-modal" onclick="closeWhatsAppModal()">
+          ✖ Close
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="container">
+    
+    <!-- Header -->
+    <div class="page-header">
+      <button class="btn-back" onclick="goBack()">← Back</button>
+      <h1>📝 Sales Entry Form</h1>
+      <div class="user-badge">
+        <span id="currentUser">Loading...</span>
+      </div>
+    </div>
+    
+    <!-- Status Message -->
+    <div id="statusMessage" class="message hidden"></div>
+    
+    <!-- Sales Form -->
+    <div class="form-container">
+      <form id="salesForm">
+        
+        <!-- Basic Information -->
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Receipt No <span class="required">*</span></label>
+            <input type="text" id="receiptNo" required>
+          </div>
+          
+          <div class="form-group">
+            <label>Executive Name <span class="required">*</span></label>
+            <input type="text" id="executiveName" required readonly>
+          </div>
+          
+          <div class="form-group">
+            <label>Booking Date <span class="required">*</span></label>
+            <input type="date" id="bookingDate" required>
+          </div>
+          
+          <div class="form-group">
+            <label>Customer Name <span class="required">*</span></label>
+            <input type="text" id="customerName" required placeholder="As per Aadhaar">
+          </div>
+          
+          <div class="form-group">
+            <label>Mobile No <span class="required">*</span></label>
+            <input type="tel" id="mobileNo" required maxlength="10" placeholder="10 digits">
+          </div>
+          
+          <div class="form-group">
+            <label>Model <span class="required">*</span></label>
+            <select id="model" required>
+              <option value="">-- Loading models... --</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>Variant <span class="required">*</span></label>
+            <select id="variant" required>
+              <option value="">-- Select Model First --</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>Colour <span class="required">*</span></label>
+            <input type="text" id="colour" required>
+          </div>
+          
+          <div class="form-group">
+            <label>Discount <span class="required">*</span></label>
+            <input type="text" id="discount" required>
+          </div>
+          
+          <div class="form-group">
+            <label>Final Price After Discount <span class="required">*</span></label>
+            <input type="number" id="finalPrice" required placeholder="₹">
+          </div>
+          
+          <div class="form-group">
+            <label>Financier Name <span class="required">*</span></label>
+            <select id="financierName" required>
+              <option value="">-- Select --</option>
+              <option>Cash</option>
+              <option>TVS Credit</option>
+              <option>Shriram Finance</option>
+              <option>Hinduja Finance</option>
+              <option>Janan SFB</option>
+              <option>TATA Capital</option>
+              <option>Indusind Bank</option>
+              <option>Berar Finance</option>
+              <option>IDFC</option>
+              <option>Other</option>
+            </select>
+            <input type="text" id="otherFinancierInput" placeholder="Enter financier name">
+          </div>
+          
+          <div class="form-group">
+            <label>Delivery Date <span class="required">*</span></label>
+            <input type="date" id="deliveryDate" required>
+          </div>
+        </div>
+        
+        <!-- Accessories Section -->
+        <div class="section-divider">
+          🔩 Accessories (Dynamic based on Model/Variant)
+        </div>
+        <p class="optional-note">Only applicable accessories for selected model will appear below</p>
+        
+        <div class="form-grid" id="accessoryFields">
+          <!-- Dynamically populated based on PriceMaster -->
+        </div>
+        
+        <div class="form-grid">
+          
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label>Sales Remark <span class="required">*</span></label>
+            <textarea id="salesRemark" required rows="5" style="min-height: 100px;"></textarea>
+          </div>
+        </div>
+        
+        <!-- Receipt Information -->
+        <div class="section-divider">
+          💰 Receipt Information (Optional)
+        </div>
+        <p class="optional-note">You can add receipt details now or leave blank for Accounts team to fill later</p>
+        
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Receipt No 1 <span class="required">*</span></label>
+            <input type="text" id="receiptNo1" required readonly>
+          </div>
+          
+          <div class="form-group">
+            <label>Receipt 1 Amount <span class="required">*</span></label>
+            <input type="number" id="receipt1Amount" required placeholder="₹">
+          </div>
+          
+          <div class="form-group">
+            <label>Receipt No 2</label>
+            <input type="text" id="receiptNo2">
+          </div>
+          
+          <div class="form-group">
+            <label>Receipt 2 Amount</label>
+            <input type="number" id="receipt2Amount" placeholder="₹">
+          </div>
+          
+          <div class="form-group">
+            <label>Receipt No 3</label>
+            <input type="text" id="receiptNo3">
+          </div>
+          
+          <div class="form-group">
+            <label>Receipt 3 Amount</label>
+            <input type="number" id="receipt3Amount" placeholder="₹">
+          </div>
+          
+          <div class="form-group">
+            <label>Receipt No 4</label>
+            <input type="text" id="receiptNo4">
+          </div>
+          
+          <div class="form-group">
+            <label>Receipt 4 Amount</label>
+            <input type="number" id="receipt4Amount" placeholder="₹">
+          </div>
+          
+          <div class="form-group">
+            <label>DO Number</label>
+            <input type="text" id="doNumber">
+          </div>
+          
+          <div class="form-group">
+            <label>Disbursed Amount</label>
+            <input type="number" id="disbursedAmount" placeholder="₹">
+          </div>
+        </div>
+        
+        <!-- Payment Summary -->
+        <div id="totalsDisplay" class="totals-display">
+          <h3>💵 Payment Summary</h3>
+          <div class="total-row">
+            <span>Cash Total (Receipts 1-4):</span>
+            <span id="cashTotalDisplay">₹0.00</span>
+          </div>
+          <div class="total-row">
+            <span>Disbursed Amount:</span>
+            <span id="disbursedDisplay">₹0.00</span>
+          </div>
+          <div class="total-row">
+            <span>Grand Total (Cash + Disbursed):</span>
+            <span id="totalDisplay">₹0.00</span>
+          </div>
+        </div>
+        
+        <!-- Submit Buttons -->
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" onclick="resetForm()">
+            🔄 Clear Form
+          </button>
+          <button type="submit" class="btn-primary" id="submitBtn">
+            💾 Save Sales Entry
+          </button>
+        </div>
+        
+      </form>
+    </div>
+    
+  </div>
+  
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/sales.js"></script>
+</body>
+</html>

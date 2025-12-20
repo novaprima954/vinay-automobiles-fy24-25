@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Vinay Automobiles</title>
+  <link rel="stylesheet" href="css/styles.css">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Internal business management system">
+</head>
+<body class="login-page">
+  <div class="login-container">
+    <div class="logo">
+      <div class="logo-icon">🏍️</div>
+      <h1>Vinay Automobiles</h1>
+      <p>Secure Login Portal</p>
+    </div>
+    
+    <div id="message" class="message hidden"></div>
+    
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input 
+          type="text" 
+          id="username" 
+          name="username" 
+          required 
+          placeholder="Enter your username"
+          autocomplete="username"
+          autofocus>
+      </div>
+      
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="password-wrapper">
+          <input 
+            type="password" 
+            id="password" 
+            name="password" 
+            required 
+            placeholder="Enter your password"
+            autocomplete="current-password">
+          <span class="toggle-password" onclick="togglePassword()">👁️</span>
+        </div>
+      </div>
+      
+      <button type="submit" class="btn-primary" id="loginBtn">
+        Login
+      </button>
+      
+      <div class="loading hidden" id="loading">
+        <div class="spinner"></div>
+        <p>Authenticating...</p>
+      </div>
+    </form>
+  </div>
+  
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>

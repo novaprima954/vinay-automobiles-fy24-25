@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="HandheldFriendly" content="true">
+  <meta name="MobileOptimized" content="width">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Add New Lead - CRM</title>
+  <link rel="stylesheet" href="css/common.css">
+  <style>
+    body {
+      background: #f5f5f5;
+      padding: 0;
+      margin: 0;
+    }
+
+    .add-container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding-bottom: 20px;
+    }
+
+    /* Header */
+    .add-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .btn-back {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      font-size: 18px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .header-title {
+      font-size: 20px;
+      font-weight: 700;
+      flex: 1;
+    }
+
+    /* Form Container */
+    .form-container {
+      background: white;
+      margin: 20px;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .required {
+      color: #F44336;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+      width: 100%;
+      padding: 14px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 16px;
+      box-sizing: border-box;
+      transition: all 0.3s;
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-textarea {
+      min-height: 100px;
+      resize: vertical;
+      font-family: inherit;
+    }
+
+    /* Source Selection */
+    .source-options {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .source-option {
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      background: white;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .source-option.selected {
+      border-color: #667eea;
+      background: #f0f4ff;
+      color: #667eea;
+    }
+
+    .source-option:active {
+      transform: scale(0.95);
+    }
+
+    /* Submit Button */
+    .btn-submit {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 20px;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+      transition: all 0.3s;
+    }
+
+    .btn-submit:active {
+      transform: translateY(2px);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Message */
+    .message {
+      padding: 12px 20px;
+      margin: 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      text-align: center;
+      display: none;
+    }
+
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    /* Helper Text */
+    .helper-text {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+    }
+
+    /* Loading State */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .loading-overlay.active {
+      display: flex;
+    }
+
+    .loading-content {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      text-align: center;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 15px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 480px) {
+      .source-options {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="add-container">
+    <!-- Header -->
+    <div class="add-header">
+      <button class="btn-back" onclick="goBack()">←</button>
+      <div class="header-title">Add New Lead</div>
+    </div>
+
+    <!-- Status Message -->
+    <div id="statusMessage" class="message"></div>
+
+    <!-- Form -->
+    <div class="form-container">
+      <form id="addLeadForm">
+        <!-- Customer Name -->
+        <div class="form-group">
+          <label class="form-label">Customer Name <span class="required">*</span></label>
+          <input type="text" id="customerName" class="form-input" placeholder="Enter customer name" required>
+        </div>
+
+        <!-- Mobile Number -->
+        <div class="form-group">
+          <label class="form-label">Mobile Number <span class="required">*</span></label>
+          <input type="tel" id="mobileNo" class="form-input" placeholder="98XXXXXXXX" required pattern="[0-9]{10}" maxlength="10">
+          <div class="helper-text">Enter 10-digit mobile number</div>
+        </div>
+
+        <!-- Email (Optional) -->
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" id="email" class="form-input" placeholder="customer@example.com">
+        </div>
+
+        <!-- Address (Optional) -->
+        <div class="form-group">
+          <label class="form-label">Address</label>
+          <input type="text" id="address" class="form-input" placeholder="Enter address">
+        </div>
+
+        <!-- Interested Model -->
+        <div class="form-group">
+          <label class="form-label">Interested Model <span class="required">*</span></label>
+          <select id="model" class="form-select" required>
+            <option value="">-- Select Model --</option>
+            <option>Jupiter 110</option>
+            <option>Jupiter 125</option>
+            <option>Ntorq 125</option>
+            <option>Raider 125</option>
+            <option>Apache RTR 160</option>
+            <option>Apache RTR 160 4V</option>
+            <option>Apache RTR 180</option>
+            <option>Apache RTR 200 4V</option>
+            <option>Apache RR 310</option>
+            <option>XL 100</option>
+            <option>Sport</option>
+            <option>Radeon</option>
+            <option>iQube Electric</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <!-- Lead Source -->
+        <div class="form-group">
+          <label class="form-label">Lead Source <span class="required">*</span></label>
+          <div class="source-options">
+            <div class="source-option" data-source="Walk-in" onclick="selectSource(this)">
+              🚶 Walk-in
+            </div>
+            <div class="source-option" data-source="Phone Call" onclick="selectSource(this)">
+              📱 Phone Call
+            </div>
+            <div class="source-option" data-source="Social Media" onclick="selectSource(this)">
+              📱 Social Media
+            </div>
+            <div class="source-option" data-source="Referral" onclick="selectSource(this)">
+              👥 Referral
+            </div>
+            <div class="source-option" data-source="Website" onclick="selectSource(this)">
+              🌐 Website
+            </div>
+            <div class="source-option" data-source="Other" onclick="selectSource(this)">
+              📋 Other
+            </div>
+          </div>
+          <input type="hidden" id="source" required>
+        </div>
+
+        <!-- Expected Purchase Date -->
+        <div class="form-group">
+          <label class="form-label">Expected Purchase Date</label>
+          <input type="date" id="expectedDate" class="form-input">
+        </div>
+
+        <!-- Notes -->
+        <div class="form-group">
+          <label class="form-label">Notes</label>
+          <textarea id="notes" class="form-textarea" placeholder="Add any additional notes..."></textarea>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn-submit" id="submitBtn">
+          💾 Save Lead
+        </button>
+      </form>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+      <div class="loading-content">
+        <div class="spinner"></div>
+        <div>Saving lead...</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/crm-add.js"></script>
+</body>
+</html>

@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="HandheldFriendly" content="true">
+  <meta name="MobileOptimized" content="width">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Operator - Update Status</title>
+  <link rel="stylesheet" href="css/common.css">
+  <style>
+    body {
+      background: #f5f5f5;
+      padding: 0;
+      margin: 0;
+    }
+
+    .operator-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding-bottom: 20px;
+    }
+
+    /* Header */
+    .operator-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .btn-back {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      font-size: 18px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .header-title {
+      font-size: 20px;
+      font-weight: 700;
+      flex: 1;
+    }
+
+    /* Pending Cards */
+    .pending-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      padding: 20px;
+    }
+
+    @media (max-width: 600px) {
+      .pending-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .pending-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .pending-card:active {
+      transform: scale(0.95);
+    }
+
+    .pending-icon {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .pending-label {
+      font-size: 12px;
+      color: #999;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .pending-count {
+      font-size: 28px;
+      font-weight: 700;
+      color: #333;
+    }
+
+    .pending-card.dms { border-left: 5px solid #FF9800; }
+    .pending-card.insurance { border-left: 5px solid #2196F3; }
+    .pending-card.vahan { border-left: 5px solid #4CAF50; }
+
+    /* Search Section */
+    .search-section {
+      background: white;
+      margin: 0 20px 20px 20px;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .search-header {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 15px;
+      color: #333;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .form-input, .form-select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    .btn-search {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Results List */
+    .results-section {
+      margin: 0 20px 20px 20px;
+      display: none;
+    }
+
+    .results-header {
+      background: white;
+      padding: 15px 20px;
+      border-radius: 12px 12px 0 0;
+      font-weight: 700;
+      color: #333;
+    }
+
+    .result-item {
+      background: white;
+      padding: 15px 20px;
+      border-bottom: 1px solid #f0f0f0;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .result-item:last-child {
+      border-radius: 0 0 12px 12px;
+    }
+
+    .result-item:hover {
+      background: #f8f9fa;
+    }
+
+    .result-item:active {
+      background: #e9ecef;
+    }
+
+    .result-name {
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .result-details {
+      font-size: 13px;
+      color: #666;
+    }
+
+    /* Update Form */
+    .update-section {
+      background: white;
+      margin: 0 20px 20px 20px;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      display: none;
+    }
+
+    .customer-details {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .detail-label {
+      color: #666;
+      font-weight: 600;
+    }
+
+    .detail-value {
+      color: #333;
+      font-weight: 700;
+    }
+
+    /* Checkbox Sections */
+    .status-section {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+    }
+
+    .status-section.locked {
+      background: #f0f0f0;
+      border-color: #ccc;
+    }
+
+    .status-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .status-title {
+      font-weight: 700;
+      color: #333;
+    }
+
+    .status-badge {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .badge-locked {
+      background: #4CAF50;
+      color: white;
+    }
+
+    .badge-pending {
+      background: #FF9800;
+      color: white;
+    }
+
+    .status-options {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 10px;
+    }
+
+    .radio-option {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .status-info {
+      font-size: 12px;
+      color: #999;
+      margin-top: 5px;
+    }
+
+    /* Number Plate Input */
+    .number-plate-input {
+      font-family: monospace;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    /* Buttons */
+    .btn-update {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    .btn-cancel {
+      width: 100%;
+      padding: 14px;
+      background: #f0f0f0;
+      color: #333;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    /* Message */
+    .message {
+      padding: 12px 20px;
+      margin: 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      text-align: center;
+      display: none;
+    }
+
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      display: none;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="operator-container">
+    <!-- Header -->
+    <div class="operator-header">
+      <button class="btn-back" onclick="goBack()">←</button>
+      <div class="header-title">🔄 Update Status</div>
+    </div>
+
+    <!-- Status Message -->
+    <div id="statusMessage" class="message"></div>
+
+    <!-- Pending Cards -->
+    <div class="pending-cards">
+      <div class="pending-card dms" onclick="showPendingList('dms')">
+        <div class="pending-icon">📋</div>
+        <div class="pending-label">DMS Pending</div>
+        <div class="pending-count" id="dmsPendingCount">0</div>
+      </div>
+
+      <div class="pending-card insurance" onclick="showPendingList('insurance')">
+        <div class="pending-icon">🛡️</div>
+        <div class="pending-label">Insurance Pending</div>
+        <div class="pending-count" id="insurancePendingCount">0</div>
+      </div>
+
+      <div class="pending-card vahan" onclick="showPendingList('vahan')">
+        <div class="pending-icon">🚗</div>
+        <div class="pending-label">Vahan Pending</div>
+        <div class="pending-count" id="vahanPendingCount">0</div>
+      </div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="search-section">
+      <div class="search-header">🔍 Search Records</div>
+      
+      <div class="form-group">
+        <label class="form-label">Search By</label>
+        <select id="searchBy" class="form-select">
+          <option value="receiptNo">Receipt Number</option>
+          <option value="executive">Executive Name</option>
+          <option value="customerName">Customer Name</option>
+          <option value="mobileNo">Mobile Number</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Search For</label>
+        <input type="text" id="searchValue" class="form-input" placeholder="Enter search term...">
+      </div>
+
+      <button class="btn-search" onclick="searchRecords()">🔍 SEARCH</button>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading" id="loadingState">
+      <div class="spinner"></div>
+      <div>Loading...</div>
+    </div>
+
+    <!-- Results List -->
+    <div class="results-section" id="resultsSection">
+      <div class="results-header">
+        Search Results (<span id="resultCount">0</span>)
+      </div>
+      <div id="resultsList"></div>
+    </div>
+
+    <!-- Update Form -->
+    <div class="update-section" id="updateSection">
+      <div class="search-header">📝 Update Status</div>
+      
+      <div class="customer-details" id="customerDetails"></div>
+
+      <form id="updateForm">
+        <!-- DMS Section -->
+        <div class="status-section" id="dmsSection">
+          <div class="status-header">
+            <span class="status-title">📋 DMS</span>
+            <span class="status-badge badge-pending" id="dmsBadge">PENDING</span>
+          </div>
+          <div class="status-options">
+            <label class="radio-option">
+              <input type="radio" name="dmsStatus" value="Yes" id="dmsYes">
+              <span>Yes</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="dmsStatus" value="No" id="dmsNo">
+              <span>No</span>
+            </label>
+          </div>
+          <div class="status-info" id="dmsInfo"></div>
+        </div>
+
+        <!-- Insurance Section -->
+        <div class="status-section" id="insuranceSection">
+          <div class="status-header">
+            <span class="status-title">🛡️ Insurance</span>
+            <span class="status-badge badge-pending" id="insuranceBadge">PENDING</span>
+          </div>
+          <div class="status-options">
+            <label class="radio-option">
+              <input type="radio" name="insuranceStatus" value="Yes" id="insuranceYes">
+              <span>Yes</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="insuranceStatus" value="No" id="insuranceNo">
+              <span>No</span>
+            </label>
+          </div>
+          <div class="status-info" id="insuranceInfo"></div>
+        </div>
+
+        <!-- Vahan Section -->
+        <div class="status-section" id="vahanSection">
+          <div class="status-header">
+            <span class="status-title">🚗 Vahan</span>
+            <span class="status-badge badge-pending" id="vahanBadge">PENDING</span>
+          </div>
+          <div class="status-options">
+            <label class="radio-option">
+              <input type="radio" name="vahanStatus" value="Yes" id="vahanYes">
+              <span>Yes</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="vahanStatus" value="No" id="vahanNo">
+              <span>No</span>
+            </label>
+          </div>
+          <div class="status-info" id="vahanInfo"></div>
+        </div>
+
+        <!-- Number Plate Section -->
+        <div class="status-section" id="numberPlateSection">
+          <div class="status-header">
+            <span class="status-title">🔢 Number Plate</span>
+            <span class="status-badge badge-pending" id="numberPlateBadge">PENDING</span>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Number Plate Details (XX-00-XX-0000)</label>
+            <input 
+              type="text" 
+              id="numberPlateDetails" 
+              class="form-input number-plate-input" 
+              placeholder="MH-31-AB-1234"
+              maxlength="14"
+            >
+          </div>
+
+          <div class="status-options">
+            <label class="radio-option">
+              <input type="radio" name="numberPlateFitted" value="Yes" id="numberPlateYes">
+              <span>Fitted: Yes</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="numberPlateFitted" value="No" id="numberPlateNo">
+              <span>Fitted: No</span>
+            </label>
+          </div>
+          <div class="status-info" id="numberPlateInfo"></div>
+        </div>
+
+        <button type="submit" class="btn-update">💾 UPDATE STATUS</button>
+        <button type="button" class="btn-cancel" onclick="cancelUpdate()">❌ CANCEL</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/operator-update.js"></script>
+</body>
+</html>

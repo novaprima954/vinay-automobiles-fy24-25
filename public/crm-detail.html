@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="HandheldFriendly" content="true">
+  <meta name="MobileOptimized" content="width">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Lead Details - CRM</title>
+  <link rel="stylesheet" href="css/common.css">
+  <style>
+    body {
+      background: #f5f5f5;
+      padding: 0;
+      margin: 0;
+    }
+
+    .detail-container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding-bottom: 20px;
+    }
+
+    /* Header */
+    .detail-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .header-row {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 10px;
+    }
+
+    .btn-back {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      font-size: 18px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .header-title {
+      font-size: 20px;
+      font-weight: 700;
+      flex: 1;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .btn-call {
+      flex: 1;
+      background: rgba(76, 175, 80, 0.9);
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-convert {
+      flex: 1;
+      background: rgba(255, 152, 0, 0.9);
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Tabs */
+    .tabs-container {
+      background: white;
+      margin: 20px 20px 0 20px;
+      border-radius: 15px 15px 0 0;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid #f0f0f0;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 15px;
+      text-align: center;
+      cursor: pointer;
+      font-weight: 600;
+      color: #999;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+    }
+
+    .tab.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+    }
+
+    /* Tab Content */
+    .tab-content {
+      display: none;
+      padding: 20px;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Info Tab */
+    .info-row {
+      margin-bottom: 20px;
+    }
+
+    .info-label {
+      font-size: 12px;
+      color: #999;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .info-value {
+      font-size: 16px;
+      color: #333;
+      font-weight: 600;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 16px;
+      box-sizing: border-box;
+      transition: all 0.3s;
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-textarea {
+      min-height: 80px;
+      resize: vertical;
+      font-family: inherit;
+    }
+
+    .btn-update {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .btn-update:active {
+      transform: translateY(2px);
+    }
+
+    /* Activity Tab */
+    .activity-timeline {
+      position: relative;
+      padding-left: 30px;
+    }
+
+    .activity-item {
+      position: relative;
+      padding-bottom: 20px;
+      border-left: 2px solid #e0e0e0;
+      padding-left: 20px;
+      margin-left: 10px;
+    }
+
+    .activity-item:last-child {
+      border-left: none;
+    }
+
+    .activity-icon {
+      position: absolute;
+      left: -12px;
+      background: white;
+      border: 2px solid #667eea;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+
+    .activity-type {
+      font-weight: 700;
+      color: #667eea;
+      margin-bottom: 3px;
+    }
+
+    .activity-date {
+      font-size: 12px;
+      color: #999;
+      margin-bottom: 5px;
+    }
+
+    .activity-text {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #999;
+    }
+
+    /* Notes Tab */
+    .note-form {
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #f0f0f0;
+    }
+
+    .btn-add-note {
+      width: 100%;
+      padding: 12px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .notes-list {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .note-item {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 10px;
+      border-left: 4px solid #667eea;
+    }
+
+    .note-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: #999;
+    }
+
+    .note-text {
+      color: #333;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    /* Message */
+    .message {
+      padding: 12px 20px;
+      margin: 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      text-align: center;
+      display: none;
+    }
+
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="detail-container">
+    <!-- Header -->
+    <div class="detail-header">
+      <div class="header-row">
+        <button class="btn-back" onclick="goBack()">←</button>
+        <div class="header-title" id="leadName">Loading...</div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-call" id="btnCall" onclick="callLead()">📞 CALL</button>
+        <button class="btn-convert" id="btnConvert" onclick="convertToSale()">✅ CONVERT</button>
+      </div>
+    </div>
+
+    <!-- Status Message -->
+    <div id="statusMessage" class="message"></div>
+
+    <!-- Loading -->
+    <div id="loadingState" class="loading">
+      <div class="spinner"></div>
+      <div>Loading lead details...</div>
+    </div>
+
+    <!-- Tabs Container -->
+    <div class="tabs-container" id="tabsContainer" style="display: none;">
+      <!-- Tabs -->
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('info')">📝 INFO</div>
+        <div class="tab" onclick="switchTab('activity')">📊 ACTIVITY</div>
+        <div class="tab" onclick="switchTab('notes')">📋 NOTES</div>
+      </div>
+
+      <!-- Info Tab -->
+      <div class="tab-content active" id="infoTab">
+        <!-- Lead Info (Read-only) -->
+        <div class="info-row">
+          <div class="info-label">📱 Mobile Number</div>
+          <div class="info-value" id="infoMobile">-</div>
+        </div>
+
+        <div class="info-row">
+          <div class="info-label">📧 Email</div>
+          <div class="info-value" id="infoEmail">-</div>
+        </div>
+
+        <div class="info-row">
+          <div class="info-label">🏠 Address</div>
+          <div class="info-value" id="infoAddress">-</div>
+        </div>
+
+        <div class="info-row">
+          <div class="info-label">🏍️ Interested Model</div>
+          <div class="info-value" id="infoModel">-</div>
+        </div>
+
+        <div class="info-row">
+          <div class="info-label">🎯 Lead Source</div>
+          <div class="info-value" id="infoSource">-</div>
+        </div>
+
+        <div class="info-row">
+          <div class="info-label">👤 Assigned To</div>
+          <div class="info-value" id="infoAssigned">-</div>
+        </div>
+
+        <!-- Editable Fields -->
+        <form id="updateForm">
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select id="status" class="form-select">
+              <option value="">-- Select --</option>
+              <option value="New">New</option>
+              <option value="Contacted">Contacted</option>
+              <option value="Interested">Interested</option>
+              <option value="Negotiating">Negotiating</option>
+              <option value="Hot Lead">Hot Lead</option>
+              <option value="Cold Lead">Cold Lead</option>
+              <option value="Lost">Lost</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Expected Purchase Date</label>
+            <input type="date" id="expectedDate" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Next Follow-up Date</label>
+            <input type="date" id="followUpDate" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Notes</label>
+            <textarea id="notes" class="form-textarea"></textarea>
+          </div>
+
+          <button type="submit" class="btn-update">💾 UPDATE</button>
+        </form>
+      </div>
+
+      <!-- Activity Tab -->
+      <div class="tab-content" id="activityTab">
+        <div class="activity-timeline" id="activityTimeline">
+          <div class="empty-state">No activity recorded yet</div>
+        </div>
+      </div>
+
+      <!-- Notes Tab -->
+      <div class="tab-content" id="notesTab">
+        <div class="note-form">
+          <div class="form-group">
+            <label class="form-label">Add New Note</label>
+            <textarea id="newNote" class="form-textarea" placeholder="Enter your note..."></textarea>
+          </div>
+          <button class="btn-add-note" onclick="addNote()">➕ ADD NOTE</button>
+        </div>
+
+        <div class="notes-list" id="notesList">
+          <div class="empty-state">No notes yet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/crm-detail.js"></script>
+</body>
+</html>
