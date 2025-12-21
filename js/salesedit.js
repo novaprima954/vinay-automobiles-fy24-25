@@ -122,12 +122,11 @@ function setupEventListeners() {
 // ==========================================
 
 /**
- * Search for sales records
+ * Search for sales records - USES STANDARD API WITH FRONTEND FILTERING
  */
 async function searchSales() {
   const searchByEl = document.getElementById('searchBy');
   const searchValueEl = document.getElementById('searchValue');
-  const searchModelEl = document.getElementById('searchModel');
   
   if (!searchByEl || !searchValueEl) {
     console.error('Search elements not found');
@@ -136,93 +135,62 @@ async function searchSales() {
   
   const searchBy = searchByEl.value;
   const searchValue = searchValueEl.value.trim();
-  const searchModel = searchModelEl ? searchModelEl.value : '';
   
-  if (!searchValue && !searchModel) {
+  if (!searchValue) {
     alert('Please enter a search value');
     return;
   }
   
-  console.log('🔍 Searching:', { searchBy, searchValue, searchModel });
+  console.log('🔍 Searching:', { searchBy, searchValue });
   
   const resultsSection = document.getElementById('resultsSection');
   const resultsBody = document.getElementById('resultsBody');
   
   resultsSection.style.display = 'block';
-  resultsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px;">⏳ Searching...</td></tr>';
+  resultsBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">⏳ Searching...</td></tr>';
   
   try {
-    const sessionId = SessionManager.getSessionId();
-    const session = SessionManager.getSession();
+    // Use searchViewRecords - standard API method
+    console.log('📞 Calling searchViewRecords...');
+    const response = await API.searchViewRecords(searchBy, searchValue, null, null, null, null);
     
-    console.log('🔍 DEBUG: Starting search');
-    console.log('  searchBy:', searchBy);
-    console.log('  searchValue:', searchValue);
-    console.log('  sessionId:', sessionId);
-    console.log('  userRole:', session.user.role);
-    console.log('  userName:', session.user.username);
-    
-    let response;
-    
-    // Try the special searchRecordsForEdit method first
-    try {
-      console.log('📞 Calling searchRecordsForEdit...');
-      response = await API.call('searchRecordsForEdit', {
-        sessionId: sessionId,
-        searchBy: searchBy,
-        searchValue: searchValue,
-        userRole: session.user.role,
-        userName: session.user.username
-      });
-      console.log('✅ searchRecordsForEdit response:', response);
-    } catch (e) {
-      console.log('⚠️ searchRecordsForEdit not available, using fallback');
-      console.log('  Error:', e.message);
-      // Fallback to standard search
-      console.log('📞 Calling searchViewRecords...');
-      response = await API.searchViewRecords(searchBy, searchValue, null, null, null, null);
-      console.log('✅ searchViewRecords response:', response);
-    }
+    console.log('✅ API Response:', response);
     
     if (response.success && response.results) {
-      console.log('📊 Raw results:', response.results);
-      console.log('📊 Number of results:', response.results.length);
+      console.log('📊 Raw results:', response.results.length, 'total');
       
-      // Log each result's Account Check value
+      // Log details of each result
       response.results.forEach(function(record, index) {
         console.log(`  Result ${index + 1}:`, {
           receiptNo: record.receiptNo,
           customerName: record.customerName,
           accountCheck: record.accountCheck,
-          accountCheckType: typeof record.accountCheck,
-          accountCheckValue: JSON.stringify(record.accountCheck),
-          accountCheckLength: record.accountCheck ? record.accountCheck.length : 0
+          type: typeof record.accountCheck
         });
       });
       
-      // Filter to only show editable records (Account Check != "Yes")
+      // Filter on FRONTEND - only remove Account Check = "Yes"
       const editableRecords = response.results.filter(function(record) {
-        const accountCheck = record.accountCheck || '';
-        const isEditable = accountCheck !== 'Yes';
-        console.log(`  Filtering ${record.receiptNo}: accountCheck="${accountCheck}", isEditable=${isEditable}`);
-        return isEditable;
+        const accountCheck = (record.accountCheck || '').toString().trim();
+        const isYes = accountCheck === 'Yes';
+        console.log(`  Filter ${record.receiptNo}: accountCheck="${accountCheck}", blocked=${isYes}`);
+        return !isYes; // Allow blank, "No", or anything except "Yes"
       });
       
-      console.log('📊 Found', response.results.length, 'total,', editableRecords.length, 'editable');
+      console.log('✅ Editable records:', editableRecords.length);
       
       if (editableRecords.length > 0) {
-        console.log('✅ Displaying', editableRecords.length, 'editable records');
         displaySearchResults(editableRecords);
       } else {
-        console.log('⚠️ No editable records after filtering');
-        resultsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #ffc107;">⚠️ No editable records found (all have Account Check = "Yes")</td></tr>';
+        resultsBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ffc107;">⚠️ No editable records found (all have Account Check = "Yes")</td></tr>';
       }
     } else {
-      resultsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #e74c3c;">❌ ' + (response.message || 'No records found') + '</td></tr>';
+      console.log('❌ No results');
+      resultsBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #e74c3c;">❌ No records found</td></tr>';
     }
   } catch (error) {
     console.error('❌ Search error:', error);
-    resultsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #e74c3c;">❌ Error searching records</td></tr>';
+    resultsBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #e74c3c;">❌ Error: ' + error.message + '</td></tr>';
   }
 }
 
