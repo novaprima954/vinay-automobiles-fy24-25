@@ -38,7 +38,7 @@ async function loadModelsForEdit() {
   if (!modelSelect) return;
   
   try {
-    const response = await API.getAllModels();
+    const response = await API.getPriceMasterModels();
     
     if (response.success && response.models) {
       cachedModels = response.models;
@@ -122,21 +122,36 @@ async function getPriceMasterDetails(model, variant) {
  */
 function setupEventListeners() {
   // Search button
-  document.getElementById('searchBtn').addEventListener('click', searchRecords);
+  const searchBtn = document.getElementById('searchBtn');
+  if (searchBtn) {
+    searchBtn.addEventListener('click', searchRecords);
+  }
   
   // Enter key in search
-  document.getElementById('searchValue').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') searchRecords();
-  });
+  const searchValue = document.getElementById('searchValue');
+  if (searchValue) {
+    searchValue.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') searchRecords();
+    });
+  }
   
   // Model change in edit form
-  document.getElementById('model').addEventListener('change', handleModelChange);
+  const modelSelect = document.getElementById('model');
+  if (modelSelect) {
+    modelSelect.addEventListener('change', handleModelChange);
+  }
   
   // Variant change in edit form
-  document.getElementById('variant').addEventListener('change', handleVariantChange);
+  const variantSelect = document.getElementById('variant');
+  if (variantSelect) {
+    variantSelect.addEventListener('change', handleVariantChange);
+  }
   
   // Financier dropdown
-  document.getElementById('financierName').addEventListener('change', handleFinancierChange);
+  const financierSelect = document.getElementById('financierName');
+  if (financierSelect) {
+    financierSelect.addEventListener('change', handleFinancierChange);
+  }
   
   // Calculate totals on amount changes
   ['receipt2Amount', 'receipt3Amount', 'receipt4Amount', 'disbursedAmount', 'finalPrice'].forEach(function(id) {
@@ -147,13 +162,19 @@ function setupEventListeners() {
   });
   
   // Form submit
-  document.getElementById('editForm').addEventListener('submit', handleUpdate);
+  const editForm = document.getElementById('editForm');
+  if (editForm) {
+    editForm.addEventListener('submit', handleUpdate);
+  }
   
   // Cancel button
-  document.getElementById('cancelBtn').addEventListener('click', function() {
-    document.getElementById('detailsSection').style.display = 'none';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
+  const cancelBtn = document.getElementById('cancelBtn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', function() {
+      document.getElementById('detailsSection').style.display = 'none';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
 }
 
 // ==========================================
