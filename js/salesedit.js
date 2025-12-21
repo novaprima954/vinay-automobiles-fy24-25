@@ -127,10 +127,11 @@ function setupEventListeners() {
 async function searchSales() {
   const searchBy = document.getElementById('searchBy').value;
   const searchValue = document.getElementById('searchValue').value.trim();
-  const searchModel = document.getElementById('searchModel').value;
+  const searchModelEl = document.getElementById('searchModel');
+  const searchModel = searchModelEl ? searchModelEl.value : '';
   
   if (!searchValue && !searchModel) {
-    alert('Please enter a search value or select a model');
+    alert('Please enter a search value');
     return;
   }
   
