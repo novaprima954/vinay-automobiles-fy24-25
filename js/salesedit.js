@@ -152,12 +152,46 @@ async function searchSales() {
   resultsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px;">⏳ Searching...</td></tr>';
   
   try {
-    const response = await API.searchViewRecords(searchBy, searchValue, null, null, null, null);
+    let response;
     
-    if (response.success && response.results) {
-      displaySearchResults(response.results);
+    // If searching by Receipt No, use direct lookup
+    if (searchBy === 'Receipt No' && searchValue) {
+      const sessionId = SessionManager.getSessionId();
+      response = await API.getRecordByReceiptNo(sessionId, searchValue);
+      
+      if (response.success && response.record) {
+        // Check if Account Check is "No" or blank (editable)
+        const accountCheck = response.record.accountCheck || '';
+        
+        if (accountCheck === 'Yes') {
+          resultsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #ffc107;">⚠️ This record has Account Check = "Yes" and cannot be edited</td></tr>';
+          return;
+        }
+        
+        // Convert single record to array for display
+        displaySearchResults([response.record]);
+      } else {
+        resultsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #e74c3c;">❌ ' + (response.message || 'No records found') + '</td></tr>';
+      }
     } else {
-      resultsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #e74c3c;">❌ ' + (response.message || 'No records found') + '</td></tr>';
+      // For other search types, use searchViewRecords
+      response = await API.searchViewRecords(searchBy, searchValue, null, null, null, null);
+      
+      if (response.success && response.results) {
+        // Filter out records with Account Check = "Yes"
+        const editableRecords = response.results.filter(function(record) {
+          const accountCheck = record.accountCheck || '';
+          return accountCheck !== 'Yes';
+        });
+        
+        if (editableRecords.length > 0) {
+          displaySearchResults(editableRecords);
+        } else {
+          resultsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #ffc107;">⚠️ No editable records found (all have Account Check = "Yes")</td></tr>';
+        }
+      } else {
+        resultsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #e74c3c;">❌ ' + (response.message || 'No records found') + '</td></tr>';
+      }
     }
   } catch (error) {
     console.error('❌ Search error:', error);
