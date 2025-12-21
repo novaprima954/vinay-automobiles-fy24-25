@@ -155,10 +155,18 @@ async function searchSales() {
     const sessionId = SessionManager.getSessionId();
     const session = SessionManager.getSession();
     
+    console.log('🔍 DEBUG: Starting search');
+    console.log('  searchBy:', searchBy);
+    console.log('  searchValue:', searchValue);
+    console.log('  sessionId:', sessionId);
+    console.log('  userRole:', session.user.role);
+    console.log('  userName:', session.user.username);
+    
     let response;
     
     // Try the special searchRecordsForEdit method first
     try {
+      console.log('📞 Calling searchRecordsForEdit...');
       response = await API.call('searchRecordsForEdit', {
         sessionId: sessionId,
         searchBy: searchBy,
@@ -166,24 +174,47 @@ async function searchSales() {
         userRole: session.user.role,
         userName: session.user.username
       });
+      console.log('✅ searchRecordsForEdit response:', response);
     } catch (e) {
       console.log('⚠️ searchRecordsForEdit not available, using fallback');
+      console.log('  Error:', e.message);
       // Fallback to standard search
+      console.log('📞 Calling searchViewRecords...');
       response = await API.searchViewRecords(searchBy, searchValue, null, null, null, null);
+      console.log('✅ searchViewRecords response:', response);
     }
     
     if (response.success && response.results) {
+      console.log('📊 Raw results:', response.results);
+      console.log('📊 Number of results:', response.results.length);
+      
+      // Log each result's Account Check value
+      response.results.forEach(function(record, index) {
+        console.log(`  Result ${index + 1}:`, {
+          receiptNo: record.receiptNo,
+          customerName: record.customerName,
+          accountCheck: record.accountCheck,
+          accountCheckType: typeof record.accountCheck,
+          accountCheckValue: JSON.stringify(record.accountCheck),
+          accountCheckLength: record.accountCheck ? record.accountCheck.length : 0
+        });
+      });
+      
       // Filter to only show editable records (Account Check != "Yes")
       const editableRecords = response.results.filter(function(record) {
         const accountCheck = record.accountCheck || '';
-        return accountCheck !== 'Yes';
+        const isEditable = accountCheck !== 'Yes';
+        console.log(`  Filtering ${record.receiptNo}: accountCheck="${accountCheck}", isEditable=${isEditable}`);
+        return isEditable;
       });
       
       console.log('📊 Found', response.results.length, 'total,', editableRecords.length, 'editable');
       
       if (editableRecords.length > 0) {
+        console.log('✅ Displaying', editableRecords.length, 'editable records');
         displaySearchResults(editableRecords);
       } else {
+        console.log('⚠️ No editable records after filtering');
         resultsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #ffc107;">⚠️ No editable records found (all have Account Check = "Yes")</td></tr>';
       }
     } else {
