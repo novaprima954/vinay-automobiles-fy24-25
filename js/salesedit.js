@@ -155,16 +155,37 @@ async function searchSales() {
     const sessionId = SessionManager.getSessionId();
     const session = SessionManager.getSession();
     
-    const response = await API.call('searchRecordsForEdit', {
-      sessionId: sessionId,
-      searchBy: searchBy,
-      searchValue: searchValue,
-      userRole: session.user.role,
-      userName: session.user.username
-    });
+    let response;
+    
+    // Try the special searchRecordsForEdit method first
+    try {
+      response = await API.call('searchRecordsForEdit', {
+        sessionId: sessionId,
+        searchBy: searchBy,
+        searchValue: searchValue,
+        userRole: session.user.role,
+        userName: session.user.username
+      });
+    } catch (e) {
+      console.log('⚠️ searchRecordsForEdit not available, using fallback');
+      // Fallback to standard search
+      response = await API.searchViewRecords(searchBy, searchValue, null, null, null, null);
+    }
     
     if (response.success && response.results) {
-      displaySearchResults(response.results);
+      // Filter to only show editable records (Account Check != "Yes")
+      const editableRecords = response.results.filter(function(record) {
+        const accountCheck = record.accountCheck || '';
+        return accountCheck !== 'Yes';
+      });
+      
+      console.log('📊 Found', response.results.length, 'total,', editableRecords.length, 'editable');
+      
+      if (editableRecords.length > 0) {
+        displaySearchResults(editableRecords);
+      } else {
+        resultsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #ffc107;">⚠️ No editable records found (all have Account Check = "Yes")</td></tr>';
+      }
     } else {
       resultsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #e74c3c;">❌ ' + (response.message || 'No records found') + '</td></tr>';
     }
@@ -226,10 +247,20 @@ async function loadRecord(receiptNo) {
   
   try {
     const sessionId = SessionManager.getSessionId();
-    const response = await API.call('getRecordForEdit', {
-      sessionId: sessionId,
-      receiptNo: receiptNo
-    });
+    
+    let response;
+    
+    // Try getRecordForEdit first
+    try {
+      response = await API.call('getRecordForEdit', {
+        sessionId: sessionId,
+        receiptNo: receiptNo
+      });
+    } catch (e) {
+      console.log('⚠️ getRecordForEdit not available, using getRecordByReceiptNo');
+      // Fallback to standard method
+      response = await API.getRecordByReceiptNo(sessionId, receiptNo);
+    }
     
     if (response.success && response.record) {
       lastSavedData = response.record;
