@@ -119,7 +119,7 @@
     
     @media (min-width: 769px) {
       .protected-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
       }
     }
     
@@ -156,28 +156,6 @@
       display: flex;
       align-items: center;
       gap: 8px;
-    }
-    
-    /* Editable section background */
-    .editable-section-wrapper {
-      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-      padding: 25px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    }
-    
-    /* Form grid - 2 columns */
-    .form-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 15px;
-    }
-    
-    @media (min-width: 769px) {
-      .form-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
     }
     
     .editable-highlight {
@@ -380,7 +358,7 @@
     
     <!-- Header -->
     <div class="page-header">
-      <button class="btn-back" onclick="window.history.back()">← Back</button>
+      <button class="btn-back" onclick="goBack()">← Back</button>
       <h1>✏️ Sales Booking Form Edit</h1>
       <div class="user-badge">
         <span id="currentUser">Loading...</span>
@@ -422,7 +400,7 @@
         </div>
       </div>
       
-      <button class="btn-primary" id="searchBtn" style="width: 100%;">
+      <button class="btn-primary" style="width: 100%;" onclick="searchRecords()">
         🔍 Search Records
       </button>
     </div>
@@ -454,7 +432,7 @@
       
       <!-- Protected Fields -->
       <div class="protected-section">
-        <h4>🔒 Protected Fields (Read-Only)</h4>
+        <h4>🔒 Protected Fields (Cannot be edited)</h4>
         <div class="protected-grid">
           <div class="protected-item">
             <span class="protected-label">Receipt No</span>
@@ -463,18 +441,6 @@
           <div class="protected-item">
             <span class="protected-label">Executive Name</span>
             <span class="protected-value" id="protectedExecutiveName">-</span>
-          </div>
-          <div class="protected-item">
-            <span class="protected-label">Booking Date</span>
-            <span class="protected-value" id="protectedBookingDate">-</span>
-          </div>
-          <div class="protected-item">
-            <span class="protected-label">Customer Name</span>
-            <span class="protected-value" id="protectedCustomerName">-</span>
-          </div>
-          <div class="protected-item">
-            <span class="protected-label">Mobile No</span>
-            <span class="protected-value" id="protectedMobileNo">-</span>
           </div>
           <div class="protected-item">
             <span class="protected-label">Receipt No 1</span>
@@ -487,18 +453,45 @@
         </div>
       </div>
       
-      <!-- Editable Fields Section with Background -->
-      <div class="editable-section-wrapper">
-        <div class="section-header">
-          ✏️ Editable Fields
-        </div>
-        
-        <form id="editForm">
+      <!-- Editable Fields -->
+      <div class="section-header">
+        ✏️ Editable Fields
+      </div>
+      
+      <form id="editForm">
         <div class="form-grid">
+          <div class="form-group">
+            <label>Booking Date <span class="required">*</span></label>
+            <input type="date" id="bookingDate" required class="editable-highlight">
+          </div>
+          
+          <div class="form-group">
+            <label>Customer Name <span class="required">*</span></label>
+            <input type="text" id="customerName" required class="editable-highlight">
+          </div>
+          
+          <div class="form-group">
+            <label>Mobile No <span class="required">*</span></label>
+            <input type="tel" id="mobileNo" required maxlength="10" class="editable-highlight">
+          </div>
+          
           <div class="form-group">
             <label>Model <span class="required">*</span></label>
             <select id="model" required class="editable-highlight">
-              <option value="">-- Loading models... --</option>
+              <option value="">-- Select --</option>
+              <option>Jupiter 110</option>
+              <option>Jupiter 125</option>
+              <option>Ntorq</option>
+              <option>Radeon</option>
+              <option>Raider</option>
+              <option>Apache</option>
+              <option>Ronin</option>
+              <option>Sport</option>
+              <option>Star</option>
+              <option>XL 100</option>
+              <option>Zest</option>
+              <option>iQube</option>
+              <option>Orbiter</option>
             </select>
           </div>
           
@@ -619,20 +612,14 @@
           ⚠️ WARNING: Grand Total (₹<span id="totalInWarning"></span>) does not match Final Price (₹<span id="finalPriceInWarning"></span>)! ⚠️
         </div>
         
-        <!-- Submit Buttons -->
+        <!-- Submit Button -->
         <div class="form-actions">
-          <button type="submit" class="btn-primary" id="updateBtn" style="flex: 1;">
+          <button type="submit" class="btn-primary" id="updateBtn" style="width: 100%;">
             💾 Update Record
-          </button>
-          <button type="button" class="btn-secondary" id="cancelBtn" style="flex: 1;">
-            ✖ Cancel
           </button>
         </div>
         
       </form>
-      </div>
-      <!-- End of Editable Section Wrapper -->
-      
     </div>
     
   </div>
