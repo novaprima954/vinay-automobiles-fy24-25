@@ -7,6 +7,13 @@ let currentReceiptNo = null;
 let currentReceipt1Amount = 0;  // Store receipt 1 amount (read-only)
 let currentStatus = '';
 
+// Cache for variants to avoid repeated API calls
+const variantCache = {};
+const priceMasterCache = {};
+
+// Debounce timer for search
+let searchDebounceTimer = null;
+
 // ==========================================
 // PAGE INITIALIZATION
 // ==========================================
@@ -153,16 +160,19 @@ async function loadDashboard() {
   try {
     const response = await API.getAccountsDashboard(sessionId, month);
     
-    console.log('📊 Dashboard response:', response);
+    console.log('📊 Dashboard response:', JSON.stringify(response, null, 2));
+    console.log('  Response keys:', Object.keys(response));
+    console.log('  Response.success:', response.success);
+    console.log('  Response.dashboard:', response.dashboard);
     
     if (response.success) {
       const yesCount = response.yesCount || 0;
       const noCount = response.noCount || 0;
       const blankCount = response.blankCount || 0;
       
-      console.log('  ✅ Yes:', yesCount);
-      console.log('  ⚠️ No:', noCount);
-      console.log('  ⭕ Blank:', blankCount);
+      console.log('  ✅ Yes Count:', yesCount);
+      console.log('  ⚠️ No Count:', noCount);
+      console.log('  ⭕ Blank Count:', blankCount);
       
       document.getElementById('countYes').textContent = yesCount;
       document.getElementById('countNo').textContent = noCount;
@@ -424,7 +434,7 @@ async function populateDetails(record) {
 }
 
 /**
- * Load variants from PriceMaster based on model
+ * Load variants from PriceMaster based on model (with caching)
  */
 async function loadVariantsFromPriceMaster(model) {
   const variantSelect = document.getElementById('variant');
@@ -436,12 +446,28 @@ async function loadVariantsFromPriceMaster(model) {
     return;
   }
   
+  // Check cache first
+  if (variantCache[model]) {
+    console.log('⚡ Using cached variants for', model);
+    variantSelect.innerHTML = '<option value="">-- Select --</option>';
+    variantCache[model].forEach(function(variant) {
+      const option = document.createElement('option');
+      option.value = variant;
+      option.textContent = variant;
+      variantSelect.appendChild(option);
+    });
+    return;
+  }
+  
   variantSelect.innerHTML = '<option value="">-- Loading variants... --</option>';
   
   try {
     const response = await API.getPriceMasterVariants(model);
     
     if (response.success) {
+      // Cache the variants
+      variantCache[model] = response.variants;
+      
       variantSelect.innerHTML = '<option value="">-- Select --</option>';
       
       response.variants.forEach(function(variant) {

@@ -621,28 +621,6 @@
             </div>
           </div>
           
-          <!-- Final Price After Discount Display (moved BEFORE Price Verification) -->
-          <div class="totals-display" style="margin: 20px 0;">
-            <h4>💰 Final Price After Discount</h4>
-            <div class="total-row">
-              <span class="total-label">Final Price After Discount:</span>
-              <span class="total-value" id="finalPriceDisplay">₹0.00</span>
-            </div>
-          </div>
-          
-          <!-- Price Verification Section (moved BEFORE Payment Summary) -->
-          <div class="form-group" style="margin-bottom: 20px;">
-            <div style="background: white; padding: 20px; border-radius: 12px; border-left: 5px solid #667eea; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-              <h3 style="color: #667eea; margin: 0 0 15px 0; font-size: 17px; font-weight: 700;">🔍 Price Verification</h3>
-              <button type="button" class="btn-secondary" onclick="calculatePrice()" style="width: 100%; margin-bottom: 15px; padding: 12px; font-size: 15px;">
-                💰 Calculate from PriceMaster
-              </button>
-              <div id="priceBreakdown" style="display: none;">
-                <!-- Price breakdown will be displayed here by JavaScript -->
-              </div>
-            </div>
-          </div>
-          
           <!-- Payment Summary Section -->
           <div class="section-header" style="background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); margin: 20px 0 15px 0;">💵 Payment Summary</div>
           
@@ -682,6 +660,28 @@
             <div class="form-group">
               <label>Finance Commission</label>
               <input type="number" id="financeComm" class="editable-highlight" placeholder="₹">
+            </div>
+          </div>
+          
+          <!-- Final Price After Discount Display (moved AFTER Finance Commission) -->
+          <div class="totals-display" style="margin: 20px 0;">
+            <h4>💰 Final Price After Discount</h4>
+            <div class="total-row">
+              <span class="total-label">Final Price After Discount:</span>
+              <span class="total-value" id="finalPriceDisplay">₹0.00</span>
+            </div>
+          </div>
+          
+          <!-- Price Verification Section (moved AFTER Finance Commission) -->
+          <div class="form-group" style="margin-bottom: 20px;">
+            <div style="background: white; padding: 20px; border-radius: 12px; border-left: 5px solid #667eea; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+              <h3 style="color: #667eea; margin: 0 0 15px 0; font-size: 17px; font-weight: 700;">🔍 Price Verification</h3>
+              <button type="button" class="btn-secondary" onclick="calculatePrice()" style="width: 100%; margin-bottom: 15px; padding: 12px; font-size: 15px;">
+                💰 Calculate from PriceMaster
+              </button>
+              <div id="priceBreakdown" style="display: none;">
+                <!-- Price breakdown will be displayed here by JavaScript -->
+              </div>
             </div>
           </div>
           
