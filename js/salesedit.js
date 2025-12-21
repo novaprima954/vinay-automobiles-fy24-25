@@ -152,8 +152,7 @@ async function searchSales() {
   resultsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px;">⏳ Searching...</td></tr>';
   
   try {
-    const sessionId = SessionManager.getSessionId();
-    const response = await API.searchSalesRecords(sessionId, searchBy, searchValue, searchModel);
+    const response = await API.searchViewRecords(searchBy, searchValue, null, null, null, null);
     
     if (response.success && response.results) {
       displaySearchResults(response.results);
