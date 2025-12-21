@@ -125,9 +125,17 @@ function setupEventListeners() {
  * Search for sales records
  */
 async function searchSales() {
-  const searchBy = document.getElementById('searchBy').value;
-  const searchValue = document.getElementById('searchValue').value.trim();
+  const searchByEl = document.getElementById('searchBy');
+  const searchValueEl = document.getElementById('searchValue');
   const searchModelEl = document.getElementById('searchModel');
+  
+  if (!searchByEl || !searchValueEl) {
+    console.error('Search elements not found');
+    return;
+  }
+  
+  const searchBy = searchByEl.value;
+  const searchValue = searchValueEl.value.trim();
   const searchModel = searchModelEl ? searchModelEl.value : '';
   
   if (!searchValue && !searchModel) {
