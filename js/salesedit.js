@@ -122,11 +122,11 @@ async function getPriceMasterDetails(model, variant) {
  */
 function setupEventListeners() {
   // Search button
-  document.getElementById('searchBtn').addEventListener('click', searchSales);
+  document.getElementById('searchBtn').addEventListener('click', searchRecords);
   
   // Enter key in search
   document.getElementById('searchValue').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') searchSales();
+    if (e.key === 'Enter') searchRecords();
   });
   
   // Model change in edit form
@@ -181,13 +181,6 @@ async function handleVariantChange() {
 // ==========================================
 // SEARCH FUNCTIONALITY
 // ==========================================
-  document.getElementById('mobileNo').addEventListener('input', function() {
-    this.value = this.value.replace(/\D/g, '');
-  });
-  
-  // Form submission
-  document.getElementById('editForm').addEventListener('submit', handleUpdate);
-}
 
 /**
  * Handle search by dropdown change
