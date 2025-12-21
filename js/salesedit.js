@@ -152,46 +152,21 @@ async function searchSales() {
   resultsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px;">⏳ Searching...</td></tr>';
   
   try {
-    let response;
+    const sessionId = SessionManager.getSessionId();
+    const session = SessionManager.getSession();
     
-    // If searching by Receipt No, use direct lookup
-    if (searchBy === 'Receipt No' && searchValue) {
-      const sessionId = SessionManager.getSessionId();
-      response = await API.getRecordByReceiptNo(sessionId, searchValue);
-      
-      if (response.success && response.record) {
-        // Check if Account Check is "No" or blank (editable)
-        const accountCheck = response.record.accountCheck || '';
-        
-        if (accountCheck === 'Yes') {
-          resultsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #ffc107;">⚠️ This record has Account Check = "Yes" and cannot be edited</td></tr>';
-          return;
-        }
-        
-        // Convert single record to array for display
-        displaySearchResults([response.record]);
-      } else {
-        resultsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #e74c3c;">❌ ' + (response.message || 'No records found') + '</td></tr>';
-      }
+    const response = await API.call('searchRecordsForEdit', {
+      sessionId: sessionId,
+      searchBy: searchBy,
+      searchValue: searchValue,
+      userRole: session.user.role,
+      userName: session.user.username
+    });
+    
+    if (response.success && response.results) {
+      displaySearchResults(response.results);
     } else {
-      // For other search types, use searchViewRecords
-      response = await API.searchViewRecords(searchBy, searchValue, null, null, null, null);
-      
-      if (response.success && response.results) {
-        // Filter out records with Account Check = "Yes"
-        const editableRecords = response.results.filter(function(record) {
-          const accountCheck = record.accountCheck || '';
-          return accountCheck !== 'Yes';
-        });
-        
-        if (editableRecords.length > 0) {
-          displaySearchResults(editableRecords);
-        } else {
-          resultsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #ffc107;">⚠️ No editable records found (all have Account Check = "Yes")</td></tr>';
-        }
-      } else {
-        resultsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #e74c3c;">❌ ' + (response.message || 'No records found') + '</td></tr>';
-      }
+      resultsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #e74c3c;">❌ ' + (response.message || 'No records found') + '</td></tr>';
     }
   } catch (error) {
     console.error('❌ Search error:', error);
@@ -238,7 +213,7 @@ function displaySearchResults(results) {
 // ==========================================
 
 /**
- * Load record by receipt number
+ * Load record from search results
  */
 async function loadRecord(receiptNo) {
   console.log('📄 Loading record:', receiptNo);
@@ -251,7 +226,10 @@ async function loadRecord(receiptNo) {
   
   try {
     const sessionId = SessionManager.getSessionId();
-    const response = await API.getRecordByReceiptNo(sessionId, receiptNo);
+    const response = await API.call('getRecordForEdit', {
+      sessionId: sessionId,
+      receiptNo: receiptNo
+    });
     
     if (response.success && response.record) {
       lastSavedData = response.record;
