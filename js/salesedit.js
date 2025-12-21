@@ -25,10 +25,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const user = session.user;
   console.log('✅ Logged in as:', user.username, '(' + user.role + ')');
   
-  // Display user info
-  document.getElementById('userName').textContent = user.username;
-  document.getElementById('userRole').textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
-  
   // Load models from PriceMaster
   loadModels();
   
