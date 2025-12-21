@@ -1,263 +1,705 @@
 // ==========================================
-// SALES EDIT - COMPLETELY FRESH START
+// SALES EDIT PAGE - WITH PRICEMASTER INTEGRATION
+// ==========================================
+
+let lastSavedData = null;
+let currentPriceMasterDetails = null;
+
+// ==========================================
+// PAGE INITIALIZATION
 // ==========================================
 
 document.addEventListener('DOMContentLoaded', function() {
   console.log('=== SALES EDIT PAGE ===');
   
-  // Check auth
+  // Check authentication
   const session = SessionManager.getSession();
+  
   if (!session) {
+    console.log('❌ No session - redirecting to login');
     alert('Please login first');
     window.location.href = 'index.html';
     return;
   }
   
-  console.log('✅ Logged in as:', session.user.username);
+  const user = session.user;
+  console.log('✅ Logged in as:', user.username, '(' + user.role + ')');
   
-  // Event listeners
-  document.getElementById('searchBtn').addEventListener('click', doSearch);
-  document.getElementById('searchValue').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') doSearch();
-  });
+  // Load models from PriceMaster
+  loadModels();
   
-  // Form submit
-  document.getElementById('editForm').addEventListener('submit', doUpdate);
-  
-  // Cancel
-  document.getElementById('cancelBtn').addEventListener('click', function() {
-    document.getElementById('detailsSection').style.display = 'none';
-  });
-  
-  // Financier dropdown
-  document.getElementById('financierName').addEventListener('change', function() {
-    const other = document.getElementById('otherFinancierInput');
-    other.style.display = this.value === 'Other' ? 'block' : 'none';
-  });
+  // Setup event listeners
+  setupEventListeners();
 });
 
-// ==========================================
-// SEARCH
-// ==========================================
-
-async function doSearch() {
-  const searchBy = document.getElementById('searchBy').value;
-  const searchValue = document.getElementById('searchValue').value.trim();
+/**
+ * Load all models from PriceMaster
+ */
+async function loadModels() {
+  const modelSelect = document.getElementById('searchModel');
   
-  if (!searchValue) {
-    alert('Please enter search value');
-    return;
-  }
+  if (!modelSelect) return;
   
-  console.log('🔍 Searching:', searchBy, '=', searchValue);
-  
-  const tbody = document.getElementById('resultsBody');
-  const section = document.getElementById('resultsSection');
-  
-  section.style.display = 'block';
-  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">⏳ Searching...</td></tr>';
+  modelSelect.innerHTML = '<option value="">-- Loading models... --</option>';
   
   try {
-    const response = await API.searchViewRecords(searchBy, searchValue, null, null, null, null);
+    const response = await API.getAllModels();
     
-    console.log('📊 Search response:', response);
-    
-    if (response.success && response.results && response.results.length > 0) {
-      // Filter editable
-      const editable = response.results.filter(r => {
-        const ac = (r.accountCheck || '').trim();
-        return ac !== 'Yes';
+    if (response.success && response.models) {
+      modelSelect.innerHTML = '<option value="">-- All Models --</option>';
+      
+      response.models.forEach(function(model) {
+        const option = document.createElement('option');
+        option.value = model;
+        option.textContent = model;
+        modelSelect.appendChild(option);
       });
       
-      console.log('Found:', response.results.length, 'total,', editable.length, 'editable');
-      
-      if (editable.length > 0) {
-        showResults(editable);
-      } else {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#ffc107">⚠️ No editable records</td></tr>';
-      }
+      console.log('✅ Loaded', response.models.length, 'models from PriceMaster');
     } else {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">No records found</td></tr>';
+      console.error('❌ Error loading models:', response.message);
+      modelSelect.innerHTML = '<option value="">-- Error loading models --</option>';
     }
-  } catch (err) {
-    console.error('❌ Search error:', err);
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:red">Error: ' + err.message + '</td></tr>';
+  } catch (error) {
+    console.error('❌ Load models error:', error);
+    modelSelect.innerHTML = '<option value="">-- Error loading models --</option>';
   }
 }
 
-function showResults(results) {
-  const tbody = document.getElementById('resultsBody');
-  tbody.innerHTML = '';
+/**
+ * Setup event listeners
+ */
+function setupEventListeners() {
+  // Search button
+  const searchBtn = document.getElementById('searchBtn');
+  if (searchBtn) {
+    searchBtn.addEventListener('click', searchSales);
+  }
   
-  results.forEach(rec => {
-    const row = tbody.insertRow();
-    row.style.cursor = 'pointer';
-    row.onclick = () => loadFullRecord(rec.receiptNo);
+  // Enter key in search field
+  const searchValue = document.getElementById('searchValue');
+  if (searchValue) {
+    searchValue.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        searchSales();
+      }
+    });
+  }
+  
+  // Model change in edit form
+  const modelSelect = document.getElementById('model');
+  if (modelSelect) {
+    modelSelect.addEventListener('change', handleModelChange);
+  }
+  
+  // Variant change in edit form
+  const variantSelect = document.getElementById('variant');
+  if (variantSelect) {
+    variantSelect.addEventListener('change', handleVariantChange);
+  }
+  
+  // Financier change
+  const financierSelect = document.getElementById('financierName');
+  if (financierSelect) {
+    financierSelect.addEventListener('change', handleFinancierChange);
+  }
+  
+  // Form submit
+  const editForm = document.getElementById('editForm');
+  if (editForm) {
+    editForm.addEventListener('submit', handleUpdate);
+  }
+  
+  // Cancel button
+  const cancelBtn = document.getElementById('cancelBtn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', cancelEdit);
+  }
+}
+
+// ==========================================
+// SEARCH FUNCTIONALITY
+// ==========================================
+
+/**
+ * Search for sales records
+ */
+async function searchSales() {
+  const searchByEl = document.getElementById('searchBy');
+  const searchValueEl = document.getElementById('searchValue');
+  const searchModelEl = document.getElementById('searchModel');
+  
+  if (!searchByEl || !searchValueEl) {
+    console.error('Search elements not found');
+    return;
+  }
+  
+  const searchBy = searchByEl.value;
+  const searchValue = searchValueEl.value.trim();
+  const searchModel = searchModelEl ? searchModelEl.value : '';
+  
+  if (!searchValue && !searchModel) {
+    alert('Please enter a search value');
+    return;
+  }
+  
+  console.log('🔍 Searching:', { searchBy, searchValue, searchModel });
+  
+  const resultsSection = document.getElementById('resultsSection');
+  const resultsBody = document.getElementById('resultsBody');
+  
+  resultsSection.style.display = 'block';
+  resultsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px;">⏳ Searching...</td></tr>';
+  
+  try {
+    const sessionId = SessionManager.getSessionId();
+    const session = SessionManager.getSession();
+    
+    let response;
+    
+    // Try the special searchRecordsForEdit method first
+    try {
+      response = await API.call('searchRecordsForEdit', {
+        sessionId: sessionId,
+        searchBy: searchBy,
+        searchValue: searchValue,
+        userRole: session.user.role,
+        userName: session.user.username
+      });
+    } catch (e) {
+      console.log('⚠️ searchRecordsForEdit not available, using fallback');
+      // Fallback to standard search
+      response = await API.searchViewRecords(searchBy, searchValue, null, null, null, null);
+    }
+    
+    if (response.success && response.results) {
+      // Filter to only show editable records (Account Check != "Yes")
+      const editableRecords = response.results.filter(function(record) {
+        const accountCheck = record.accountCheck || '';
+        return accountCheck !== 'Yes';
+      });
+      
+      console.log('📊 Found', response.results.length, 'total,', editableRecords.length, 'editable');
+      
+      if (editableRecords.length > 0) {
+        displaySearchResults(editableRecords);
+      } else {
+        resultsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #ffc107;">⚠️ No editable records found (all have Account Check = "Yes")</td></tr>';
+      }
+    } else {
+      resultsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #e74c3c;">❌ ' + (response.message || 'No records found') + '</td></tr>';
+    }
+  } catch (error) {
+    console.error('❌ Search error:', error);
+    resultsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #e74c3c;">❌ Error searching records</td></tr>';
+  }
+}
+
+/**
+ * Display search results
+ */
+function displaySearchResults(results) {
+  const resultsBody = document.getElementById('resultsBody');
+  
+  if (!results || results.length === 0) {
+    resultsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px;">No records found</td></tr>';
+    return;
+  }
+  
+  resultsBody.innerHTML = '';
+  
+  results.forEach(function(record) {
+    const row = document.createElement('tr');
+    row.onclick = function() { loadRecord(record.receiptNo); };
     
     row.innerHTML = `
-      <td>${rec.receiptNo || ''}</td>
-      <td>${rec.customerName || ''}</td>
-      <td>${rec.mobileNo || ''}</td>
-      <td>${rec.model || ''}</td>
-      <td>${rec.bookingDate || ''}</td>
-      <td>${rec.accountCheck || 'Blank'}</td>
+      <td>${record.receiptNo || '-'}</td>
+      <td>${record.executiveName || '-'}</td>
+      <td>${record.bookingDate || '-'}</td>
+      <td>${record.customerName || '-'}</td>
+      <td>${record.mobileNo || '-'}</td>
+      <td>${record.model || '-'}</td>
+      <td>${record.variant || '-'}</td>
+      <td>${record.colour || '-'}</td>
     `;
+    
+    resultsBody.appendChild(row);
   });
   
   console.log('✅ Displayed', results.length, 'results');
 }
 
 // ==========================================
-// LOAD FULL RECORD
+// LOAD AND POPULATE RECORD
 // ==========================================
 
-async function loadFullRecord(receiptNo) {
-  console.log('📄 Loading full record:', receiptNo);
+/**
+ * Load record from search results
+ */
+async function loadRecord(receiptNo) {
+  console.log('📄 Loading record:', receiptNo);
   
-  document.getElementById('detailsSection').style.display = 'block';
-  document.getElementById('detailsSection').scrollIntoView({ behavior: 'smooth' });
+  const detailsSection = document.getElementById('detailsSection');
+  detailsSection.style.display = 'block';
+  
+  // Scroll to details
+  detailsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   
   try {
     const sessionId = SessionManager.getSessionId();
-    const response = await API.getRecordByReceiptNo(sessionId, receiptNo);
     
-    console.log('📦 Full record response:', response);
+    let response;
+    
+    // Try getRecordForEdit first
+    try {
+      response = await API.call('getRecordForEdit', {
+        sessionId: sessionId,
+        receiptNo: receiptNo
+      });
+    } catch (e) {
+      console.log('⚠️ getRecordForEdit not available, using getRecordByReceiptNo');
+      // Fallback to standard method
+      response = await API.getRecordByReceiptNo(sessionId, receiptNo);
+    }
     
     if (response.success && response.record) {
-      populateForm(response.record);
+      lastSavedData = response.record;
+      await populateForm(response.record);
     } else {
       alert('Error loading record: ' + (response.message || 'Unknown error'));
     }
-  } catch (err) {
-    console.error('❌ Load error:', err);
-    alert('Error loading record: ' + err.message);
+  } catch (error) {
+    console.error('❌ Load record error:', error);
+    alert('Error loading record');
   }
 }
 
-function populateForm(rec) {
-  console.log('📝 Populating form:', rec);
+/**
+ * Populate form with record data
+ */
+async function populateForm(record) {
+  console.log('📝 Populating form with:', record);
   
-  // Store for update
-  window.currentRecord = rec;
+  // Protected fields (read-only display)
+  document.getElementById('protectedReceiptNo').textContent = record.receiptNo || '-';
+  document.getElementById('protectedExecutiveName').textContent = record.executiveName || '-';
+  document.getElementById('protectedBookingDate').textContent = record.bookingDate || '-';
+  document.getElementById('protectedCustomerName').textContent = record.customerName || '-';
+  document.getElementById('protectedMobileNo').textContent = record.mobileNo || '-';
+  document.getElementById('protectedReceiptNo1').textContent = record.receiptNo1 || '-';
+  document.getElementById('protectedReceipt1Amount').textContent = record.receipt1Amount ? '₹' + record.receipt1Amount : '-';
   
-  // Protected fields
-  document.getElementById('protectedReceiptNo').textContent = rec.receiptNo || '-';
-  document.getElementById('protectedExecutiveName').textContent = rec.executiveName || '-';
-  document.getElementById('protectedBookingDate').textContent = rec.bookingDate || '-';
-  document.getElementById('protectedCustomerName').textContent = rec.customerName || '-';
-  document.getElementById('protectedMobileNo').textContent = rec.mobileNo || '-';
-  document.getElementById('protectedReceiptNo1').textContent = rec.receiptNo1 || '-';
-  document.getElementById('protectedReceipt1Amount').textContent = rec.receipt1Amount ? '₹' + rec.receipt1Amount : '-';
+  // Load models first
+  await loadModelsForEdit();
+  
+  // Set model
+  const modelSelect = document.getElementById('model');
+  if (modelSelect && record.model) {
+    modelSelect.value = record.model;
+  }
+  
+  // Load variants for this model
+  if (record.model) {
+    await loadVariantsForEdit(record.model);
+  }
+  
+  // Set variant
+  const variantSelect = document.getElementById('variant');
+  if (variantSelect && record.variant) {
+    variantSelect.value = record.variant;
+  }
+  
+  // Render accessories for this model/variant with saved values
+  if (record.model && record.variant) {
+    await renderAccessories(record.model, record.variant, record);
+  }
   
   // Editable fields
-  document.getElementById('model').value = rec.model || '';
-  document.getElementById('variant').value = rec.variant || '';
-  document.getElementById('colour').value = rec.colour || '';
-  document.getElementById('discount').value = rec.discount || '';
-  document.getElementById('finalPrice').value = rec.finalPrice || '';
-  document.getElementById('deliveryDate').value = rec.deliveryDate || '';
-  document.getElementById('salesRemark').value = rec.salesRemark || '';
-  
-  // Additional receipts
-  document.getElementById('receiptNo2').value = rec.receiptNo2 || '';
-  document.getElementById('receipt2Amount').value = rec.receipt2Amount || '';
-  document.getElementById('receiptNo3').value = rec.receiptNo3 || '';
-  document.getElementById('receipt3Amount').value = rec.receipt3Amount || '';
-  document.getElementById('receiptNo4').value = rec.receiptNo4 || '';
-  document.getElementById('receipt4Amount').value = rec.receipt4Amount || '';
-  document.getElementById('doNumber').value = rec.doNumber || '';
-  document.getElementById('disbursedAmount').value = rec.disbursedAmount || '';
+  document.getElementById('colour').value = record.colour || '';
+  document.getElementById('discount').value = record.discount || '';
+  document.getElementById('finalPrice').value = record.finalPrice || '';
+  document.getElementById('deliveryDate').value = record.deliveryDate || '';
+  document.getElementById('salesRemark').value = record.salesRemark || '';
   
   // Financier
   const standardFinanciers = ['Cash', 'TVS Credit', 'Shriram Finance', 'Hinduja Finance', 
                               'Janan SFB', 'TATA Capital', 'Indusind Bank', 'Berar Finance', 'IDFC'];
   
-  const financier = rec.financierName || '';
-  if (standardFinanciers.includes(financier)) {
-    document.getElementById('financierName').value = financier;
-    document.getElementById('otherFinancierInput').style.display = 'none';
-  } else if (financier) {
-    document.getElementById('financierName').value = 'Other';
-    document.getElementById('otherFinancierInput').style.display = 'block';
-    document.getElementById('otherFinancierInput').value = financier;
+  const financierSelect = document.getElementById('financierName');
+  const otherFinancierInput = document.getElementById('otherFinancierInput');
+  
+  if (standardFinanciers.includes(record.financierName)) {
+    financierSelect.value = record.financierName;
+    otherFinancierInput.style.display = 'none';
+  } else if (record.financierName) {
+    financierSelect.value = 'Other';
+    otherFinancierInput.style.display = 'block';
+    otherFinancierInput.value = record.financierName;
   }
   
-  console.log('✅ Form populated successfully');
+  console.log('✅ Form populated');
+}
+
+/**
+ * Load models for edit form
+ */
+async function loadModelsForEdit() {
+  const modelSelect = document.getElementById('model');
+  
+  if (!modelSelect) return;
+  
+  modelSelect.innerHTML = '<option value="">-- Loading models... --</option>';
+  
+  try {
+    const response = await API.getAllModels();
+    
+    if (response.success && response.models) {
+      modelSelect.innerHTML = '<option value="">-- Select Model --</option>';
+      
+      response.models.forEach(function(model) {
+        const option = document.createElement('option');
+        option.value = model;
+        option.textContent = model;
+        modelSelect.appendChild(option);
+      });
+      
+      console.log('✅ Loaded models for edit form');
+    } else {
+      modelSelect.innerHTML = '<option value="">-- Error loading models --</option>';
+    }
+  } catch (error) {
+    console.error('❌ Load models error:', error);
+    modelSelect.innerHTML = '<option value="">-- Error loading models --</option>';
+  }
+}
+
+/**
+ * Load variants for selected model
+ */
+async function loadVariantsForEdit(model) {
+  const variantSelect = document.getElementById('variant');
+  
+  if (!variantSelect || !model) {
+    if (variantSelect) {
+      variantSelect.innerHTML = '<option value="">-- Select Model First --</option>';
+    }
+    return;
+  }
+  
+  variantSelect.innerHTML = '<option value="">-- Loading variants... --</option>';
+  
+  try {
+    const response = await API.getPriceMasterVariants(model);
+    
+    if (response.success && response.variants) {
+      variantSelect.innerHTML = '<option value="">-- Select Variant --</option>';
+      
+      response.variants.forEach(function(variant) {
+        const option = document.createElement('option');
+        option.value = variant;
+        option.textContent = variant;
+        variantSelect.appendChild(option);
+      });
+      
+      console.log('✅ Loaded', response.variants.length, 'variants for', model);
+    } else {
+      variantSelect.innerHTML = '<option value="">-- Error loading variants --</option>';
+    }
+  } catch (error) {
+    console.error('❌ Load variants error:', error);
+    variantSelect.innerHTML = '<option value="">-- Error loading variants --</option>';
+  }
+}
+
+/**
+ * Render accessories based on PriceMaster + pre-fill saved values
+ */
+async function renderAccessories(model, variant, savedData) {
+  const container = document.getElementById('accessoryFields');
+  
+  if (!container) return;
+  
+  // Clear existing accessories
+  container.innerHTML = '<div style="text-align: center; padding: 10px; color: #999;">⏳ Loading accessories...</div>';
+  
+  try {
+    // Get PriceMaster details for this model/variant
+    const response = await API.getPriceMasterDetails(model, variant);
+    
+    if (!response.success) {
+      container.innerHTML = '<div style="text-align: center; padding: 10px; color: #e74c3c;">❌ Could not load accessories</div>';
+      return;
+    }
+    
+    currentPriceMasterDetails = response.details;
+    const pm = response.details;
+    
+    container.innerHTML = '';
+    
+    // Render accessories that have prices in PriceMaster
+    const accessories = [
+      { id: 'guard', name: 'Guard', priceKey: 'guardPrice', savedKey: 'guard' },
+      { id: 'gripcover', name: 'Grip Cover', priceKey: 'gripPrice', savedKey: 'gripcover' },
+      { id: 'seatcover', name: 'Seat Cover', priceKey: 'seatCoverPrice', savedKey: 'seatcover' },
+      { id: 'matin', name: 'Matin', priceKey: 'matinPrice', savedKey: 'matin' },
+      { id: 'tankcover', name: 'Tank Cover', priceKey: 'tankCoverPrice', savedKey: 'tankcover' },
+      { id: 'handlehook', name: 'Handle Hook', priceKey: 'handleHookPrice', savedKey: 'handlehook' }
+    ];
+    
+    accessories.forEach(function(acc) {
+      if (pm[acc.priceKey]) {
+        const price = parseFloat(pm[acc.priceKey]) || 0;
+        const savedValue = savedData ? (savedData[acc.savedKey] || '') : '';
+        
+        const div = document.createElement('div');
+        div.className = 'form-group';
+        div.innerHTML = `
+          <label>${acc.name} (₹${price.toLocaleString()})</label>
+          <select id="${acc.id}">
+            <option value="">-- Select --</option>
+            <option value="Yes" ${savedValue === 'Yes' ? 'selected' : ''}>Yes</option>
+            <option value="No" ${savedValue === 'No' ? 'selected' : ''}>No</option>
+          </select>
+        `;
+        container.appendChild(div);
+      }
+    });
+    
+    // Helmet - special case (quantity)
+    if (pm.helmetPrice) {
+      const price = parseFloat(pm.helmetPrice) || 0;
+      const savedHelmet = savedData ? (savedData.helmet || '') : '';
+      
+      const div = document.createElement('div');
+      div.className = 'form-group';
+      div.innerHTML = `
+        <label>Helmet (₹${price.toLocaleString()})</label>
+        <select id="helmet">
+          <option value="">-- Select --</option>
+          <option value="No" ${savedHelmet === 'No' ? 'selected' : ''}>No</option>
+          <option value="1" ${savedHelmet === '1' ? 'selected' : ''}>1</option>
+          <option value="2" ${savedHelmet === '2' ? 'selected' : ''}>2</option>
+        </select>
+      `;
+      container.appendChild(div);
+    }
+    
+    console.log('✅ Rendered accessories for', model, variant);
+    
+  } catch (error) {
+    console.error('❌ Render accessories error:', error);
+    container.innerHTML = '<div style="text-align: center; padding: 10px; color: #e74c3c;">❌ Error loading accessories</div>';
+  }
 }
 
 // ==========================================
-// UPDATE
+// EVENT HANDLERS
 // ==========================================
 
-async function doUpdate(e) {
+/**
+ * Handle model change - reload variants and accessories
+ */
+async function handleModelChange() {
+  const modelSelect = document.getElementById('model');
+  const model = modelSelect ? modelSelect.value : '';
+  
+  console.log('📦 Model changed to:', model);
+  
+  if (model) {
+    // Load variants for new model
+    await loadVariantsForEdit(model);
+    
+    // Clear accessories (will re-render when variant is selected)
+    const container = document.getElementById('accessoryFields');
+    if (container) {
+      container.innerHTML = '<div style="text-align: center; padding: 10px; color: #999;">Please select a variant first</div>';
+    }
+  } else {
+    // Clear variants and accessories
+    const variantSelect = document.getElementById('variant');
+    if (variantSelect) {
+      variantSelect.innerHTML = '<option value="">-- Select Model First --</option>';
+    }
+    
+    const container = document.getElementById('accessoryFields');
+    if (container) {
+      container.innerHTML = '';
+    }
+  }
+}
+
+/**
+ * Handle variant change - re-render accessories (RESET to blank)
+ */
+async function handleVariantChange() {
+  const modelSelect = document.getElementById('model');
+  const variantSelect = document.getElementById('variant');
+  
+  const model = modelSelect ? modelSelect.value : '';
+  const variant = variantSelect ? variantSelect.value : '';
+  
+  console.log('🎨 Variant changed to:', variant);
+  
+  if (model && variant) {
+    // Re-render accessories with NO saved data (reset to blank)
+    await renderAccessories(model, variant, null);
+  } else {
+    const container = document.getElementById('accessoryFields');
+    if (container) {
+      container.innerHTML = '';
+    }
+  }
+}
+
+/**
+ * Handle financier change
+ */
+function handleFinancierChange() {
+  const financierSelect = document.getElementById('financierName');
+  const otherInput = document.getElementById('otherFinancierInput');
+  
+  if (!financierSelect || !otherInput) return;
+  
+  if (financierSelect.value === 'Other') {
+    otherInput.style.display = 'block';
+  } else {
+    otherInput.style.display = 'none';
+    otherInput.value = '';
+  }
+}
+
+// ==========================================
+// UPDATE FUNCTIONALITY
+// ==========================================
+
+/**
+ * Handle form submission
+ */
+async function handleUpdate(e) {
   e.preventDefault();
   
-  if (!window.currentRecord) {
+  if (!lastSavedData) {
     alert('No record loaded');
     return;
   }
   
-  // Get financier
-  let financier = document.getElementById('financierName').value;
-  if (financier === 'Other') {
-    financier = document.getElementById('otherFinancierInput').value.trim();
-    if (!financier) {
+  console.log('💾 Updating sale...');
+  
+  // Get financier value
+  let financierValue = document.getElementById('financierName').value;
+  if (financierValue === 'Other') {
+    const otherInput = document.getElementById('otherFinancierInput');
+    if (otherInput && otherInput.value.trim()) {
+      financierValue = otherInput.value.trim();
+    } else {
       alert('Please enter financier name');
       return;
     }
   }
   
+  // Collect accessory values
+  const accessories = getAccessoryValues();
+  
+  // Build update data
   const data = {
-    receiptNo: window.currentRecord.receiptNo,
+    receiptNo: lastSavedData.receiptNo,
     model: document.getElementById('model').value,
     variant: document.getElementById('variant').value,
     colour: document.getElementById('colour').value,
     discount: document.getElementById('discount').value,
     finalPrice: document.getElementById('finalPrice').value,
-    financierName: financier,
+    financierName: financierValue,
     deliveryDate: document.getElementById('deliveryDate').value,
     salesRemark: document.getElementById('salesRemark').value,
-    receiptNo2: document.getElementById('receiptNo2').value,
-    receipt2Amount: document.getElementById('receipt2Amount').value,
-    receiptNo3: document.getElementById('receiptNo3').value,
-    receipt3Amount: document.getElementById('receipt3Amount').value,
-    receiptNo4: document.getElementById('receiptNo4').value,
-    receipt4Amount: document.getElementById('receipt4Amount').value,
-    doNumber: document.getElementById('doNumber').value,
-    disbursedAmount: document.getElementById('disbursedAmount').value
+    ...accessories
   };
   
-  console.log('💾 Updating:', data);
-  
-  const btn = document.getElementById('updateBtn');
-  btn.disabled = true;
-  btn.textContent = '💾 Updating...';
+  console.log('📤 Update data:', data);
   
   try {
+    const updateBtn = document.getElementById('updateBtn');
+    if (updateBtn) {
+      updateBtn.disabled = true;
+      updateBtn.textContent = '💾 Updating...';
+    }
+    
     const sessionId = SessionManager.getSessionId();
     const response = await API.updateSalesRecord(sessionId, data);
     
-    btn.disabled = false;
-    btn.textContent = '💾 Update Record';
+    if (updateBtn) {
+      updateBtn.disabled = false;
+      updateBtn.textContent = '💾 Update Sale';
+    }
     
     if (response.success) {
-      alert('✅ Updated successfully!');
-      // Reload record
-      await loadFullRecord(data.receiptNo);
+      alert('✅ Sale updated successfully!');
+      
+      // Reload the record to show updated data
+      await loadRecord(lastSavedData.receiptNo);
+      
+      // Optionally refresh search results
+      // searchSales();
     } else {
       alert('❌ Update failed: ' + (response.message || 'Unknown error'));
     }
-  } catch (err) {
-    console.error('❌ Update error:', err);
-    alert('❌ Error: ' + err.message);
+  } catch (error) {
+    console.error('❌ Update error:', error);
+    alert('❌ Error updating sale');
     
-    btn.disabled = false;
-    btn.textContent = '💾 Update Record';
+    const updateBtn = document.getElementById('updateBtn');
+    if (updateBtn) {
+      updateBtn.disabled = false;
+      updateBtn.textContent = '💾 Update Sale';
+    }
   }
 }
 
+/**
+ * Get accessory values from form
+ */
+function getAccessoryValues() {
+  const values = {
+    guard: '',
+    gripcover: '',
+    seatcover: '',
+    matin: '',
+    tankcover: '',
+    handlehook: '',
+    helmet: ''
+  };
+  
+  // Get values from rendered accessories
+  ['guard', 'gripcover', 'seatcover', 'matin', 'tankcover', 'handlehook', 'helmet'].forEach(function(id) {
+    const element = document.getElementById(id);
+    if (element) {
+      values[id] = element.value || '';
+    }
+  });
+  
+  return values;
+}
+
+/**
+ * Cancel edit and hide details
+ */
+function cancelEdit() {
+  const detailsSection = document.getElementById('detailsSection');
+  if (detailsSection) {
+    detailsSection.style.display = 'none';
+  }
+  
+  lastSavedData = null;
+  currentPriceMasterDetails = null;
+  
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/**
+ * Logout
+ */
 function logout() {
-  if (confirm('Logout?')) {
+  if (confirm('Are you sure you want to logout?')) {
     SessionManager.clearSession();
     window.location.href = 'index.html';
   }
