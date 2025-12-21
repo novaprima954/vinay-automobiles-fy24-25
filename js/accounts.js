@@ -787,9 +787,10 @@ async function calculatePrice() {
       return;
     }
     
-    // Get PriceMaster details
-    const sessionId = SessionManager.getSessionId();
-    const pmResponse = await API.getPriceMasterDetails(sessionId, model, variant);
+    // Get PriceMaster details (sessionId handled by API wrapper)
+    const pmResponse = await API.getPriceMasterDetails(model, variant);
+    
+    console.log('  📋 PriceMaster API response:', pmResponse);
     
     if (!pmResponse.success) {
       breakdown.innerHTML = `<div style="text-align: center; padding: 20px; color: #e74c3c;">❌ ${pmResponse.message}</div>`;
