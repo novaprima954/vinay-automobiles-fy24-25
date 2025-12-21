@@ -304,25 +304,43 @@ async function loadRecord(record) {
   console.log('📝 Loading record:', record);
   
   // Store receipt no for update and full record
-  document.getElementById('selectedReceiptNo').value = record.receiptNo;
+  const selectedReceiptNoInput = document.getElementById('selectedReceiptNo');
+  if (selectedReceiptNoInput) {
+    selectedReceiptNoInput.value = record.receiptNo;
+  }
   window.currentRecord = record;
   
-  // Protected fields
-  document.getElementById('protectedReceiptNo').textContent = record.receiptNo || '-';
-  document.getElementById('protectedExecutiveName').textContent = record.executiveName || '-';
-  document.getElementById('protectedBookingDate').textContent = record.bookingDate || '-';
-  document.getElementById('protectedCustomerName').textContent = record.customerName || '-';
-  document.getElementById('protectedMobileNo').textContent = record.mobileNo || '-';
-  document.getElementById('protectedReceiptNo1').textContent = record.receiptNo1 || '-';
-  document.getElementById('protectedReceipt1Amount').textContent = record.receipt1Amount ? '₹' + record.receipt1Amount : '-';
+  // Protected fields - with null checks
+  const protectedFields = {
+    'protectedReceiptNo': record.receiptNo || '-',
+    'protectedExecutiveName': record.executiveName || '-',
+    'protectedBookingDate': record.bookingDate || '-',
+    'protectedCustomerName': record.customerName || '-',
+    'protectedMobileNo': record.mobileNo || '-',
+    'protectedReceiptNo1': record.receiptNo1 || '-',
+    'protectedReceipt1Amount': record.receipt1Amount ? '₹' + record.receipt1Amount : '-'
+  };
+  
+  Object.keys(protectedFields).forEach(function(id) {
+    const element = document.getElementById(id);
+    if (element) {
+      element.textContent = protectedFields[id];
+    }
+  });
   
   // Editable fields - Model
-  document.getElementById('model').value = record.model || '';
+  const modelSelect = document.getElementById('model');
+  if (modelSelect) {
+    modelSelect.value = record.model || '';
+  }
   
   // Load variants for this model
   if (record.model) {
     await updateVariants();
-    document.getElementById('variant').value = record.variant || '';
+    const variantSelect = document.getElementById('variant');
+    if (variantSelect) {
+      variantSelect.value = record.variant || '';
+    }
     
     // Render accessories WITH saved values for this model/variant
     if (record.variant) {
@@ -330,37 +348,63 @@ async function loadRecord(record) {
     }
   }
   
-  document.getElementById('colour').value = record.colour || '';
-  document.getElementById('discount').value = record.discount || '';
-  document.getElementById('finalPrice').value = record.finalPrice || '';
+  // Editable fields - with null checks
+  const editableFields = {
+    'colour': record.colour || '',
+    'discount': record.discount || '',
+    'finalPrice': record.finalPrice || '',
+    'deliveryDate': record.deliveryDate || '',
+    'salesRemark': record.salesRemark || '',
+    'receiptNo2': record.receiptNo2 || '',
+    'receipt2Amount': record.receipt2Amount || '',
+    'receiptNo3': record.receiptNo3 || '',
+    'receipt3Amount': record.receipt3Amount || '',
+    'receiptNo4': record.receiptNo4 || '',
+    'receipt4Amount': record.receipt4Amount || '',
+    'doNumber': record.doNumber || '',
+    'disbursedAmount': record.disbursedAmount || ''
+  };
+  
+  Object.keys(editableFields).forEach(function(id) {
+    const element = document.getElementById(id);
+    if (element) {
+      element.value = editableFields[id];
+    }
+  });
   
   // Financier
   const standardFinanciers = ['Cash', 'TVS Credit', 'Shriram Finance', 'Hinduja Finance', 
                               'Janan SFB', 'TATA Capital', 'Indusind Bank', 'Berar Finance', 'IDFC'];
   
-  if (standardFinanciers.includes(record.financierName)) {
-    document.getElementById('financierName').value = record.financierName;
-  } else if (record.financierName) {
-    document.getElementById('financierName').value = 'Other';
-    document.getElementById('otherFinancierInput').style.display = 'block';
-    document.getElementById('otherFinancierInput').value = record.financierName;
+  const financierSelect = document.getElementById('financierName');
+  const otherFinancierInput = document.getElementById('otherFinancierInput');
+  
+  if (financierSelect) {
+    if (standardFinanciers.includes(record.financierName)) {
+      financierSelect.value = record.financierName;
+      if (otherFinancierInput) {
+        otherFinancierInput.style.display = 'none';
+      }
+    } else if (record.financierName) {
+      financierSelect.value = 'Other';
+      if (otherFinancierInput) {
+        otherFinancierInput.style.display = 'block';
+        otherFinancierInput.value = record.financierName;
+      }
+    }
   }
   
-  document.getElementById('deliveryDate').value = record.deliveryDate || '';
-  document.getElementById('salesRemark').value = record.salesRemark || '';
-  document.getElementById('receiptNo2').value = record.receiptNo2 || '';
-  document.getElementById('receipt2Amount').value = record.receipt2Amount || '';
-  document.getElementById('receiptNo3').value = record.receiptNo3 || '';
-  document.getElementById('receipt3Amount').value = record.receipt3Amount || '';
-  document.getElementById('receiptNo4').value = record.receiptNo4 || '';
-  document.getElementById('receipt4Amount').value = record.receipt4Amount || '';
-  document.getElementById('doNumber').value = record.doNumber || '';
-  document.getElementById('disbursedAmount').value = record.disbursedAmount || '';
+  // Calculate totals if function exists
+  if (typeof calculateTotals === 'function') {
+    calculateTotals();
+  }
   
-  calculateTotals();
-  
-  document.getElementById('detailsSection').style.display = 'block';
-  document.getElementById('detailsSection').scrollIntoView({ behavior: 'smooth' });
+  // Show details section
+  const detailsSection = document.getElementById('detailsSection');
+  if (detailsSection) {
+    detailsSection.style.display = 'block';
+    detailsSection.scrollIntoView({ behavior: 'smooth' });
+  }
   
   console.log('✅ Record loaded with saved accessory values');
 }
