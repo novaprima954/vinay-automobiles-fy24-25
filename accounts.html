@@ -663,29 +663,6 @@
             </div>
           </div>
           
-          <!-- Final Price After Discount Display (moved AFTER Finance Commission) -->
-          <div class="totals-display" style="margin: 20px 0;">
-            <h4>💰 Final Price After Discount</h4>
-            <div class="total-row">
-              <span class="total-label">Final Price After Discount:</span>
-              <span class="total-value" id="finalPriceDisplay">₹0.00</span>
-            </div>
-          </div>
-          
-          <!-- Price Verification Section (moved AFTER Finance Commission) -->
-          <div class="form-group" style="margin-bottom: 20px;">
-            <div style="background: white; padding: 20px; border-radius: 12px; border-left: 5px solid #667eea; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-              <h3 style="color: #667eea; margin: 0 0 15px 0; font-size: 17px; font-weight: 700;">🔍 Price Verification</h3>
-              <button type="button" class="btn-secondary" onclick="calculatePrice()" style="width: 100%; margin-bottom: 15px; padding: 12px; font-size: 15px;">
-                💰 Calculate from PriceMaster
-              </button>
-              <div id="priceBreakdown" style="display: none;">
-                <!-- Price breakdown will be displayed here by JavaScript -->
-              </div>
-            </div>
-          </div>
-          
-          
           <div class="totals-display" style="background: #fff3cd; border-left-color: #ffc107;">
             <div class="total-row" style="border-bottom-color: rgba(133, 100, 4, 0.15);">
               <span class="total-label" style="color: #856404;">Cash Total (Receipts 1-4):</span>
@@ -698,6 +675,28 @@
             <div class="total-row" style="border-bottom: none;">
               <span class="total-label" style="color: #856404;">Grand Total:</span>
               <span class="total-value" style="color: #856404;" id="totalDisplay">₹0.00</span>
+            </div>
+          </div>
+          
+          <!-- Price Verification Section (BEFORE Final Price, AFTER Grand Total) -->
+          <div class="form-group" style="margin-bottom: 20px;">
+            <div style="background: white; padding: 20px; border-radius: 12px; border-left: 5px solid #667eea; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+              <h3 style="color: #667eea; margin: 0 0 15px 0; font-size: 17px; font-weight: 700;">🔍 Price Verification</h3>
+              <button type="button" class="btn-secondary" onclick="calculatePrice()" style="width: 100%; margin-bottom: 15px; padding: 12px; font-size: 15px;">
+                💰 Calculate from PriceMaster
+              </button>
+              <div id="priceBreakdown" style="display: none;">
+                <!-- Price breakdown will be displayed here by JavaScript -->
+              </div>
+            </div>
+          </div>
+          
+          <!-- Final Price After Discount Display (AFTER Price Verification) -->
+          <div class="totals-display" style="margin: 20px 0;">
+            <h4>💰 Final Price After Discount</h4>
+            <div class="total-row">
+              <span class="total-label">Final Price After Discount:</span>
+              <span class="total-value" id="finalPriceDisplay">₹0.00</span>
             </div>
           </div>
         

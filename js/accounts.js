@@ -163,12 +163,12 @@ async function loadDashboard() {
     console.log('📊 Dashboard response:', JSON.stringify(response, null, 2));
     console.log('  Response keys:', Object.keys(response));
     console.log('  Response.success:', response.success);
-    console.log('  Response.dashboard:', response.dashboard);
     
     if (response.success) {
-      const yesCount = response.yesCount || 0;
-      const noCount = response.noCount || 0;
-      const blankCount = response.blankCount || 0;
+      // Backend returns: accountCheckYes, accountCheckNo, accountCheckBlank
+      const yesCount = response.accountCheckYes || 0;
+      const noCount = response.accountCheckNo || 0;
+      const blankCount = response.accountCheckBlank || 0;
       
       console.log('  ✅ Yes Count:', yesCount);
       console.log('  ⚠️ No Count:', noCount);
