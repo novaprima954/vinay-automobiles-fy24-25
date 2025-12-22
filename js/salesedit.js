@@ -26,10 +26,19 @@ document.addEventListener('DOMContentLoaded', async function() {
   // Auto-populate executive search if user is sales
   if (user.role === 'sales') {
     const searchBy = document.getElementById('searchBy');
+    const executiveDropdown = document.getElementById('executiveDropdown');
     const searchValue = document.getElementById('searchValue');
-    if (searchBy && searchValue) {
+    
+    if (searchBy && executiveDropdown) {
       searchBy.value = 'Executive Name';
-      searchValue.value = user.username;
+      executiveDropdown.value = user.username;
+      
+      // Show dropdown, hide text input
+      if (searchValue) {
+        searchValue.style.display = 'none';
+      }
+      executiveDropdown.style.display = 'block';
+      
       console.log('✅ Auto-populated executive search with:', user.username);
     }
   }
@@ -347,22 +356,27 @@ async function loadRecord(record) {
     modelSelect.value = record.model || '';
   }
   
-  // Load variants for this model
+  // Load variants for this model and populate dropdown
   if (record.model) {
-    // Parallel load: variants and PriceMaster details together
-    const [variants, pmDetails] = await Promise.all([
-      loadVariantsForModel(record.model),
-      record.variant ? getPriceMasterDetails(record.model, record.variant) : null
-    ]);
+    // First: populate variant dropdown with options
+    const variants = await updateVariants(); // This populates the dropdown
     
+    // Then: set the saved variant value
     const variantSelect = document.getElementById('variant');
-    if (variantSelect) {
-      variantSelect.value = record.variant || '';
+    if (variantSelect && record.variant) {
+      // Small delay to ensure DOM is updated
+      setTimeout(function() {
+        variantSelect.value = record.variant;
+        console.log('✅ Set variant to:', record.variant);
+      }, 50);
     }
     
-    // Render accessories WITH saved values (using already-fetched pmDetails)
-    if (record.variant && pmDetails) {
-      await renderAccessoriesWithPMDetails(pmDetails, record);
+    // Load PriceMaster details and render accessories
+    if (record.variant) {
+      const pmDetails = await getPriceMasterDetails(record.model, record.variant);
+      if (pmDetails) {
+        renderAccessoriesWithPMDetails(pmDetails, record);
+      }
     }
   }
   
