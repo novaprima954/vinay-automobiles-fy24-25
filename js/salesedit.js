@@ -23,8 +23,21 @@ document.addEventListener('DOMContentLoaded', async function() {
   const user = session.user;
   console.log('✅ Logged in as:', user.username, '(' + user.role + ')');
   
-  // Load models from PriceMaster for edit form
-  await loadModelsForEdit();
+  // Auto-populate executive search if user is sales
+  if (user.role === 'sales') {
+    const searchBy = document.getElementById('searchBy');
+    const searchValue = document.getElementById('searchValue');
+    if (searchBy && searchValue) {
+      searchBy.value = 'Executive Name';
+      searchValue.value = user.username;
+      console.log('✅ Auto-populated executive search with:', user.username);
+    }
+  }
+  
+  // Load models from PriceMaster (parallel with setup)
+  loadModelsForEdit().catch(function(err) {
+    console.error('Model loading error:', err);
+  });
   
   // Setup event listeners
   setupEventListeners();
@@ -336,15 +349,20 @@ async function loadRecord(record) {
   
   // Load variants for this model
   if (record.model) {
-    await updateVariants();
+    // Parallel load: variants and PriceMaster details together
+    const [variants, pmDetails] = await Promise.all([
+      loadVariantsForModel(record.model),
+      record.variant ? getPriceMasterDetails(record.model, record.variant) : null
+    ]);
+    
     const variantSelect = document.getElementById('variant');
     if (variantSelect) {
       variantSelect.value = record.variant || '';
     }
     
-    // Render accessories WITH saved values for this model/variant
-    if (record.variant) {
-      await renderAccessoriesWithSavedValues(record.model, record.variant, record);
+    // Render accessories WITH saved values (using already-fetched pmDetails)
+    if (record.variant && pmDetails) {
+      await renderAccessoriesWithPMDetails(pmDetails, record);
     }
   }
   
@@ -412,6 +430,85 @@ async function loadRecord(record) {
 /**
  * Render accessories WITH saved values from record (for editing)
  */
+/**
+ * Render accessories WITH saved values from record (OPTIMIZED - uses pre-fetched PM details)
+ */
+function renderAccessoriesWithPMDetails(pmDetails, savedRecord) {
+  const accessoryContainer = document.getElementById('accessoryFields');
+  
+  if (!pmDetails) {
+    accessoryContainer.innerHTML = '<div style="text-align: center; padding: 10px; color: #e74c3c;">❌ No PriceMaster data</div>';
+    return;
+  }
+  
+  accessoryContainer.innerHTML = '';
+  
+  // Define accessories with their property names
+  const accessories = [
+    { id: 'guard', name: 'Guard', priceKey: 'guardPrice' },
+    { id: 'gripcover', name: 'Grip Cover', priceKey: 'gripPrice' },
+    { id: 'seatcover', name: 'Seat Cover', priceKey: 'seatCoverPrice' },
+    { id: 'matin', name: 'Matin', priceKey: 'matinPrice' },
+    { id: 'tankcover', name: 'Tank Cover', priceKey: 'tankCoverPrice' },
+    { id: 'handlehook', name: 'Handle Hook', priceKey: 'handleHookPrice' }
+  ];
+  
+  // Render accessories with saved values
+  accessories.forEach(function(acc) {
+    if (pmDetails[acc.priceKey]) {
+      const price = parseFloat(pmDetails[acc.priceKey]) || 0;
+      const savedValue = savedRecord[acc.id] || '';
+      
+      const formGroup = document.createElement('div');
+      formGroup.className = 'form-group';
+      
+      const label = document.createElement('label');
+      label.innerHTML = acc.name + ' (₹' + price.toLocaleString() + ')';
+      
+      const select = document.createElement('select');
+      select.id = acc.id;
+      select.className = 'editable-highlight';
+      select.innerHTML = `
+        <option value="">-- Select --</option>
+        <option value="Yes" ${savedValue === 'Yes' ? 'selected' : ''}>Yes</option>
+        <option value="No" ${savedValue === 'No' ? 'selected' : ''}>No</option>
+      `;
+      
+      formGroup.appendChild(label);
+      formGroup.appendChild(select);
+      accessoryContainer.appendChild(formGroup);
+    }
+  });
+  
+  // Helmet - special case with saved value
+  if (pmDetails.helmetPrice) {
+    const price = parseFloat(pmDetails.helmetPrice) || 0;
+    const savedHelmet = savedRecord.helmet || '';
+    
+    const formGroup = document.createElement('div');
+    formGroup.className = 'form-group';
+    
+    const label = document.createElement('label');
+    label.innerHTML = 'Helmet (₹' + price.toLocaleString() + ')';
+    
+    const select = document.createElement('select');
+    select.id = 'helmet';
+    select.className = 'editable-highlight';
+    select.innerHTML = `
+      <option value="">-- Select --</option>
+      <option value="No" ${savedHelmet === 'No' ? 'selected' : ''}>No</option>
+      <option value="1" ${savedHelmet === '1' ? 'selected' : ''}>1</option>
+      <option value="2" ${savedHelmet === '2' ? 'selected' : ''}>2</option>
+    `;
+    
+    formGroup.appendChild(label);
+    formGroup.appendChild(select);
+    accessoryContainer.appendChild(formGroup);
+  }
+  
+  console.log('✅ Rendered accessories WITH saved values (optimized)');
+}
+
 async function renderAccessoriesWithSavedValues(model, variant, savedRecord) {
   const accessoryContainer = document.getElementById('accessoryFields');
   
@@ -499,24 +596,28 @@ async function updateVariants() {
   const model = document.getElementById('model').value;
   const variantSelect = document.getElementById('variant');
   
-  variantSelect.innerHTML = '<option value="">-- Loading variants... --</option>';
-  
-  if (model) {
-    const variants = await loadVariantsForModel(model);
-    
-    variantSelect.innerHTML = '<option value="">-- Select Variant --</option>';
-    variants.forEach(function(variant) {
-      const option = document.createElement('option');
-      option.value = variant;
-      option.textContent = variant;
-      variantSelect.appendChild(option);
-    });
-  } else {
+  if (!model) {
     variantSelect.innerHTML = '<option value="">-- Select Model First --</option>';
+    document.getElementById('accessoryFields').innerHTML = '';
+    return [];
   }
+  
+  variantSelect.innerHTML = '<option value="">-- Loading... --</option>';
+  
+  const variants = await loadVariantsForModel(model);
+  
+  variantSelect.innerHTML = '<option value="">-- Select Variant --</option>';
+  variants.forEach(function(variant) {
+    const option = document.createElement('option');
+    option.value = variant;
+    option.textContent = variant;
+    variantSelect.appendChild(option);
+  });
   
   // Clear accessories when model changes
   document.getElementById('accessoryFields').innerHTML = '';
+  
+  return variants;
 }
 
 /**
