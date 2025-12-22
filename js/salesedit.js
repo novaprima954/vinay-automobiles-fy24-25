@@ -23,6 +23,12 @@ document.addEventListener('DOMContentLoaded', async function() {
   const user = session.user;
   console.log('✅ Logged in as:', user.username, '(' + user.role + ')');
   
+  // Display current user name in header
+  const currentUserDisplay = document.getElementById('currentUser');
+  if (currentUserDisplay) {
+    currentUserDisplay.textContent = user.username + ' (' + user.role + ')';
+  }
+  
   // Setup event listeners first
   setupEventListeners();
   
@@ -284,40 +290,22 @@ async function searchRecords() {
     console.log('📊 Raw results:', response.results ? response.results.length : 0);
     
     if (response.success && response.results) {
-      // Filter 1: Remove Account Check = "Yes"
+      // Filter: Remove Account Check = "Yes"
       let filteredResults = response.results.filter(function(record) {
         const accountCheck = (record.accountCheck || '').trim();
         return accountCheck !== 'Yes';
       });
       
-      console.log('After Account Check filter:', filteredResults.length);
+      console.log('✅ After Account Check filter:', filteredResults.length, 'editable records');
       
-      // Filter 2: For sales users, show ONLY their records
-      if (user.role === 'sales') {
-        // Debug: Check what executiveName values we have
-        console.log('🔍 Checking executive names:');
-        filteredResults.forEach(function(record, index) {
-          console.log(`  Record ${index + 1}:`, {
-            executiveName: record.executiveName,
-            userName: user.username,
-            match: (record.executiveName || '').toLowerCase() === user.username.toLowerCase()
-          });
-        });
-        
-        // Case-insensitive comparison
-        filteredResults = filteredResults.filter(function(record) {
-          const recordExec = (record.executiveName || '').toLowerCase().trim();
-          const currentUser = user.username.toLowerCase().trim();
-          return recordExec === currentUser;
-        });
-        console.log('👤 Filtered to user records:', filteredResults.length);
-      }
+      // NOTE: For sales users, backend already filters to their records
+      // No need to filter again on frontend since executiveName is not in search results
       
       if (filteredResults.length > 0) {
         displaySearchResults(filteredResults);
         showMessage('Found ' + filteredResults.length + ' editable record(s)', 'success');
       } else {
-        showMessage('No editable records found for you', 'error');
+        showMessage('No editable records found', 'error');
         document.getElementById('resultsSection').style.display = 'none';
       }
     } else {
@@ -364,14 +352,21 @@ async function loadRecord(record) {
   console.log('📝 Loading record:', record);
   
   // ACCESS CONTROL: Sales users can ONLY edit their own records
+  // Check executiveName from the record (it's populated when clicking from search results)
   const session = SessionManager.getSession();
-  if (session.user.role === 'sales') {
+  if (session.user.role === 'sales' && record.executiveName) {
     const recordExec = (record.executiveName || '').toLowerCase().trim();
     const currentUser = session.user.username.toLowerCase().trim();
     
+    console.log('🔐 Access check:', {
+      recordExec: recordExec,
+      currentUser: currentUser,
+      match: recordExec === currentUser
+    });
+    
     if (recordExec !== currentUser) {
       alert('❌ Access Denied: You can only edit your own sales records.');
-      console.log('🚫 Access denied:', currentUser, 'tried to edit', record.executiveName, 'record');
+      console.log('🚫 Access denied:', currentUser, 'tried to edit', record.executiveName, "'s record");
       return;
     }
   }
