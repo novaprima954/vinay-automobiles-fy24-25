@@ -541,6 +541,11 @@ async function loadRecord(searchResultRecord) {
   }
   
   console.log('✅ Record loaded with saved accessory values');
+  
+  } catch (error) {
+    console.error('❌ Error loading record:', error);
+    alert('Error loading record: ' + error.message);
+  }
 }
 
 /**
