@@ -290,10 +290,25 @@ async function searchRecords() {
         return accountCheck !== 'Yes';
       });
       
+      console.log('After Account Check filter:', filteredResults.length);
+      
       // Filter 2: For sales users, show ONLY their records
       if (user.role === 'sales') {
+        // Debug: Check what executiveName values we have
+        console.log('🔍 Checking executive names:');
+        filteredResults.forEach(function(record, index) {
+          console.log(`  Record ${index + 1}:`, {
+            executiveName: record.executiveName,
+            userName: user.username,
+            match: (record.executiveName || '').toLowerCase() === user.username.toLowerCase()
+          });
+        });
+        
+        // Case-insensitive comparison
         filteredResults = filteredResults.filter(function(record) {
-          return record.executiveName === user.username;
+          const recordExec = (record.executiveName || '').toLowerCase().trim();
+          const currentUser = user.username.toLowerCase().trim();
+          return recordExec === currentUser;
         });
         console.log('👤 Filtered to user records:', filteredResults.length);
       }
@@ -350,10 +365,15 @@ async function loadRecord(record) {
   
   // ACCESS CONTROL: Sales users can ONLY edit their own records
   const session = SessionManager.getSession();
-  if (session.user.role === 'sales' && record.executiveName !== session.user.username) {
-    alert('❌ Access Denied: You can only edit your own sales records.');
-    console.log('🚫 Access denied:', session.user.username, 'tried to edit', record.executiveName, 'record');
-    return;
+  if (session.user.role === 'sales') {
+    const recordExec = (record.executiveName || '').toLowerCase().trim();
+    const currentUser = session.user.username.toLowerCase().trim();
+    
+    if (recordExec !== currentUser) {
+      alert('❌ Access Denied: You can only edit your own sales records.');
+      console.log('🚫 Access denied:', currentUser, 'tried to edit', record.executiveName, 'record');
+      return;
+    }
   }
   
   // Store receipt no for update and full record
