@@ -23,7 +23,15 @@ document.addEventListener('DOMContentLoaded', async function() {
   const user = session.user;
   console.log('✅ Logged in as:', user.username, '(' + user.role + ')');
   
-  // Auto-populate executive search if user is sales
+  // Setup event listeners first
+  setupEventListeners();
+  
+  // Load models from PriceMaster (non-blocking)
+  loadModelsForEdit().catch(function(err) {
+    console.error('Model loading error:', err);
+  });
+  
+  // Auto-search for sales users - show only THEIR records
   if (user.role === 'sales') {
     const searchBy = document.getElementById('searchBy');
     const executiveDropdown = document.getElementById('executiveDropdown');
@@ -39,17 +47,14 @@ document.addEventListener('DOMContentLoaded', async function() {
       }
       executiveDropdown.style.display = 'block';
       
-      console.log('✅ Auto-populated executive search with:', user.username);
+      console.log('✅ Auto-searching for executive:', user.username);
+      
+      // Auto-trigger search after 100ms (let page render first)
+      setTimeout(function() {
+        searchRecords();
+      }, 100);
     }
   }
-  
-  // Load models from PriceMaster (parallel with setup)
-  loadModelsForEdit().catch(function(err) {
-    console.error('Model loading error:', err);
-  });
-  
-  // Setup event listeners
-  setupEventListeners();
 });
 
 /**
@@ -266,24 +271,41 @@ async function searchRecords() {
   }
   
   const sessionId = SessionManager.getSessionId();
-  const user = SessionManager.getCurrentUser();
+  const session = SessionManager.getSession();
+  const user = session.user;
   
-  console.log('Searching:', searchBy, '=', searchValue);
+  console.log('🔍 Searching:', searchBy, '=', searchValue);
   
   try {
-    const response = await API.call('searchRecordsForEdit', {
-      sessionId: sessionId,
-      searchBy: searchBy,
-      searchValue: searchValue,
-      userRole: user.role,
-      userName: user.name
-    });
+    // Use FAST searchViewRecords API
+    const response = await API.searchViewRecords(searchBy, searchValue, null, null, null, null);
     
-    if (response.success) {
-      displaySearchResults(response.results);
-      showMessage('Found ' + response.results.length + ' editable record(s)', 'success');
+    console.log('📊 Raw results:', response.results ? response.results.length : 0);
+    
+    if (response.success && response.results) {
+      // Filter 1: Remove Account Check = "Yes"
+      let filteredResults = response.results.filter(function(record) {
+        const accountCheck = (record.accountCheck || '').trim();
+        return accountCheck !== 'Yes';
+      });
+      
+      // Filter 2: For sales users, show ONLY their records
+      if (user.role === 'sales') {
+        filteredResults = filteredResults.filter(function(record) {
+          return record.executiveName === user.username;
+        });
+        console.log('👤 Filtered to user records:', filteredResults.length);
+      }
+      
+      if (filteredResults.length > 0) {
+        displaySearchResults(filteredResults);
+        showMessage('Found ' + filteredResults.length + ' editable record(s)', 'success');
+      } else {
+        showMessage('No editable records found for you', 'error');
+        document.getElementById('resultsSection').style.display = 'none';
+      }
     } else {
-      showMessage(response.message, 'error');
+      showMessage('No records found', 'error');
       document.getElementById('resultsSection').style.display = 'none';
     }
   } catch (error) {
@@ -332,13 +354,11 @@ async function loadRecord(record) {
   }
   window.currentRecord = record;
   
-  // Protected fields - with null checks
+  // Protected fields - with null checks (removed protectedCustomerName and protectedMobileNo)
   const protectedFields = {
     'protectedReceiptNo': record.receiptNo || '-',
     'protectedExecutiveName': record.executiveName || '-',
     'protectedBookingDate': record.bookingDate || '-',
-    'protectedCustomerName': record.customerName || '-',
-    'protectedMobileNo': record.mobileNo || '-',
     'protectedReceiptNo1': record.receiptNo1 || '-',
     'protectedReceipt1Amount': record.receipt1Amount ? '₹' + record.receipt1Amount : '-'
   };
@@ -354,6 +374,17 @@ async function loadRecord(record) {
   const modelSelect = document.getElementById('model');
   if (modelSelect) {
     modelSelect.value = record.model || '';
+  }
+  
+  // Editable Customer Name and Mobile No
+  const customerNameInput = document.getElementById('customerName');
+  if (customerNameInput) {
+    customerNameInput.value = record.customerName || '';
+  }
+  
+  const mobileNoInput = document.getElementById('mobileNo');
+  if (mobileNoInput) {
+    mobileNoInput.value = record.mobileNo || '';
   }
   
   // Load variants for this model and populate dropdown
@@ -521,6 +552,7 @@ function renderAccessoriesWithPMDetails(pmDetails, savedRecord) {
   }
   
   console.log('✅ Rendered accessories WITH saved values (optimized)');
+  console.log('🪖 Helmet value:', savedRecord.helmet);
 }
 
 async function renderAccessoriesWithSavedValues(model, variant, savedRecord) {
