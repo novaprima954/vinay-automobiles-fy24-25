@@ -258,28 +258,36 @@ function handleSearchByChange() {
  * Search records
  */
 async function searchRecords() {
-  const searchBy = document.getElementById('searchBy').value;
-  
-  if (!searchBy) {
-    showMessage('Please select a search field', 'error');
-    return;
-  }
-  
-  let searchValue;
-  if (searchBy === 'Executive Name') {
-    searchValue = document.getElementById('executiveDropdown').value;
-  } else {
-    searchValue = document.getElementById('searchValue').value.trim();
-  }
-  
-  if (!searchValue) {
-    showMessage('Please enter a search value', 'error');
-    return;
-  }
-  
-  const sessionId = SessionManager.getSessionId();
   const session = SessionManager.getSession();
   const user = session.user;
+  
+  let searchBy, searchValue;
+  
+  // FORCE sales users to search by Executive Name = their username
+  if (user.role === 'sales') {
+    searchBy = 'Executive Name';
+    searchValue = user.username;
+    console.log('🔒 Sales user forced search: Executive Name =', searchValue);
+  } else {
+    // Admin can search by any field
+    searchBy = document.getElementById('searchBy').value;
+    
+    if (!searchBy) {
+      showMessage('Please select a search field', 'error');
+      return;
+    }
+    
+    if (searchBy === 'Executive Name') {
+      searchValue = document.getElementById('executiveDropdown').value;
+    } else {
+      searchValue = document.getElementById('searchValue').value.trim();
+    }
+    
+    if (!searchValue) {
+      showMessage('Please enter a search value', 'error');
+      return;
+    }
+  }
   
   console.log('🔍 Searching:', searchBy, '=', searchValue);
   
@@ -348,10 +356,49 @@ function displaySearchResults(results) {
 /**
  * Load selected record
  */
-async function loadRecord(record) {
-  console.log('📝 Loading record:', record);
+async function loadRecord(searchResultRecord) {
+  console.log('🔍 Clicked record (limited fields):', searchResultRecord);
+  console.log('📋 Available fields:', Object.keys(searchResultRecord));
   
-  // ACCESS CONTROL: Sales users can ONLY edit their own records
+  // Fetch FULL record from backend
+  const receiptNo = searchResultRecord.receiptNo;
+  if (!receiptNo) {
+    alert('Error: No receipt number found');
+    return;
+  }
+  
+  console.log('📞 Fetching full record for Receipt No:', receiptNo);
+  
+  try {
+    const sessionId = SessionManager.getSessionId();
+    const response = await API.getRecordByReceiptNo(sessionId, receiptNo);
+    
+    console.log('📦 Full record response:', response);
+    
+    if (!response.success || !response.record) {
+      alert('Error loading full record: ' + (response.message || 'Unknown error'));
+      return;
+    }
+    
+    const record = response.record;
+    
+    console.log('📊 Full record field values:', {
+      receiptNo: record.receiptNo,
+      executiveName: record.executiveName,
+      bookingDate: record.bookingDate,
+      customerName: record.customerName,
+      mobileNo: record.mobileNo,
+      model: record.model,
+      variant: record.variant,
+      colour: record.colour,
+      discount: record.discount,
+      finalPrice: record.finalPrice,
+      financierName: record.financierName,
+      deliveryDate: record.deliveryDate,
+      salesRemark: record.salesRemark
+    });
+    
+    // ACCESS CONTROL: Sales users can ONLY edit their own records
   // Check executiveName from the record (it's populated when clicking from search results)
   const session = SessionManager.getSession();
   if (session.user.role === 'sales' && record.executiveName) {
