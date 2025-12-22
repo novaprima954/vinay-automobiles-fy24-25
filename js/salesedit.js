@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     console.error('Model loading error:', err);
   });
   
-  // Auto-search for sales users - show only THEIR records
+  // Pre-populate executive search for sales users (but don't auto-search)
   if (user.role === 'sales') {
     const searchBy = document.getElementById('searchBy');
     const executiveDropdown = document.getElementById('executiveDropdown');
@@ -47,12 +47,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       }
       executiveDropdown.style.display = 'block';
       
-      console.log('✅ Auto-searching for executive:', user.username);
-      
-      // Auto-trigger search after 100ms (let page render first)
-      setTimeout(function() {
-        searchRecords();
-      }, 100);
+      console.log('✅ Pre-populated executive:', user.username, '(click Search to find records)');
     }
   }
 });
@@ -148,6 +143,12 @@ async function getPriceMasterDetails(model, variant) {
  * Setup event listeners
  */
 function setupEventListeners() {
+  // Search by dropdown change - toggle between text input and executive dropdown
+  const searchBySelect = document.getElementById('searchBy');
+  if (searchBySelect) {
+    searchBySelect.addEventListener('change', handleSearchByChange);
+  }
+  
   // Search button
   const searchBtn = document.getElementById('searchBtn');
   if (searchBtn) {
@@ -346,6 +347,14 @@ function displaySearchResults(results) {
  */
 async function loadRecord(record) {
   console.log('📝 Loading record:', record);
+  
+  // ACCESS CONTROL: Sales users can ONLY edit their own records
+  const session = SessionManager.getSession();
+  if (session.user.role === 'sales' && record.executiveName !== session.user.username) {
+    alert('❌ Access Denied: You can only edit your own sales records.');
+    console.log('🚫 Access denied:', session.user.username, 'tried to edit', record.executiveName, 'record');
+    return;
+  }
   
   // Store receipt no for update and full record
   const selectedReceiptNoInput = document.getElementById('selectedReceiptNo');
