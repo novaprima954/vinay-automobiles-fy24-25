@@ -306,8 +306,25 @@ async function searchRecords() {
       
       console.log('✅ After Account Check filter:', filteredResults.length, 'editable records');
       
-      // NOTE: For sales users, backend already filters to their records
-      // No need to filter again on frontend since executiveName is not in search results
+      // CRITICAL FIX: Backend doesn't filter by executive for sales users
+      // Must filter on frontend to show ONLY their records
+      if (user.role === 'sales') {
+        const usernameLower = user.username.toLowerCase().trim();
+        
+        filteredResults = filteredResults.filter(function(record) {
+          // Check multiple possible field names for executive
+          const exec = (record.executiveName || record.executive || record.salesExecutive || '').toLowerCase().trim();
+          const match = exec === usernameLower;
+          
+          if (!match && record.receiptNo) {
+            console.log('🚫 Filtered out:', record.receiptNo, 'executive:', exec, 'user:', usernameLower);
+          }
+          
+          return match;
+        });
+        
+        console.log('👤 Filtered to', user.username, 'records:', filteredResults.length);
+      }
       
       if (filteredResults.length > 0) {
         displaySearchResults(filteredResults);
@@ -357,50 +374,26 @@ function displaySearchResults(results) {
  * Load selected record
  */
 async function loadRecord(searchResultRecord) {
-  console.log('🔍 Clicked record (limited fields):', searchResultRecord);
+  console.log('🔍 Loading record (from search result):', searchResultRecord);
   console.log('📋 Available fields:', Object.keys(searchResultRecord));
   
-  // Fetch FULL record from backend
-  const receiptNo = searchResultRecord.receiptNo;
-  if (!receiptNo) {
-    alert('Error: No receipt number found');
-    return;
-  }
+  // Use the search result directly - it has all the basic fields we need
+  const record = searchResultRecord;
   
-  console.log('📞 Fetching full record for Receipt No:', receiptNo);
+  // Show what we have
+  console.log('📊 Record data:', {
+    receiptNo: record.receiptNo,
+    customerName: record.customerName,
+    mobileNo: record.mobileNo,
+    model: record.model,
+    variant: record.variant,
+    date: record.date
+  });
   
   try {
-    const sessionId = SessionManager.getSessionId();
-    const response = await API.getRecordByReceiptNo(sessionId, receiptNo);
-    
-    console.log('📦 Full record response:', response);
-    
-    if (!response.success || !response.record) {
-      alert('Error loading full record: ' + (response.message || 'Unknown error'));
-      return;
-    }
-    
-    const record = response.record;
-    
-    console.log('📊 Full record field values:', {
-      receiptNo: record.receiptNo,
-      executiveName: record.executiveName,
-      bookingDate: record.bookingDate,
-      customerName: record.customerName,
-      mobileNo: record.mobileNo,
-      model: record.model,
-      variant: record.variant,
-      colour: record.colour,
-      discount: record.discount,
-      finalPrice: record.finalPrice,
-      financierName: record.financierName,
-      deliveryDate: record.deliveryDate,
-      salesRemark: record.salesRemark
-    });
-    
     // ACCESS CONTROL: Sales users can ONLY edit their own records
-  // Check executiveName from the record (it's populated when clicking from search results)
-  const session = SessionManager.getSession();
+    // Note: executiveName might not be in search results, so we trust the search filtered correctly
+    const session = SessionManager.getSession();
   if (session.user.role === 'sales' && record.executiveName) {
     const recordExec = (record.executiveName || '').toLowerCase().trim();
     const currentUser = session.user.username.toLowerCase().trim();
@@ -428,8 +421,8 @@ async function loadRecord(searchResultRecord) {
   // Protected fields - with null checks (removed protectedCustomerName and protectedMobileNo)
   const protectedFields = {
     'protectedReceiptNo': record.receiptNo || '-',
-    'protectedExecutiveName': record.executiveName || '-',
-    'protectedBookingDate': record.bookingDate || '-',
+    'protectedExecutiveName': record.executiveName || record.executive || record.salesExecutive || '-',
+    'protectedBookingDate': record.bookingDate || record.date || '-',
     'protectedReceiptNo1': record.receiptNo1 || '-',
     'protectedReceipt1Amount': record.receipt1Amount ? '₹' + record.receipt1Amount : '-'
   };
