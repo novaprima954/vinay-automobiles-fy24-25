@@ -261,32 +261,39 @@ async function searchRecords() {
   const session = SessionManager.getSession();
   const user = session.user;
   
-  let searchBy, searchValue;
+  let searchBy = document.getElementById('searchBy').value;
+  let searchValue;
   
-  // FORCE sales users to search by Executive Name = their username
-  if (user.role === 'sales') {
+  if (!searchBy) {
+    showMessage('Please select a search field', 'error');
+    return;
+  }
+  
+  // Get search value based on search type
+  if (searchBy === 'Executive Name') {
+    searchValue = document.getElementById('executiveDropdown').value;
+  } else {
+    searchValue = document.getElementById('searchValue').value.trim();
+  }
+  
+  if (!searchValue) {
+    showMessage('Please enter a search value', 'error');
+    return;
+  }
+  
+  // SECURITY: For sales users, if NOT searching by Executive Name, force it
+  if (user.role === 'sales' && searchBy !== 'Executive Name') {
+    const confirm = window.confirm(
+      'Sales users can only view their own records.\n\n' +
+      'Search will be limited to Executive Name = ' + user.username + '\n\n' +
+      'Continue?'
+    );
+    
+    if (!confirm) return;
+    
     searchBy = 'Executive Name';
     searchValue = user.username;
-    console.log('🔒 Sales user forced search: Executive Name =', searchValue);
-  } else {
-    // Admin can search by any field
-    searchBy = document.getElementById('searchBy').value;
-    
-    if (!searchBy) {
-      showMessage('Please select a search field', 'error');
-      return;
-    }
-    
-    if (searchBy === 'Executive Name') {
-      searchValue = document.getElementById('executiveDropdown').value;
-    } else {
-      searchValue = document.getElementById('searchValue').value.trim();
-    }
-    
-    if (!searchValue) {
-      showMessage('Please enter a search value', 'error');
-      return;
-    }
+    console.log('🔒 Sales user search forced to: Executive Name =', searchValue);
   }
   
   console.log('🔍 Searching:', searchBy, '=', searchValue);
@@ -376,6 +383,17 @@ async function loadRecord(searchResultRecord) {
     receiptNo: record.receiptNo,
     customerName: record.customerName,
     mobileNo: record.mobileNo,
+    model: record.model,
+    variant: record.variant,
+    date: record.date
+  });
+  
+  console.log('ℹ️ IMPORTANT: Other fields will be blank');
+  console.log('   Search results only include: receiptNo, customerName, mobileNo, model, variant, date');
+  console.log('   Missing fields: colour, discount, finalPrice, financier, deliveryDate, accessories, receipts');
+  console.log('   To get all fields, backend API needs to return them in search results');
+  
+  try {
     model: record.model,
     variant: record.variant,
     date: record.date
@@ -525,6 +543,13 @@ async function loadRecord(searchResultRecord) {
   }
   
   console.log('✅ Record loaded with saved accessory values');
+  
+  // Show user-friendly message about missing fields
+  showMessage(
+    'ℹ️ Note: Some fields may be blank (colour, discount, final price, etc.). ' +
+    'Only basic fields are available from search results.',
+    'info'
+  );
   
   } catch (error) {
     console.error('❌ Error loading record:', error);
