@@ -306,24 +306,15 @@ async function searchRecords() {
       
       console.log('✅ After Account Check filter:', filteredResults.length, 'editable records');
       
-      // CRITICAL FIX: Backend doesn't filter by executive for sales users
-      // Must filter on frontend to show ONLY their records
-      if (user.role === 'sales') {
-        const usernameLower = user.username.toLowerCase().trim();
-        
-        filteredResults = filteredResults.filter(function(record) {
-          // Check multiple possible field names for executive
-          const exec = (record.executiveName || record.executive || record.salesExecutive || '').toLowerCase().trim();
-          const match = exec === usernameLower;
-          
-          if (!match && record.receiptNo) {
-            console.log('🚫 Filtered out:', record.receiptNo, 'executive:', exec, 'user:', usernameLower);
-          }
-          
-          return match;
-        });
-        
-        console.log('👤 Filtered to', user.username, 'records:', filteredResults.length);
+      // NOTE: Sales users search by "Executive Name = their username"
+      // We trust the backend returns correct results for that search
+      // If wrong records appear, the backend search is not filtering properly
+      
+      if (user.role === 'sales' && searchBy === 'Executive Name') {
+        console.log('⚠️ WARNING: Cannot verify executive match on frontend');
+        console.log('   Search results do not include executiveName field');
+        console.log('   Trusting backend filtered by:', searchValue);
+        console.log('   If you see wrong records, backend search needs fixing');
       }
       
       if (filteredResults.length > 0) {
