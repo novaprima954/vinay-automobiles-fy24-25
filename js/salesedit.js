@@ -299,6 +299,26 @@ function displaySearchResults(results) {
 async function loadRecord(record) {
   console.log('📝 Loading record:', record);
   
+  // Try to fetch FULL record first
+  let fullRecord = record;
+  
+  try {
+    const sessionId = SessionManager.getSessionId();
+    const response = await API.getRecordByReceiptNo(sessionId, record.receiptNo);
+    
+    if (response.success && response.record) {
+      console.log('✅ Got full record from API');
+      fullRecord = response.record;
+    } else {
+      console.log('⚠️ Using search result data (limited fields):', response.message);
+    }
+  } catch (error) {
+    console.log('⚠️ Using search result data (API blocked)');
+  }
+  
+  // Use fullRecord (either from API or search result)
+  record = fullRecord;
+  
   // ACCESS CONTROL: Sales users can only edit their own records
   // Since search results don't have executiveName, we check when saving
   
