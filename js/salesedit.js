@@ -374,6 +374,9 @@ async function loadRecord(record) {
   setValue('doNumber', record.doNumber || '');
   setValue('disbursedAmount', record.disbursedAmount || '');
   
+  // Store helmet value temporarily (for accessory rendering)
+  window.savedHelmetValue = record.helmet || '';
+  
   // Financier
   const standardFinanciers = ['Cash', 'TVS Credit', 'Shriram Finance', 'Hinduja Finance', 
                               'Janan SFB', 'TATA Capital', 'Indusind Bank', 'Berar Finance', 'IDFC'];
@@ -501,7 +504,7 @@ function renderAccessoriesWithSavedValues(pmDetails, savedRecord) {
   // Helmet
   if (pmDetails.helmetPrice) {
     const price = parseFloat(pmDetails.helmetPrice) || 0;
-    const savedHelmet = savedRecord.helmet || '';
+    const savedHelmet = savedRecord.helmet || window.savedHelmetValue || '';
     
     const formGroup = document.createElement('div');
     formGroup.className = 'form-group';
@@ -551,7 +554,7 @@ function handleFinancierChange() {
 
 function calculateTotals() {
   const r1Text = (document.getElementById('protectedReceipt1Amount') || {}).textContent || '₹0';
-  const r1 = parseFloat(r1Text.replace('₹', '').trim()) || 0;
+  const r1 = parseFloat(r1Text.replace('₹', '').replace(/,/g, '').trim()) || 0;
   const r2 = parseFloat((document.getElementById('receipt2Amount') || {}).value) || 0;
   const r3 = parseFloat((document.getElementById('receipt3Amount') || {}).value) || 0;
   const r4 = parseFloat((document.getElementById('receipt4Amount') || {}).value) || 0;
@@ -560,8 +563,27 @@ function calculateTotals() {
   const cashTotal = r1 + r2 + r3 + r4;
   const grandTotal = cashTotal + disbursed;
   
+  console.log('💰 Totals:', {r1, r2, r3, r4, disbursed, cashTotal, grandTotal});
+  
   setTextContent('cashTotal', '₹' + cashTotal.toFixed(2));
   setTextContent('grandTotal', '₹' + grandTotal.toFixed(2));
+  
+  // Store in hidden fields for form submission
+  if (!document.getElementById('hiddenCashTotal')) {
+    const cashInput = document.createElement('input');
+    cashInput.type = 'hidden';
+    cashInput.id = 'hiddenCashTotal';
+    document.getElementById('editForm').appendChild(cashInput);
+  }
+  if (!document.getElementById('hiddenGrandTotal')) {
+    const grandInput = document.createElement('input');
+    grandInput.type = 'hidden';
+    grandInput.id = 'hiddenGrandTotal';
+    document.getElementById('editForm').appendChild(grandInput);
+  }
+  
+  document.getElementById('hiddenCashTotal').value = cashTotal.toFixed(2);
+  document.getElementById('hiddenGrandTotal').value = grandTotal.toFixed(2);
 }
 
 // ==========================================
@@ -607,7 +629,9 @@ async function handleUpdate(e) {
     receiptNo4: getValue('receiptNo4'),
     receipt4Amount: getValue('receipt4Amount'),
     doNumber: getValue('doNumber'),
-    disbursedAmount: getValue('disbursedAmount')
+    disbursedAmount: getValue('disbursedAmount'),
+    cashTotal: getValue('hiddenCashTotal') || '0',
+    grandTotal: getValue('hiddenGrandTotal') || '0'
   };
   
   // Add accessories
@@ -629,7 +653,10 @@ async function handleUpdate(e) {
   
   try {
     const sessionId = SessionManager.getSessionId();
-    const response = await API.updateSalesRecord(sessionId, data);
+    const response = await API.call('updateSalesRecord', {
+      sessionId: sessionId,
+      data: JSON.stringify(data)
+    });
     
     if (updateBtn) {
       updateBtn.disabled = false;
