@@ -539,6 +539,11 @@ function renderAccessoriesWithSavedValues(pmDetails, savedRecord) {
     const price = parseFloat(pmDetails.helmetPrice) || 0;
     const savedHelmet = savedRecord.helmet || window.savedHelmetValue || '';
     
+    // Convert to string for comparison
+    const helmetValue = String(savedHelmet);
+    
+    console.log('🪖 Setting helmet dropdown:', {saved: savedHelmet, string: helmetValue});
+    
     const formGroup = document.createElement('div');
     formGroup.className = 'form-group';
     
@@ -550,9 +555,9 @@ function renderAccessoriesWithSavedValues(pmDetails, savedRecord) {
     select.className = 'editable-highlight';
     select.innerHTML = 
       '<option value="">-- Select --</option>' +
-      '<option value="No"' + (savedHelmet === 'No' ? ' selected' : '') + '>No</option>' +
-      '<option value="1"' + (savedHelmet === '1' ? ' selected' : '') + '>1</option>' +
-      '<option value="2"' + (savedHelmet === '2' ? ' selected' : '') + '>2</option>';
+      '<option value="No"' + (helmetValue === 'No' ? ' selected' : '') + '>No</option>' +
+      '<option value="1"' + (helmetValue === '1' || helmetValue === 1 ? ' selected' : '') + '>1</option>' +
+      '<option value="2"' + (helmetValue === '2' || helmetValue === 2 ? ' selected' : '') + '>2</option>';
     
     formGroup.appendChild(label);
     formGroup.appendChild(select);
