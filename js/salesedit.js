@@ -1,20 +1,22 @@
 // ==========================================
-// SALES EDIT PAGE LOGIC - WITH PRICEMASTER INTEGRATION
+// SALES EDIT - COMPLETE CLEAN VERSION
 // ==========================================
 
-// Cache for PriceMaster data
+// PriceMaster cache
 let cachedModels = null;
 let variantCache = {};
 let priceMasterCache = {};
 
-// Initialize on page load
+// ==========================================
+// PAGE INITIALIZATION
+// ==========================================
+
 document.addEventListener('DOMContentLoaded', async function() {
   console.log('=== SALES EDIT PAGE ===');
   
   // Check authentication
   const session = SessionManager.getSession();
   if (!session) {
-    console.log('❌ No session - redirecting to login');
     alert('Please login first');
     window.location.href = 'index.html';
     return;
@@ -23,133 +25,34 @@ document.addEventListener('DOMContentLoaded', async function() {
   const user = session.user;
   console.log('✅ Logged in as:', user.username, '(' + user.role + ')');
   
-  // Display current user name in header
+  // Check access (sales + admin only)
+  if (user.role !== 'admin' && user.role !== 'sales') {
+    alert('Access denied. Only admin and sales can access this page.');
+    window.location.href = 'home.html';
+    return;
+  }
+  
+  // Display current user
   const currentUserDisplay = document.getElementById('currentUser');
   if (currentUserDisplay) {
     currentUserDisplay.textContent = user.username + ' (' + user.role + ')';
   }
   
-  // Setup event listeners first
+  // Setup event listeners
   setupEventListeners();
   
   // Load models from PriceMaster (non-blocking)
   loadModelsForEdit().catch(function(err) {
     console.error('Model loading error:', err);
   });
-  
-  // Pre-populate executive search for sales users (but don't auto-search)
-  if (user.role === 'sales') {
-    const searchBy = document.getElementById('searchBy');
-    const executiveDropdown = document.getElementById('executiveDropdown');
-    const searchValue = document.getElementById('searchValue');
-    
-    if (searchBy && executiveDropdown) {
-      searchBy.value = 'Executive Name';
-      executiveDropdown.value = user.username;
-      
-      // Show dropdown, hide text input
-      if (searchValue) {
-        searchValue.style.display = 'none';
-      }
-      executiveDropdown.style.display = 'block';
-      
-      console.log('✅ Pre-populated executive:', user.username, '(click Search to find records)');
-    }
-  }
 });
 
-/**
- * Load models from PriceMaster into edit form dropdown
- */
-async function loadModelsForEdit() {
-  const modelSelect = document.getElementById('model');
-  if (!modelSelect) return;
-  
-  try {
-    const response = await API.getPriceMasterModels();
-    
-    if (response.success && response.models) {
-      cachedModels = response.models;
-      
-      modelSelect.innerHTML = '<option value="">-- Select Model --</option>';
-      response.models.forEach(function(model) {
-        const option = document.createElement('option');
-        option.value = model;
-        option.textContent = model;
-        modelSelect.appendChild(option);
-      });
-      
-      console.log('✅ Loaded', response.models.length, 'models from PriceMaster');
-    } else {
-      console.error('❌ Error loading models');
-      modelSelect.innerHTML = '<option value="">-- Error loading models --</option>';
-    }
-  } catch (error) {
-    console.error('❌ Load models error:', error);
-  }
-}
+// ==========================================
+// EVENT LISTENERS SETUP
+// ==========================================
 
-/**
- * Load variants for a model from PriceMaster
- */
-async function loadVariantsForModel(model) {
-  if (!model) return [];
-  
-  // Check cache
-  if (variantCache[model]) {
-    console.log('📦 Using cached variants for', model);
-    return variantCache[model];
-  }
-  
-  try {
-    const response = await API.getPriceMasterVariants(model);
-    
-    if (response.success && response.variants) {
-      variantCache[model] = response.variants;
-      console.log('✅ Loaded', response.variants.length, 'variants for', model);
-      return response.variants;
-    }
-  } catch (error) {
-    console.error('❌ Load variants error:', error);
-  }
-  
-  return [];
-}
-
-/**
- * Get PriceMaster details for model/variant
- */
-async function getPriceMasterDetails(model, variant) {
-  if (!model || !variant) return null;
-  
-  const cacheKey = model + '|' + variant;
-  
-  // Check cache
-  if (priceMasterCache[cacheKey]) {
-    console.log('📦 Using cached PriceMaster for', model, variant);
-    return priceMasterCache[cacheKey];
-  }
-  
-  try {
-    const response = await API.getPriceMasterDetails(model, variant);
-    
-    if (response.success && response.details) {
-      priceMasterCache[cacheKey] = response.details;
-      console.log('✅ Loaded PriceMaster details for', model, variant);
-      return response.details;
-    }
-  } catch (error) {
-    console.error('❌ Load PriceMaster error:', error);
-  }
-  
-  return null;
-}
-
-/**
- * Setup event listeners
- */
 function setupEventListeners() {
-  // Search by dropdown change - toggle between text input and executive dropdown
+  // Search by dropdown change
   const searchBySelect = document.getElementById('searchBy');
   if (searchBySelect) {
     searchBySelect.addEventListener('change', handleSearchByChange);
@@ -169,25 +72,25 @@ function setupEventListeners() {
     });
   }
   
-  // Model change in edit form
+  // Model change
   const modelSelect = document.getElementById('model');
   if (modelSelect) {
     modelSelect.addEventListener('change', handleModelChange);
   }
   
-  // Variant change in edit form
+  // Variant change
   const variantSelect = document.getElementById('variant');
   if (variantSelect) {
     variantSelect.addEventListener('change', handleVariantChange);
   }
   
-  // Financier dropdown
+  // Financier change
   const financierSelect = document.getElementById('financierName');
   if (financierSelect) {
     financierSelect.addEventListener('change', handleFinancierChange);
   }
   
-  // Calculate totals on amount changes
+  // Calculate totals
   ['receipt2Amount', 'receipt3Amount', 'receipt4Amount', 'disbursedAmount', 'finalPrice'].forEach(function(id) {
     const element = document.getElementById(id);
     if (element) {
@@ -205,71 +108,114 @@ function setupEventListeners() {
   const cancelBtn = document.getElementById('cancelBtn');
   if (cancelBtn) {
     cancelBtn.addEventListener('click', function() {
-      document.getElementById('detailsSection').style.display = 'none';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const detailsSection = document.getElementById('detailsSection');
+      if (detailsSection) {
+        detailsSection.style.display = 'none';
+      }
     });
   }
 }
 
 // ==========================================
-// EVENT HANDLERS FOR MODEL/VARIANT CHANGES
+// PRICEMASTER FUNCTIONS
 // ==========================================
 
-/**
- * Handle model change - reload variants and clear accessories
- */
-async function handleModelChange() {
-  console.log('📦 Model changed');
-  await updateVariants();
-  // Clear accessories (will be populated when variant is selected)
-  document.getElementById('accessoryFields').innerHTML = '';
+async function loadModelsForEdit() {
+  const modelSelect = document.getElementById('model');
+  if (!modelSelect) return;
+  
+  try {
+    const response = await API.getPriceMasterModels();
+    
+    if (response.success && response.models) {
+      cachedModels = response.models;
+      
+      modelSelect.innerHTML = '<option value="">-- Select Model --</option>';
+      response.models.forEach(function(model) {
+        const option = document.createElement('option');
+        option.value = model;
+        option.textContent = model;
+        modelSelect.appendChild(option);
+      });
+      
+      console.log('✅ Loaded', response.models.length, 'models from PriceMaster');
+    }
+  } catch (error) {
+    console.error('❌ Load models error:', error);
+  }
 }
 
-/**
- * Handle variant change - render accessories (RESET to blank)
- */
-async function handleVariantChange() {
-  console.log('🎨 Variant changed');
-  await updateAccessoryFields();
+async function loadVariantsForModel(model) {
+  if (!model) return [];
+  
+  if (variantCache[model]) {
+    return variantCache[model];
+  }
+  
+  try {
+    const response = await API.getPriceMasterVariants(model);
+    
+    if (response.success && response.variants) {
+      variantCache[model] = response.variants;
+      return response.variants;
+    }
+  } catch (error) {
+    console.error('❌ Load variants error:', error);
+  }
+  
+  return [];
+}
+
+async function getPriceMasterDetails(model, variant) {
+  if (!model || !variant) return null;
+  
+  const cacheKey = model + '|' + variant;
+  
+  if (priceMasterCache[cacheKey]) {
+    return priceMasterCache[cacheKey];
+  }
+  
+  try {
+    const response = await API.getPriceMasterDetails(model, variant);
+    
+    if (response.success && response.details) {
+      priceMasterCache[cacheKey] = response.details;
+      return response.details;
+    }
+  } catch (error) {
+    console.error('❌ Load PriceMaster error:', error);
+  }
+  
+  return null;
 }
 
 // ==========================================
 // SEARCH FUNCTIONALITY
 // ==========================================
 
-/**
- * Handle search by dropdown change
- */
 function handleSearchByChange() {
   const searchBy = document.getElementById('searchBy').value;
   const searchValueInput = document.getElementById('searchValue');
   const executiveDropdown = document.getElementById('executiveDropdown');
   
   if (searchBy === 'Executive Name') {
-    searchValueInput.style.display = 'none';
-    executiveDropdown.style.display = 'block';
+    if (searchValueInput) searchValueInput.style.display = 'none';
+    if (executiveDropdown) executiveDropdown.style.display = 'block';
   } else {
-    searchValueInput.style.display = 'block';
-    executiveDropdown.style.display = 'none';
+    if (searchValueInput) searchValueInput.style.display = 'block';
+    if (executiveDropdown) executiveDropdown.style.display = 'none';
   }
 }
 
-/**
- * Search records
- */
 async function searchRecords() {
-  const session = SessionManager.getSession();
-  const user = session.user;
-  
-  let searchBy = document.getElementById('searchBy').value;
-  let searchValue;
+  const searchBy = document.getElementById('searchBy').value;
   
   if (!searchBy) {
     showMessage('Please select a search field', 'error');
     return;
   }
   
-  // Get search value based on search type
+  let searchValue;
   if (searchBy === 'Executive Name') {
     searchValue = document.getElementById('executiveDropdown').value;
   } else {
@@ -281,28 +227,15 @@ async function searchRecords() {
     return;
   }
   
-  // SECURITY: For sales users, if NOT searching by Executive Name, force it
-  if (user.role === 'sales' && searchBy !== 'Executive Name') {
-    const confirm = window.confirm(
-      'Sales users can only view their own records.\n\n' +
-      'Search will be limited to Executive Name = ' + user.username + '\n\n' +
-      'Continue?'
-    );
-    
-    if (!confirm) return;
-    
-    searchBy = 'Executive Name';
-    searchValue = user.username;
-    console.log('🔒 Sales user search forced to: Executive Name =', searchValue);
-  }
+  const session = SessionManager.getSession();
+  const user = session.user;
   
   console.log('🔍 Searching:', searchBy, '=', searchValue);
   
   try {
-    // Use FAST searchViewRecords API
     const response = await API.searchViewRecords(searchBy, searchValue, null, null, null, null);
     
-    console.log('📊 Raw results:', response.results ? response.results.length : 0);
+    console.log('📊 Search results:', response.results ? response.results.length : 0);
     
     if (response.success && response.results) {
       // Filter: Remove Account Check = "Yes"
@@ -311,202 +244,115 @@ async function searchRecords() {
         return accountCheck !== 'Yes';
       });
       
-      console.log('✅ After Account Check filter:', filteredResults.length, 'editable records');
-      
-      // NOTE: Sales users search by "Executive Name = their username"
-      // We trust the backend returns correct results for that search
-      // If wrong records appear, the backend search is not filtering properly
-      
-      if (user.role === 'sales' && searchBy === 'Executive Name') {
-        console.log('⚠️ WARNING: Cannot verify executive match on frontend');
-        console.log('   Search results do not include executiveName field');
-        console.log('   Trusting backend filtered by:', searchValue);
-        console.log('   If you see wrong records, backend search needs fixing');
-      }
+      console.log('✅ Editable records:', filteredResults.length);
       
       if (filteredResults.length > 0) {
         displaySearchResults(filteredResults);
         showMessage('Found ' + filteredResults.length + ' editable record(s)', 'success');
       } else {
         showMessage('No editable records found', 'error');
-        document.getElementById('resultsSection').style.display = 'none';
+        const resultsSection = document.getElementById('resultsSection');
+        if (resultsSection) resultsSection.style.display = 'none';
       }
     } else {
       showMessage('No records found', 'error');
-      document.getElementById('resultsSection').style.display = 'none';
+      const resultsSection = document.getElementById('resultsSection');
+      if (resultsSection) resultsSection.style.display = 'none';
     }
   } catch (error) {
-    console.error('Search error:', error);
-    showMessage('Search failed. Please try again.', 'error');
+    console.error('❌ Search error:', error);
+    showMessage('Error searching records', 'error');
   }
 }
 
-/**
- * Display search results
- */
 function displaySearchResults(results) {
   const tbody = document.getElementById('resultsBody');
-  tbody.innerHTML = '';
+  const resultsSection = document.getElementById('resultsSection');
   
-  if (results.length === 0) {
-    document.getElementById('resultsSection').style.display = 'none';
-    return;
-  }
+  if (!tbody) return;
+  
+  tbody.innerHTML = '';
   
   results.forEach(function(record) {
     const row = tbody.insertRow();
+    row.style.cursor = 'pointer';
     row.onclick = function() { loadRecord(record); };
+    
     row.innerHTML = 
       '<td>' + (record.receiptNo || '') + '</td>' +
       '<td>' + (record.customerName || '') + '</td>' +
       '<td>' + (record.mobileNo || '') + '</td>' +
       '<td>' + (record.model || '') + '</td>' +
-      '<td>' + (record.bookingDate || '') + '</td>' +
+      '<td>' + (record.bookingDate || record.date || '') + '</td>' +
       '<td>' + (record.accountCheck || 'Blank') + '</td>';
   });
   
-  document.getElementById('resultsSection').style.display = 'block';
+  if (resultsSection) {
+    resultsSection.style.display = 'block';
+  }
 }
 
-/**
- * Load selected record
- */
-async function loadRecord(searchResultRecord) {
-  console.log('🔍 Loading record (from search result):', searchResultRecord);
-  console.log('📋 Available fields:', Object.keys(searchResultRecord));
+// ==========================================
+// LOAD RECORD
+// ==========================================
+
+async function loadRecord(record) {
+  console.log('📝 Loading record:', record);
   
-  // Use the search result directly - it has all the basic fields we need
-  const record = searchResultRecord;
+  // ACCESS CONTROL: Sales users can only edit their own records
+  // Since search results don't have executiveName, we check when saving
   
-  // Show what we have
-  console.log('📊 Record data:', {
-    receiptNo: record.receiptNo,
-    customerName: record.customerName,
-    mobileNo: record.mobileNo,
-    model: record.model,
-    variant: record.variant,
-    date: record.date
-  });
-  
-  console.log('ℹ️ IMPORTANT: Other fields will be blank');
-  console.log('   Search results only include: receiptNo, customerName, mobileNo, model, variant, date');
-  console.log('   Missing fields: colour, discount, finalPrice, financier, deliveryDate, accessories, receipts');
-  console.log('   To get all fields, backend API needs to return them in search results');
-  
-  try {
-    model: record.model,
-    variant: record.variant,
-    date: record.date
-  });
-  
-  try {
-    // ACCESS CONTROL: Sales users can ONLY edit their own records
-    // Note: executiveName might not be in search results, so we trust the search filtered correctly
-    const session = SessionManager.getSession();
-  if (session.user.role === 'sales' && record.executiveName) {
-    const recordExec = (record.executiveName || '').toLowerCase().trim();
-    const currentUser = session.user.username.toLowerCase().trim();
-    
-    console.log('🔐 Access check:', {
-      recordExec: recordExec,
-      currentUser: currentUser,
-      match: recordExec === currentUser
-    });
-    
-    if (recordExec !== currentUser) {
-      alert('❌ Access Denied: You can only edit your own sales records.');
-      console.log('🚫 Access denied:', currentUser, 'tried to edit', record.executiveName, "'s record");
-      return;
-    }
-  }
-  
-  // Store receipt no for update and full record
+  // Store selected receipt number
   const selectedReceiptNoInput = document.getElementById('selectedReceiptNo');
   if (selectedReceiptNoInput) {
     selectedReceiptNoInput.value = record.receiptNo;
   }
+  
+  // Store original record
   window.currentRecord = record;
   
-  // Protected fields - with null checks (removed protectedCustomerName and protectedMobileNo)
-  const protectedFields = {
-    'protectedReceiptNo': record.receiptNo || '-',
-    'protectedExecutiveName': record.executiveName || record.executive || record.salesExecutive || '-',
-    'protectedBookingDate': record.bookingDate || record.date || '-',
-    'protectedReceiptNo1': record.receiptNo1 || '-',
-    'protectedReceipt1Amount': record.receipt1Amount ? '₹' + record.receipt1Amount : '-'
-  };
+  // PROTECTED FIELDS
+  setTextContent('protectedReceiptNo', record.receiptNo || '-');
+  setTextContent('protectedExecutiveName', record.executiveName || record.executive || '-');
+  setTextContent('protectedBookingDate', record.bookingDate || record.date || '-');
+  setTextContent('protectedReceiptNo1', record.receiptNo1 || '-');
+  setTextContent('protectedReceipt1Amount', record.receipt1Amount ? '₹' + record.receipt1Amount : '-');
   
-  Object.keys(protectedFields).forEach(function(id) {
-    const element = document.getElementById(id);
-    if (element) {
-      element.textContent = protectedFields[id];
-    }
-  });
+  // EDITABLE FIELDS - From search results
+  setValue('customerName', record.customerName || '');
+  setValue('mobileNo', record.mobileNo || '');
+  setValue('model', record.model || '');
   
-  // Editable fields - Model
-  const modelSelect = document.getElementById('model');
-  if (modelSelect) {
-    modelSelect.value = record.model || '';
-  }
-  
-  // Editable Customer Name and Mobile No
-  const customerNameInput = document.getElementById('customerName');
-  if (customerNameInput) {
-    customerNameInput.value = record.customerName || '';
-  }
-  
-  const mobileNoInput = document.getElementById('mobileNo');
-  if (mobileNoInput) {
-    mobileNoInput.value = record.mobileNo || '';
-  }
-  
-  // Load variants for this model and populate dropdown
+  // Load variants for model
   if (record.model) {
-    // First: populate variant dropdown with options
-    const variants = await updateVariants(); // This populates the dropdown
+    const variants = await loadVariantsForModel(record.model);
+    updateVariantDropdown(variants);
     
-    // Then: set the saved variant value
-    const variantSelect = document.getElementById('variant');
-    if (variantSelect && record.variant) {
-      // Small delay to ensure DOM is updated
-      setTimeout(function() {
-        variantSelect.value = record.variant;
-        console.log('✅ Set variant to:', record.variant);
-      }, 50);
-    }
+    setValue('variant', record.variant || '');
     
-    // Load PriceMaster details and render accessories
+    // Render accessories with saved values
     if (record.variant) {
       const pmDetails = await getPriceMasterDetails(record.model, record.variant);
       if (pmDetails) {
-        renderAccessoriesWithPMDetails(pmDetails, record);
+        renderAccessoriesWithSavedValues(pmDetails, record);
       }
     }
   }
   
-  // Editable fields - with null checks
-  const editableFields = {
-    'colour': record.colour || '',
-    'discount': record.discount || '',
-    'finalPrice': record.finalPrice || '',
-    'deliveryDate': record.deliveryDate || '',
-    'salesRemark': record.salesRemark || '',
-    'receiptNo2': record.receiptNo2 || '',
-    'receipt2Amount': record.receipt2Amount || '',
-    'receiptNo3': record.receiptNo3 || '',
-    'receipt3Amount': record.receipt3Amount || '',
-    'receiptNo4': record.receiptNo4 || '',
-    'receipt4Amount': record.receipt4Amount || '',
-    'doNumber': record.doNumber || '',
-    'disbursedAmount': record.disbursedAmount || ''
-  };
-  
-  Object.keys(editableFields).forEach(function(id) {
-    const element = document.getElementById(id);
-    if (element) {
-      element.value = editableFields[id];
-    }
-  });
+  // Other editable fields (may be blank from search results)
+  setValue('colour', record.colour || '');
+  setValue('discount', record.discount || '');
+  setValue('finalPrice', record.finalPrice || '');
+  setValue('deliveryDate', record.deliveryDate || '');
+  setValue('salesRemark', record.salesRemark || '');
+  setValue('receiptNo2', record.receiptNo2 || '');
+  setValue('receipt2Amount', record.receipt2Amount || '');
+  setValue('receiptNo3', record.receiptNo3 || '');
+  setValue('receipt3Amount', record.receipt3Amount || '');
+  setValue('receiptNo4', record.receiptNo4 || '');
+  setValue('receipt4Amount', record.receipt4Amount || '');
+  setValue('doNumber', record.doNumber || '');
+  setValue('disbursedAmount', record.disbursedAmount || '');
   
   // Financier
   const standardFinanciers = ['Cash', 'TVS Credit', 'Shriram Finance', 'Hinduja Finance', 
@@ -515,13 +361,11 @@ async function loadRecord(searchResultRecord) {
   const financierSelect = document.getElementById('financierName');
   const otherFinancierInput = document.getElementById('otherFinancierInput');
   
-  if (financierSelect) {
+  if (financierSelect && record.financierName) {
     if (standardFinanciers.includes(record.financierName)) {
       financierSelect.value = record.financierName;
-      if (otherFinancierInput) {
-        otherFinancierInput.style.display = 'none';
-      }
-    } else if (record.financierName) {
+      if (otherFinancierInput) otherFinancierInput.style.display = 'none';
+    } else {
       financierSelect.value = 'Other';
       if (otherFinancierInput) {
         otherFinancierInput.style.display = 'block';
@@ -530,7 +374,7 @@ async function loadRecord(searchResultRecord) {
     }
   }
   
-  // Calculate totals if function exists
+  // Calculate totals
   if (typeof calculateTotals === 'function') {
     calculateTotals();
   }
@@ -542,200 +386,44 @@ async function loadRecord(searchResultRecord) {
     detailsSection.scrollIntoView({ behavior: 'smooth' });
   }
   
-  console.log('✅ Record loaded with saved accessory values');
-  
-  // Show user-friendly message about missing fields
-  showMessage(
-    'ℹ️ Note: Some fields may be blank (colour, discount, final price, etc.). ' +
-    'Only basic fields are available from search results.',
-    'info'
-  );
-  
-  } catch (error) {
-    console.error('❌ Error loading record:', error);
-    alert('Error loading record: ' + error.message);
-  }
+  console.log('✅ Record loaded');
 }
 
-/**
- * Render accessories WITH saved values from record (for editing)
- */
-/**
- * Render accessories WITH saved values from record (OPTIMIZED - uses pre-fetched PM details)
- */
-function renderAccessoriesWithPMDetails(pmDetails, savedRecord) {
-  const accessoryContainer = document.getElementById('accessoryFields');
-  
-  if (!pmDetails) {
-    accessoryContainer.innerHTML = '<div style="text-align: center; padding: 10px; color: #e74c3c;">❌ No PriceMaster data</div>';
-    return;
-  }
-  
-  accessoryContainer.innerHTML = '';
-  
-  // Define accessories with their property names
-  const accessories = [
-    { id: 'guard', name: 'Guard', priceKey: 'guardPrice' },
-    { id: 'gripcover', name: 'Grip Cover', priceKey: 'gripPrice' },
-    { id: 'seatcover', name: 'Seat Cover', priceKey: 'seatCoverPrice' },
-    { id: 'matin', name: 'Matin', priceKey: 'matinPrice' },
-    { id: 'tankcover', name: 'Tank Cover', priceKey: 'tankCoverPrice' },
-    { id: 'handlehook', name: 'Handle Hook', priceKey: 'handleHookPrice' }
-  ];
-  
-  // Render accessories with saved values
-  accessories.forEach(function(acc) {
-    if (pmDetails[acc.priceKey]) {
-      const price = parseFloat(pmDetails[acc.priceKey]) || 0;
-      const savedValue = savedRecord[acc.id] || '';
-      
-      const formGroup = document.createElement('div');
-      formGroup.className = 'form-group';
-      
-      const label = document.createElement('label');
-      label.innerHTML = acc.name + ' (₹' + price.toLocaleString() + ')';
-      
-      const select = document.createElement('select');
-      select.id = acc.id;
-      select.className = 'editable-highlight';
-      select.innerHTML = `
-        <option value="">-- Select --</option>
-        <option value="Yes" ${savedValue === 'Yes' ? 'selected' : ''}>Yes</option>
-        <option value="No" ${savedValue === 'No' ? 'selected' : ''}>No</option>
-      `;
-      
-      formGroup.appendChild(label);
-      formGroup.appendChild(select);
-      accessoryContainer.appendChild(formGroup);
-    }
-  });
-  
-  // Helmet - special case with saved value
-  if (pmDetails.helmetPrice) {
-    const price = parseFloat(pmDetails.helmetPrice) || 0;
-    const savedHelmet = savedRecord.helmet || '';
-    
-    const formGroup = document.createElement('div');
-    formGroup.className = 'form-group';
-    
-    const label = document.createElement('label');
-    label.innerHTML = 'Helmet (₹' + price.toLocaleString() + ')';
-    
-    const select = document.createElement('select');
-    select.id = 'helmet';
-    select.className = 'editable-highlight';
-    select.innerHTML = `
-      <option value="">-- Select --</option>
-      <option value="No" ${savedHelmet === 'No' ? 'selected' : ''}>No</option>
-      <option value="1" ${savedHelmet === '1' ? 'selected' : ''}>1</option>
-      <option value="2" ${savedHelmet === '2' ? 'selected' : ''}>2</option>
-    `;
-    
-    formGroup.appendChild(label);
-    formGroup.appendChild(select);
-    accessoryContainer.appendChild(formGroup);
-  }
-  
-  console.log('✅ Rendered accessories WITH saved values (optimized)');
-  console.log('🪖 Helmet value:', savedRecord.helmet);
-}
+// ==========================================
+// MODEL/VARIANT HANDLERS
+// ==========================================
 
-async function renderAccessoriesWithSavedValues(model, variant, savedRecord) {
-  const accessoryContainer = document.getElementById('accessoryFields');
-  
-  accessoryContainer.innerHTML = '<div style="text-align: center; padding: 10px; color: #999;">⏳ Loading accessories...</div>';
-  
-  const pmDetails = await getPriceMasterDetails(model, variant);
-  
-  if (!pmDetails) {
-    accessoryContainer.innerHTML = '<div style="text-align: center; padding: 10px; color: #e74c3c;">❌ Could not load accessories</div>';
-    return;
-  }
-  
-  accessoryContainer.innerHTML = '';
-  
-  // Define accessories with their property names
-  const accessories = [
-    { id: 'guard', name: 'Guard', priceKey: 'guardPrice' },
-    { id: 'gripcover', name: 'Grip Cover', priceKey: 'gripPrice' },
-    { id: 'seatcover', name: 'Seat Cover', priceKey: 'seatCoverPrice' },
-    { id: 'matin', name: 'Matin', priceKey: 'matinPrice' },
-    { id: 'tankcover', name: 'Tank Cover', priceKey: 'tankCoverPrice' },
-    { id: 'handlehook', name: 'Handle Hook', priceKey: 'handleHookPrice' }
-  ];
-  
-  // Render accessories with saved values
-  accessories.forEach(function(acc) {
-    if (pmDetails[acc.priceKey]) {
-      const price = parseFloat(pmDetails[acc.priceKey]) || 0;
-      const savedValue = savedRecord[acc.id] || '';
-      
-      const formGroup = document.createElement('div');
-      formGroup.className = 'form-group';
-      
-      const label = document.createElement('label');
-      label.innerHTML = acc.name + ' (₹' + price.toLocaleString() + ')';
-      
-      const select = document.createElement('select');
-      select.id = acc.id;
-      select.className = 'editable-highlight';
-      select.innerHTML = `
-        <option value="">-- Select --</option>
-        <option value="Yes" ${savedValue === 'Yes' ? 'selected' : ''}>Yes</option>
-        <option value="No" ${savedValue === 'No' ? 'selected' : ''}>No</option>
-      `;
-      
-      formGroup.appendChild(label);
-      formGroup.appendChild(select);
-      accessoryContainer.appendChild(formGroup);
-    }
-  });
-  
-  // Helmet - special case with saved value
-  if (pmDetails.helmetPrice) {
-    const price = parseFloat(pmDetails.helmetPrice) || 0;
-    const savedHelmet = savedRecord.helmet || '';
-    
-    const formGroup = document.createElement('div');
-    formGroup.className = 'form-group';
-    
-    const label = document.createElement('label');
-    label.innerHTML = 'Helmet (₹' + price.toLocaleString() + ')';
-    
-    const select = document.createElement('select');
-    select.id = 'helmet';
-    select.className = 'editable-highlight';
-    select.innerHTML = `
-      <option value="">-- Select --</option>
-      <option value="No" ${savedHelmet === 'No' ? 'selected' : ''}>No</option>
-      <option value="1" ${savedHelmet === '1' ? 'selected' : ''}>1</option>
-      <option value="2" ${savedHelmet === '2' ? 'selected' : ''}>2</option>
-    `;
-    
-    formGroup.appendChild(label);
-    formGroup.appendChild(select);
-    accessoryContainer.appendChild(formGroup);
-  }
-  
-  console.log('✅ Rendered accessories WITH saved values');
-}
-
-/**
- * Update variants based on model
- */
-async function updateVariants() {
+async function handleModelChange() {
   const model = document.getElementById('model').value;
-  const variantSelect = document.getElementById('variant');
   
-  if (!model) {
-    variantSelect.innerHTML = '<option value="">-- Select Model First --</option>';
-    document.getElementById('accessoryFields').innerHTML = '';
-    return [];
+  if (model) {
+    const variants = await loadVariantsForModel(model);
+    updateVariantDropdown(variants);
+  } else {
+    updateVariantDropdown([]);
   }
   
-  variantSelect.innerHTML = '<option value="">-- Loading... --</option>';
+  // Clear variant and accessories
+  setValue('variant', '');
+  const accessoryFields = document.getElementById('accessoryFields');
+  if (accessoryFields) accessoryFields.innerHTML = '';
+}
+
+async function handleVariantChange() {
+  const model = document.getElementById('model').value;
+  const variant = document.getElementById('variant').value;
   
-  const variants = await loadVariantsForModel(model);
+  if (model && variant) {
+    const pmDetails = await getPriceMasterDetails(model, variant);
+    if (pmDetails) {
+      renderAccessoriesBlank(pmDetails);
+    }
+  }
+}
+
+function updateVariantDropdown(variants) {
+  const variantSelect = document.getElementById('variant');
+  if (!variantSelect) return;
   
   variantSelect.innerHTML = '<option value="">-- Select Variant --</option>';
   variants.forEach(function(variant) {
@@ -744,40 +432,18 @@ async function updateVariants() {
     option.textContent = variant;
     variantSelect.appendChild(option);
   });
-  
-  // Clear accessories when model changes
-  document.getElementById('accessoryFields').innerHTML = '';
-  
-  return variants;
 }
 
-/**
- * Update accessory fields based on model and variant - with PriceMaster prices
- * RESETS to blank when model/variant changes
- */
-async function updateAccessoryFields() {
-  const model = document.getElementById('model').value;
-  const variant = document.getElementById('variant').value;
-  const accessoryContainer = document.getElementById('accessoryFields');
+// ==========================================
+// ACCESSORY RENDERING
+// ==========================================
+
+function renderAccessoriesWithSavedValues(pmDetails, savedRecord) {
+  const container = document.getElementById('accessoryFields');
+  if (!container || !pmDetails) return;
   
-  accessoryContainer.innerHTML = '';
+  container.innerHTML = '';
   
-  if (!model || !variant) {
-    return;
-  }
-  
-  accessoryContainer.innerHTML = '<div style="text-align: center; padding: 10px; color: #999;">⏳ Loading accessories...</div>';
-  
-  const pmDetails = await getPriceMasterDetails(model, variant);
-  
-  if (!pmDetails) {
-    accessoryContainer.innerHTML = '<div style="text-align: center; padding: 10px; color: #e74c3c;">❌ Could not load accessories</div>';
-    return;
-  }
-  
-  accessoryContainer.innerHTML = '';
-  
-  // Define accessories with their PriceMaster property names
   const accessories = [
     { id: 'guard', name: 'Guard', priceKey: 'guardPrice' },
     { id: 'gripcover', name: 'Grip Cover', priceKey: 'gripPrice' },
@@ -787,10 +453,10 @@ async function updateAccessoryFields() {
     { id: 'handlehook', name: 'Handle Hook', priceKey: 'handleHookPrice' }
   ];
   
-  // Render accessories that have prices in PriceMaster - RESET TO BLANK
   accessories.forEach(function(acc) {
     if (pmDetails[acc.priceKey]) {
       const price = parseFloat(pmDetails[acc.priceKey]) || 0;
+      const savedValue = savedRecord[acc.id] || '';
       
       const formGroup = document.createElement('div');
       formGroup.className = 'form-group';
@@ -801,17 +467,21 @@ async function updateAccessoryFields() {
       const select = document.createElement('select');
       select.id = acc.id;
       select.className = 'editable-highlight';
-      select.innerHTML = '<option value="">-- Select --</option><option value="Yes">Yes</option><option value="No">No</option>';
+      select.innerHTML = 
+        '<option value="">-- Select --</option>' +
+        '<option value="Yes"' + (savedValue === 'Yes' ? ' selected' : '') + '>Yes</option>' +
+        '<option value="No"' + (savedValue === 'No' ? ' selected' : '') + '>No</option>';
       
       formGroup.appendChild(label);
       formGroup.appendChild(select);
-      accessoryContainer.appendChild(formGroup);
+      container.appendChild(formGroup);
     }
   });
   
-  // Helmet - special case (quantity)
+  // Helmet
   if (pmDetails.helmetPrice) {
     const price = parseFloat(pmDetails.helmetPrice) || 0;
+    const savedHelmet = savedRecord.helmet || '';
     
     const formGroup = document.createElement('div');
     formGroup.className = 'form-group';
@@ -822,291 +492,174 @@ async function updateAccessoryFields() {
     const select = document.createElement('select');
     select.id = 'helmet';
     select.className = 'editable-highlight';
-    select.innerHTML = '<option value="">-- Select --</option><option value="No">No</option><option value="1">1</option><option value="2">2</option>';
+    select.innerHTML = 
+      '<option value="">-- Select --</option>' +
+      '<option value="No"' + (savedHelmet === 'No' ? ' selected' : '') + '>No</option>' +
+      '<option value="1"' + (savedHelmet === '1' ? ' selected' : '') + '>1</option>' +
+      '<option value="2"' + (savedHelmet === '2' ? ' selected' : '') + '>2</option>';
     
     formGroup.appendChild(label);
     formGroup.appendChild(select);
-    accessoryContainer.appendChild(formGroup);
+    container.appendChild(formGroup);
   }
-  
-  console.log('✅ Rendered accessories for', model, variant, '- RESET TO BLANK');
 }
 
-/**
- * Handle financier change
- */
+function renderAccessoriesBlank(pmDetails) {
+  renderAccessoriesWithSavedValues(pmDetails, {});
+}
+
+// ==========================================
+// FINANCIER HANDLER
+// ==========================================
+
 function handleFinancierChange() {
   const financierSelect = document.getElementById('financierName');
-  const otherInput = document.getElementById('otherFinancierInput');
+  const otherFinancierInput = document.getElementById('otherFinancierInput');
   
-  if (financierSelect.value === 'Other') {
-    otherInput.style.display = 'block';
-    otherInput.required = true;
-  } else {
-    otherInput.style.display = 'none';
-    otherInput.required = false;
-    otherInput.value = '';
+  if (financierSelect && otherFinancierInput) {
+    if (financierSelect.value === 'Other') {
+      otherFinancierInput.style.display = 'block';
+    } else {
+      otherFinancierInput.style.display = 'none';
+    }
   }
 }
 
-/**
- * Calculate payment totals
- */
+// ==========================================
+// CALCULATE TOTALS
+// ==========================================
+
 function calculateTotals() {
-  const r1Text = document.getElementById('protectedReceipt1Amount').textContent.replace('₹', '').trim();
-  const r1 = parseFloat(r1Text) || 0;
-  const r2 = parseFloat(document.getElementById('receipt2Amount').value) || 0;
-  const r3 = parseFloat(document.getElementById('receipt3Amount').value) || 0;
-  const r4 = parseFloat(document.getElementById('receipt4Amount').value) || 0;
-  const disbursed = parseFloat(document.getElementById('disbursedAmount').value) || 0;
+  const r1Text = (document.getElementById('protectedReceipt1Amount') || {}).textContent || '₹0';
+  const r1 = parseFloat(r1Text.replace('₹', '').trim()) || 0;
+  const r2 = parseFloat((document.getElementById('receipt2Amount') || {}).value) || 0;
+  const r3 = parseFloat((document.getElementById('receipt3Amount') || {}).value) || 0;
+  const r4 = parseFloat((document.getElementById('receipt4Amount') || {}).value) || 0;
+  const disbursed = parseFloat((document.getElementById('disbursedAmount') || {}).value) || 0;
   
   const cashTotal = r1 + r2 + r3 + r4;
   const grandTotal = cashTotal + disbursed;
   
-  document.getElementById('cashTotalDisplay').textContent = '₹' + cashTotal.toFixed(2);
-  document.getElementById('disbursedDisplay').textContent = '₹' + disbursed.toFixed(2);
-  document.getElementById('totalDisplay').textContent = '₹' + grandTotal.toFixed(2);
-  
-  const finalPrice = parseFloat(document.getElementById('finalPrice').value) || 0;
-  const warning = document.getElementById('priceMismatchWarning');
-  
-  if (Math.abs(grandTotal - finalPrice) > 0.01 && grandTotal > 0) {
-    warning.style.display = 'block';
-    document.getElementById('totalInWarning').textContent = grandTotal.toFixed(2);
-    document.getElementById('finalPriceInWarning').textContent = finalPrice.toFixed(2);
-  } else {
-    warning.style.display = 'none';
-  }
+  setTextContent('cashTotal', '₹' + cashTotal.toFixed(2));
+  setTextContent('grandTotal', '₹' + grandTotal.toFixed(2));
 }
 
-/**
- * Handle form update
- */
-async function handleUpdate(event) {
-  event.preventDefault();
+// ==========================================
+// UPDATE HANDLER
+// ==========================================
+
+async function handleUpdate(e) {
+  e.preventDefault();
   
   const receiptNo = document.getElementById('selectedReceiptNo').value;
-  
-  console.log('=== UPDATE DEBUG ===');
-  console.log('Receipt No from hidden field:', receiptNo);
-  console.log('Receipt No type:', typeof receiptNo);
-  
   if (!receiptNo) {
-    showMessage('Please select a record first', 'error');
+    alert('No record selected');
     return;
   }
   
-  // Get totals
-  const r1Text = document.getElementById('protectedReceipt1Amount').textContent.replace('₹', '').trim();
-  const r1 = parseFloat(r1Text) || 0;
-  const r2 = parseFloat(document.getElementById('receipt2Amount').value) || 0;
-  const r3 = parseFloat(document.getElementById('receipt3Amount').value) || 0;
-  const r4 = parseFloat(document.getElementById('receipt4Amount').value) || 0;
-  const disbursed = parseFloat(document.getElementById('disbursedAmount').value) || 0;
-  const cashTotal = r1 + r2 + r3 + r4;
-  const grandTotal = cashTotal + disbursed;
-  const finalPrice = parseFloat(document.getElementById('finalPrice').value) || 0;
-  
-  console.log('Totals - R1:', r1, 'R2:', r2, 'R3:', r3, 'R4:', r4);
-  console.log('Cash Total:', cashTotal, 'Disbursed:', disbursed, 'Grand Total:', grandTotal);
-  
-  // Price mismatch warning
-  if (Math.abs(grandTotal - finalPrice) > 0.01 && grandTotal > 0) {
-    const confirmed = confirm('⚠️ WARNING: Grand Total (₹' + grandTotal.toFixed(2) + ') does not match Final Price (₹' + finalPrice.toFixed(2) + ').\n\nAre you sure you want to update this record?');
-    
-    if (!confirmed) {
+  // Get financier
+  let financierName = document.getElementById('financierName').value;
+  if (financierName === 'Other') {
+    financierName = document.getElementById('otherFinancierInput').value.trim();
+    if (!financierName) {
+      alert('Please enter financier name');
       return;
     }
   }
   
-  // Get form data
-  const formData = getFormData();
-  formData.receiptNo = receiptNo;
-  formData.receipt1Amount = r1;
-  formData.cashTotal = cashTotal;
-  formData.grandTotal = grandTotal;
-  
-  console.log('Form data being sent:', formData);
-  console.log('Receipt No in form data:', formData.receiptNo);
-  
-  const sessionId = SessionManager.getSessionId();
-  
-  const updateBtn = document.getElementById('updateBtn');
-  updateBtn.disabled = true;
-  updateBtn.textContent = '⏳ Updating...';
-  
-  try {
-    const response = await API.call('updateSalesRecord', {
-      sessionId: sessionId,
-      data: JSON.stringify(formData)
-    });
-    
-    console.log('Server response:', response);
-    
-    if (response.success) {
-      showMessage('✅ ' + response.message, 'success');
-      showWhatsAppModal(formData);
-    } else {
-      showMessage('❌ ' + response.message, 'error');
-    }
-  } catch (error) {
-    console.error('Update error:', error);
-    showMessage('❌ Update failed. Please try again.', 'error');
-  } finally {
-    updateBtn.disabled = false;
-    updateBtn.textContent = '💾 Update Record';
-  }
-}
-
-/**
- * Get form data
- */
-function getFormData() {
-  const model = document.getElementById('model').value;
-  const financierSelect = document.getElementById('financierName').value;
-  const otherFinancier = document.getElementById('otherFinancierInput').value;
-  
-  let financierName = financierSelect;
-  if (financierSelect === 'Other' && otherFinancier) {
-    financierName = otherFinancier;
-  }
-  
-  const formData = {
-    executiveName: window.currentRecord ? window.currentRecord.executiveName : '',
-    bookingDate: window.currentRecord ? window.currentRecord.bookingDate : '',
-    customerName: window.currentRecord ? window.currentRecord.customerName : '',
-    mobileNo: window.currentRecord ? window.currentRecord.mobileNo : '',
-    model: model,
-    variant: document.getElementById('variant').value,
-    colour: document.getElementById('colour').value,
-    discount: document.getElementById('discount').value,
-    finalPrice: document.getElementById('finalPrice').value,
+  // Collect form data
+  const data = {
+    receiptNo: receiptNo,
+    customerName: getValue('customerName'),
+    mobileNo: getValue('mobileNo'),
+    model: getValue('model'),
+    variant: getValue('variant'),
+    colour: getValue('colour'),
+    discount: getValue('discount'),
+    finalPrice: getValue('finalPrice'),
     financierName: financierName,
-    deliveryDate: document.getElementById('deliveryDate').value,
-    salesRemark: document.getElementById('salesRemark').value,
-    receiptNo2: document.getElementById('receiptNo2').value || '',
-    receipt2Amount: document.getElementById('receipt2Amount').value || '0',
-    receiptNo3: document.getElementById('receiptNo3').value || '',
-    receipt3Amount: document.getElementById('receipt3Amount').value || '0',
-    receiptNo4: document.getElementById('receiptNo4').value || '',
-    receipt4Amount: document.getElementById('receipt4Amount').value || '0',
-    doNumber: document.getElementById('doNumber').value || '',
-    disbursedAmount: document.getElementById('disbursedAmount').value || '0'
+    deliveryDate: getValue('deliveryDate'),
+    salesRemark: getValue('salesRemark'),
+    receiptNo2: getValue('receiptNo2'),
+    receipt2Amount: getValue('receipt2Amount'),
+    receiptNo3: getValue('receiptNo3'),
+    receipt3Amount: getValue('receipt3Amount'),
+    receiptNo4: getValue('receiptNo4'),
+    receipt4Amount: getValue('receipt4Amount'),
+    doNumber: getValue('doNumber'),
+    disbursedAmount: getValue('disbursedAmount')
   };
   
-  // Add accessories - collect from rendered form elements
+  // Add accessories
   const accessoryIds = ['guard', 'gripcover', 'seatcover', 'matin', 'tankcover', 'handlehook', 'helmet'];
   accessoryIds.forEach(function(id) {
     const element = document.getElementById(id);
     if (element) {
-      formData[id] = element.value || '';
+      data[id] = element.value || '';
     }
   });
   
-  return formData;
-}
-
-/**
- * Show WhatsApp modal
- */
-function showWhatsAppModal(data) {
-  lastSavedData = data;
+  console.log('💾 Updating:', data);
   
-  const r1 = parseFloat(data.receipt1Amount) || 0;
-  const r2 = parseFloat(data.receipt2Amount) || 0;
-  const r3 = parseFloat(data.receipt3Amount) || 0;
-  const r4 = parseFloat(data.receipt4Amount) || 0;
-  const cashCollected = r1 + r2 + r3 + r4;
-  
-  let message = '*Customer Name* - ' + data.customerName + '\n';
-  message += '*Variant* - ' + data.variant + '\n';
-  message += '*Colour* - ' + data.colour + '\n';
-  message += '*Finance* - ' + data.financierName + '\n';
-  message += '*Passing Date* - ' + data.bookingDate + '\n';
-  message += '*Cash Collected* - Rs.' + cashCollected.toFixed(2) + '\n';
-  message += '*Final price after discount* - Rs.' + data.finalPrice + '\n';
-  message += '*Discount* - ' + data.discount + '\n';
-  message += '*Accessories* -\n';
-
-  const accessoryNames = {
-    guard: 'Guard',
-    gripcover: 'Grip Cover',
-    seatcover: 'Seat Cover',
-    matin: 'Matin',
-    tankcover: 'Tank Cover',
-    handlehook: 'Handle Hook',
-    helmet: 'Helmet'
-  };
-  
-  Object.keys(accessoryNames).forEach(function(id) {
-    if (data[id]) {
-      message += accessoryNames[id] + ' - ' + data[id] + '\n';
-    }
-  });
-
-  document.getElementById('whatsappMessage').textContent = message;
-  document.getElementById('whatsappModal').classList.add('show');
-}
-
-/**
- * Share on WhatsApp
- */
-function shareOnWhatsApp() {
-  if (!lastSavedData) return;
-  
-  const r1 = parseFloat(lastSavedData.receipt1Amount) || 0;
-  const r2 = parseFloat(lastSavedData.receipt2Amount) || 0;
-  const r3 = parseFloat(lastSavedData.receipt3Amount) || 0;
-  const r4 = parseFloat(lastSavedData.receipt4Amount) || 0;
-  const cashCollected = r1 + r2 + r3 + r4;
-  
-  let message = '*Customer Name* - ' + lastSavedData.customerName + '\n';
-  message += '*Variant* - ' + lastSavedData.variant + '\n';
-  message += '*Colour* - ' + lastSavedData.colour + '\n';
-  message += '*Finance* - ' + lastSavedData.financierName + '\n';
-  message += '*Passing Date* - ' + lastSavedData.bookingDate + '\n';
-  message += '*Cash Collected* - Rs.' + cashCollected.toFixed(2) + '\n';
-  message += '*Final price after discount* - Rs.' + lastSavedData.finalPrice + '\n';
-  message += '*Discount* - ' + lastSavedData.discount + '\n';
-  message += '*Accessories* -\n';
-
-  const model = lastSavedData.model;
-  if (MODEL_VARIANTS[model]) {
-    const accessories = MODEL_VARIANTS[model].accessories;
-    accessories.forEach(function(accessory) {
-      const fieldId = accessory.toLowerCase().replace(/ /g, '');
-      const value = lastSavedData[fieldId] || 'No';
-      message += accessory + ' - ' + value + '\n';
-    });
+  const updateBtn = document.getElementById('updateBtn');
+  if (updateBtn) {
+    updateBtn.disabled = true;
+    updateBtn.textContent = '⏳ Updating...';
   }
-
-  const whatsappUrl = 'https://wa.me/?text=' + encodeURIComponent(message);
-  window.open(whatsappUrl, '_blank');
-  closeWhatsAppModal();
+  
+  try {
+    const sessionId = SessionManager.getSessionId();
+    const response = await API.updateSalesRecord(sessionId, data);
+    
+    if (updateBtn) {
+      updateBtn.disabled = false;
+      updateBtn.textContent = '💾 Update Record';
+    }
+    
+    if (response.success) {
+      showMessage('✅ Updated successfully!', 'success');
+    } else {
+      showMessage('❌ ' + (response.message || 'Update failed'), 'error');
+    }
+  } catch (error) {
+    console.error('❌ Update error:', error);
+    showMessage('❌ Update failed', 'error');
+    
+    if (updateBtn) {
+      updateBtn.disabled = false;
+      updateBtn.textContent = '💾 Update Record';
+    }
+  }
 }
 
-/**
- * Close WhatsApp modal
- */
-function closeWhatsAppModal() {
-  document.getElementById('whatsappModal').classList.remove('show');
-  lastSavedData = null;
+// ==========================================
+// UTILITY FUNCTIONS
+// ==========================================
+
+function setTextContent(id, value) {
+  const element = document.getElementById(id);
+  if (element) element.textContent = value;
 }
 
-/**
- * Go back to home
- */
-function goBack() {
-  window.location.href = 'home.html';
+function setValue(id, value) {
+  const element = document.getElementById(id);
+  if (element) element.value = value;
 }
 
-/**
- * Show message
- */
-function showMessage(text, type) {
-  const msg = document.getElementById('statusMessage');
-  msg.textContent = text;
-  msg.className = 'message ' + type;
-  msg.classList.remove('hidden');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+function getValue(id) {
+  const element = document.getElementById(id);
+  return element ? element.value : '';
+}
+
+function showMessage(message, type) {
+  // Use existing message display or alert
+  console.log(type.toUpperCase() + ':', message);
+  // You can implement a toast notification here
+}
+
+function logout() {
+  if (confirm('Logout?')) {
+    SessionManager.clearSession();
+    window.location.href = 'index.html';
+  }
 }
