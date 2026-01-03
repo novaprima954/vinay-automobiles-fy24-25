@@ -465,6 +465,11 @@ function renderAccessoriesWithSavedValues(pmDetails, savedRecord) {
   const container = document.getElementById('accessoryFields');
   if (!container || !pmDetails) return;
   
+  console.log('🎨 Rendering accessories with saved values');
+  console.log('   Saved record:', savedRecord);
+  console.log('   Helmet from record:', savedRecord.helmet);
+  console.log('   Helmet from window:', window.savedHelmetValue);
+  
   container.innerHTML = '';
   
   const accessories = [
@@ -565,8 +570,10 @@ function calculateTotals() {
   
   console.log('💰 Totals:', {r1, r2, r3, r4, disbursed, cashTotal, grandTotal});
   
-  setTextContent('cashTotal', '₹' + cashTotal.toFixed(2));
-  setTextContent('grandTotal', '₹' + grandTotal.toFixed(2));
+  // Update display elements (correct IDs from HTML)
+  setTextContent('cashTotalDisplay', '₹' + cashTotal.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+  setTextContent('disbursedDisplay', '₹' + disbursed.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+  setTextContent('totalDisplay', '₹' + grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
   
   // Store in hidden fields for form submission
   if (!document.getElementById('hiddenCashTotal')) {
@@ -584,6 +591,8 @@ function calculateTotals() {
   
   document.getElementById('hiddenCashTotal').value = cashTotal.toFixed(2);
   document.getElementById('hiddenGrandTotal').value = grandTotal.toFixed(2);
+  
+  console.log('✅ Updated totals display');
 }
 
 // ==========================================
