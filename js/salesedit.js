@@ -306,9 +306,18 @@ async function loadRecord(record) {
     const sessionId = SessionManager.getSessionId();
     const response = await API.getRecordByReceiptNo(sessionId, record.receiptNo);
     
+    console.log('📦 Full record response:', response);
+    
     if (response.success && response.record) {
       console.log('✅ Got full record from API');
       fullRecord = response.record;
+      
+      // Log specific fields we care about
+      console.log('🔍 Key fields from API:');
+      console.log('   bookingDate:', fullRecord.bookingDate);
+      console.log('   helmet:', fullRecord.helmet);
+      console.log('   guard:', fullRecord.guard);
+      console.log('   All field keys:', Object.keys(fullRecord));
     } else {
       console.log('⚠️ Using search result data (limited fields):', response.message);
     }
@@ -334,7 +343,17 @@ async function loadRecord(record) {
   // PROTECTED FIELDS
   setTextContent('protectedReceiptNo', record.receiptNo || '-');
   setTextContent('protectedExecutiveName', record.executiveName || record.executive || '-');
-  setTextContent('protectedBookingDate', record.bookingDate || record.date || '-');
+  
+  // Format booking date properly
+  let bookingDateDisplay = '-';
+  if (record.bookingDate) {
+    bookingDateDisplay = record.bookingDate;
+  } else if (record.date) {
+    bookingDateDisplay = record.date;
+  }
+  console.log('📅 Booking date:', {raw: record.bookingDate, date: record.date, display: bookingDateDisplay});
+  setTextContent('protectedBookingDate', bookingDateDisplay);
+  
   setTextContent('protectedReceiptNo1', record.receiptNo1 || '-');
   setTextContent('protectedReceipt1Amount', record.receipt1Amount ? '₹' + record.receipt1Amount : '-');
   
@@ -350,10 +369,19 @@ async function loadRecord(record) {
     
     setValue('variant', record.variant || '');
     
+    // Store the full record globally for accessory rendering
+    window.currentFullRecord = record;
+    
     // Render accessories with saved values
     if (record.variant) {
       const pmDetails = await getPriceMasterDetails(record.model, record.variant);
       if (pmDetails) {
+        console.log('📦 Full record data:', {
+          helmet: record.helmet,
+          guard: record.guard,
+          gripcover: record.gripcover,
+          seatcover: record.seatcover
+        });
         renderAccessoriesWithSavedValues(pmDetails, record);
       }
     }
@@ -674,6 +702,9 @@ async function handleUpdate(e) {
     
     if (response.success) {
       showMessage('✅ Updated successfully!', 'success');
+      
+      // Show WhatsApp message modal
+      showWhatsAppModal(data);
     } else {
       showMessage('❌ ' + (response.message || 'Update failed'), 'error');
     }
@@ -717,5 +748,134 @@ function logout() {
   if (confirm('Logout?')) {
     SessionManager.clearSession();
     window.location.href = 'index.html';
+  }
+}
+
+// ==========================================
+// WHATSAPP MESSAGE
+// ==========================================
+
+function showWhatsAppModal(data) {
+  // Create modal HTML
+  const modalHTML = `
+    <div id="whatsappModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center;">
+      <div style="background: white; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
+        <h3 style="margin-top: 0; color: #25D366;">📱 Send WhatsApp Message</h3>
+        
+        <div style="background: #f0f0f0; padding: 15px; border-radius: 10px; margin-bottom: 20px; font-family: monospace; white-space: pre-wrap; font-size: 13px;" id="whatsappMessagePreview"></div>
+        
+        <div style="display: flex; gap: 10px;">
+          <button onclick="sendWhatsAppMessage()" style="flex: 1; background: #25D366; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-size: 16px;">
+            📤 Send WhatsApp
+          </button>
+          <button onclick="closeWhatsAppModal()" style="flex: 1; background: #6c757d; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-size: 16px;">
+            ✖️ Close
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Add modal to page
+  const modalDiv = document.createElement('div');
+  modalDiv.innerHTML = modalHTML;
+  document.body.appendChild(modalDiv.firstElementChild);
+  
+  // Build message
+  const record = window.currentFullRecord || {};
+  
+  let message = '🏍️ *VINAY AUTOMOBILES - BOOKING UPDATE*\n\n';
+  message += '📋 Receipt No: ' + (data.receiptNo || '') + '\n';
+  message += '👤 Customer: ' + (data.customerName || '') + '\n';
+  message += '📞 Mobile: ' + (data.mobileNo || '') + '\n';
+  message += '🏍️ Model: ' + (data.model || '') + ' ' + (data.variant || '') + '\n';
+  message += '🎨 Colour: ' + (data.colour || '') + '\n\n';
+  
+  message += '💰 *PAYMENT DETAILS*\n';
+  message += '💵 Final Price: ₹' + (data.finalPrice || '0') + '\n';
+  message += '🏦 Financier: ' + (data.financierName || '') + '\n';
+  message += '📅 Delivery Date: ' + (data.deliveryDate || '') + '\n\n';
+  
+  // Accessories
+  const accessoryNames = {
+    guard: '🛡️ Guard',
+    gripcover: '🤲 Grip Cover',
+    seatcover: '💺 Seat Cover',
+    matin: '🧽 Matin',
+    tankcover: '⛽ Tank Cover',
+    handlehook: '🪝 Handle Hook',
+    helmet: '🪖 Helmet'
+  };
+  
+  let hasAccessories = false;
+  let accessoryText = '';
+  
+  Object.keys(accessoryNames).forEach(function(key) {
+    if (data[key] && data[key] !== 'No' && data[key] !== '') {
+      hasAccessories = true;
+      accessoryText += accessoryNames[key] + ': ' + data[key] + '\n';
+    }
+  });
+  
+  if (hasAccessories) {
+    message += '🔧 *ACCESSORIES*\n' + accessoryText + '\n';
+  }
+  
+  // Payment summary
+  const cashTotal = parseFloat(getValue('hiddenCashTotal') || '0');
+  const grandTotal = parseFloat(getValue('hiddenGrandTotal') || '0');
+  
+  message += '💳 *PAYMENT SUMMARY*\n';
+  message += 'Cash Total: ₹' + cashTotal.toLocaleString('en-IN') + '\n';
+  message += 'Grand Total: ₹' + grandTotal.toLocaleString('en-IN') + '\n\n';
+  
+  if (data.salesRemark) {
+    message += '📝 Remarks: ' + data.salesRemark + '\n\n';
+  }
+  
+  message += '✅ Record updated successfully!\n\n';
+  message += '_Thank you for choosing Vinay Automobiles_';
+  
+  // Display message
+  document.getElementById('whatsappMessagePreview').textContent = message;
+  
+  // Store for sending
+  window.whatsappMessage = message;
+  window.whatsappMobile = data.mobileNo;
+}
+
+function sendWhatsAppMessage() {
+  const mobile = window.whatsappMobile;
+  const message = window.whatsappMessage;
+  
+  if (!mobile) {
+    alert('Mobile number not found!');
+    return;
+  }
+  
+  // Clean mobile number (remove spaces, dashes, etc.)
+  const cleanMobile = mobile.toString().replace(/\D/g, '');
+  
+  // Format for India (+91)
+  let formattedMobile = cleanMobile;
+  if (cleanMobile.length === 10) {
+    formattedMobile = '91' + cleanMobile;
+  }
+  
+  // Encode message for URL
+  const encodedMessage = encodeURIComponent(message);
+  
+  // Open WhatsApp
+  const whatsappURL = 'https://wa.me/' + formattedMobile + '?text=' + encodedMessage;
+  window.open(whatsappURL, '_blank');
+  
+  // Close modal after short delay
+  setTimeout(closeWhatsAppModal, 1000);
+}
+
+function closeWhatsAppModal() {
+  const modal = document.getElementById('whatsappModal');
+  if (modal) {
+    modal.remove();
   }
 }
