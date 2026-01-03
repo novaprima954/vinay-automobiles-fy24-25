@@ -781,60 +781,39 @@ function showWhatsAppModal(data) {
   modalDiv.innerHTML = modalHTML;
   document.body.appendChild(modalDiv.firstElementChild);
   
-  // Build message
+  // Build message in requested format
   const record = window.currentFullRecord || {};
   
-  let message = '🏍️ *VINAY AUTOMOBILES - BOOKING UPDATE*\n\n';
-  message += '📋 Receipt No: ' + (data.receiptNo || '') + '\n';
-  message += '👤 Customer: ' + (data.customerName || '') + '\n';
-  message += '📞 Mobile: ' + (data.mobileNo || '') + '\n';
-  message += '🏍️ Model: ' + (data.model || '') + ' ' + (data.variant || '') + '\n';
-  message += '🎨 Colour: ' + (data.colour || '') + '\n\n';
+  let message = '*Customer Name* - ' + (data.customerName || '') + '\n';
+  message += '*Variant* - ' + (data.model || '') + ' - ' + (data.variant || '') + '\n';
+  message += '*Colour* - ' + (data.colour || '') + '\n';
+  message += '*Finance* - ' + (data.financierName || '') + '\n';
+  message += '*Passing Date* - ' + (data.deliveryDate || '') + '\n';
   
-  message += '💰 *PAYMENT DETAILS*\n';
-  message += '💵 Final Price: ₹' + (data.finalPrice || '0') + '\n';
-  message += '🏦 Financier: ' + (data.financierName || '') + '\n';
-  message += '📅 Delivery Date: ' + (data.deliveryDate || '') + '\n\n';
+  const cashTotal = parseFloat(getValue('hiddenCashTotal') || '0');
+  const finalPrice = parseFloat(data.finalPrice || '0');
+  
+  message += '*Cash Collected* - Rs.' + cashTotal.toFixed(2) + '\n';
+  message += '*Final price after discount* - Rs.' + finalPrice + '\n';
+  message += '*Discount* - ' + (data.discount || '0') + '\n';
   
   // Accessories
-  const accessoryNames = {
-    guard: '🛡️ Guard',
-    gripcover: '🤲 Grip Cover',
-    seatcover: '💺 Seat Cover',
-    matin: '🧽 Matin',
-    tankcover: '⛽ Tank Cover',
-    handlehook: '🪝 Handle Hook',
-    helmet: '🪖 Helmet'
-  };
+  message += '*Accessories* -\n';
   
-  let hasAccessories = false;
-  let accessoryText = '';
+  const accessoryList = [
+    {key: 'guard', name: 'Guard'},
+    {key: 'gripcover', name: 'Grip Cover'},
+    {key: 'seatcover', name: 'Seat Cover'},
+    {key: 'matin', name: 'Matin'},
+    {key: 'tankcover', name: 'Tank Cover'},
+    {key: 'handlehook', name: 'Handle Hook'},
+    {key: 'helmet', name: 'Helmet'}
+  ];
   
-  Object.keys(accessoryNames).forEach(function(key) {
-    if (data[key] && data[key] !== 'No' && data[key] !== '') {
-      hasAccessories = true;
-      accessoryText += accessoryNames[key] + ': ' + data[key] + '\n';
-    }
+  accessoryList.forEach(function(acc) {
+    const value = data[acc.key] || 'No';
+    message += acc.name + ' - ' + value + '\n';
   });
-  
-  if (hasAccessories) {
-    message += '🔧 *ACCESSORIES*\n' + accessoryText + '\n';
-  }
-  
-  // Payment summary
-  const cashTotal = parseFloat(getValue('hiddenCashTotal') || '0');
-  const grandTotal = parseFloat(getValue('hiddenGrandTotal') || '0');
-  
-  message += '💳 *PAYMENT SUMMARY*\n';
-  message += 'Cash Total: ₹' + cashTotal.toLocaleString('en-IN') + '\n';
-  message += 'Grand Total: ₹' + grandTotal.toLocaleString('en-IN') + '\n\n';
-  
-  if (data.salesRemark) {
-    message += '📝 Remarks: ' + data.salesRemark + '\n\n';
-  }
-  
-  message += '✅ Record updated successfully!\n\n';
-  message += '_Thank you for choosing Vinay Automobiles_';
   
   // Display message
   document.getElementById('whatsappMessagePreview').textContent = message;
