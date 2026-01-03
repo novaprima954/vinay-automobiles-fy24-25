@@ -233,22 +233,24 @@ async function searchRecords() {
   console.log('🔍 Searching:', searchBy, '=', searchValue);
   
   try {
-    const response = await API.searchViewRecords(searchBy, searchValue, null, null, null, null);
+    // Use searchRecordsForEdit - returns ALL fields and is much faster
+    const response = await API.call('searchRecordsForEdit', {
+      sessionId: SessionManager.getSessionId(),
+      searchBy: searchBy,
+      searchValue: searchValue,
+      userRole: user.role,
+      userName: user.name
+    });
     
     console.log('📊 Search results:', response.results ? response.results.length : 0);
     
     if (response.success && response.results) {
-      // Filter: Remove Account Check = "Yes"
-      let filteredResults = response.results.filter(function(record) {
-        const accountCheck = (record.accountCheck || '').trim();
-        return accountCheck !== 'Yes';
-      });
+      // Already filtered by backend - no need to filter Account Check
+      console.log('✅ Editable records:', response.results.length);
       
-      console.log('✅ Editable records:', filteredResults.length);
-      
-      if (filteredResults.length > 0) {
-        displaySearchResults(filteredResults);
-        showMessage('Found ' + filteredResults.length + ' editable record(s)', 'success');
+      if (response.results.length > 0) {
+        displaySearchResults(response.results);
+        showMessage('Found ' + response.results.length + ' editable record(s)', 'success');
       } else {
         showMessage('No editable records found', 'error');
         const resultsSection = document.getElementById('resultsSection');
@@ -299,38 +301,6 @@ function displaySearchResults(results) {
 async function loadRecord(record) {
   console.log('📝 Loading record:', record);
   
-  // Try to fetch FULL record first
-  let fullRecord = record;
-  
-  try {
-    const sessionId = SessionManager.getSessionId();
-    const response = await API.getRecordByReceiptNo(sessionId, record.receiptNo);
-    
-    console.log('📦 Full record response:', response);
-    
-    if (response.success && response.record) {
-      console.log('✅ Got full record from API');
-      fullRecord = response.record;
-      
-      // Log specific fields we care about
-      console.log('🔍 Key fields from API:');
-      console.log('   bookingDate:', fullRecord.bookingDate);
-      console.log('   helmet:', fullRecord.helmet);
-      console.log('   guard:', fullRecord.guard);
-      console.log('   All field keys:', Object.keys(fullRecord));
-    } else {
-      console.log('⚠️ Using search result data (limited fields):', response.message);
-    }
-  } catch (error) {
-    console.log('⚠️ Using search result data (API blocked)');
-  }
-  
-  // Use fullRecord (either from API or search result)
-  record = fullRecord;
-  
-  // ACCESS CONTROL: Sales users can only edit their own records
-  // Since search results don't have executiveName, we check when saving
-  
   // Store selected receipt number
   const selectedReceiptNoInput = document.getElementById('selectedReceiptNo');
   if (selectedReceiptNoInput) {
@@ -339,6 +309,7 @@ async function loadRecord(record) {
   
   // Store original record
   window.currentRecord = record;
+  window.currentFullRecord = record;
   
   // PROTECTED FIELDS
   setTextContent('protectedReceiptNo', record.receiptNo || '-');
@@ -357,7 +328,7 @@ async function loadRecord(record) {
   setTextContent('protectedReceiptNo1', record.receiptNo1 || '-');
   setTextContent('protectedReceipt1Amount', record.receipt1Amount ? '₹' + record.receipt1Amount : '-');
   
-  // EDITABLE FIELDS - From search results
+  // EDITABLE FIELDS - From record
   setValue('customerName', record.customerName || '');
   setValue('mobileNo', record.mobileNo || '');
   setValue('model', record.model || '');
@@ -802,22 +773,28 @@ function showWhatsAppModal(data) {
   message += '*Final price after discount* - Rs.' + finalPrice + '\n';
   message += '*Discount* - ' + (data.discount || '0') + '\n';
   
-  // Accessories
+  // Get PriceMaster details to check which accessories are available
+  const pmCache = priceMasterCache[data.model + '|' + data.variant] || {};
+  
+  // Accessories - Only show ones that have prices in PriceMaster
   message += '*Accessories* -\n';
   
   const accessoryList = [
-    {key: 'guard', name: 'Guard'},
-    {key: 'gripcover', name: 'Grip Cover'},
-    {key: 'seatcover', name: 'Seat Cover'},
-    {key: 'matin', name: 'Matin'},
-    {key: 'tankcover', name: 'Tank Cover'},
-    {key: 'handlehook', name: 'Handle Hook'},
-    {key: 'helmet', name: 'Helmet'}
+    {key: 'guard', name: 'Guard', priceKey: 'guardPrice'},
+    {key: 'gripcover', name: 'Grip Cover', priceKey: 'gripPrice'},
+    {key: 'seatcover', name: 'Seat Cover', priceKey: 'seatCoverPrice'},
+    {key: 'matin', name: 'Matin', priceKey: 'matinPrice'},
+    {key: 'tankcover', name: 'Tank Cover', priceKey: 'tankCoverPrice'},
+    {key: 'handlehook', name: 'Handle Hook', priceKey: 'handleHookPrice'},
+    {key: 'helmet', name: 'Helmet', priceKey: 'helmetPrice'}
   ];
   
+  // Only show accessories that exist in PriceMaster for this model
   accessoryList.forEach(function(acc) {
-    const value = data[acc.key] || 'No';
-    message += acc.name + ' - ' + value + '\n';
+    if (pmCache[acc.priceKey]) {
+      const value = data[acc.key] || 'No';
+      message += acc.name + ' - ' + value + '\n';
+    }
   });
   
   // Display message
