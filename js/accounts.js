@@ -225,14 +225,21 @@ async function filterByStatus(status) {
 function handleSearchByChange() {
   const searchBy = document.getElementById('searchBy').value;
   const searchValueSection = document.getElementById('searchValueSection');
+  const executiveDropdownSection = document.getElementById('executiveDropdownSection');
   const dateFilterSection = document.getElementById('dateFilterSection');
   
-  if (searchBy === 'Booking Date') {
-    if (searchValueSection) searchValueSection.style.display = 'none';
+  // Hide all special sections first
+  if (searchValueSection) searchValueSection.style.display = 'none';
+  if (executiveDropdownSection) executiveDropdownSection.style.display = 'none';
+  if (dateFilterSection) dateFilterSection.style.display = 'none';
+  
+  // Show appropriate section
+  if (searchBy === 'Executive Name') {
+    if (executiveDropdownSection) executiveDropdownSection.style.display = 'block';
+  } else if (searchBy === 'Booking Date') {
     if (dateFilterSection) dateFilterSection.style.display = 'block';
   } else {
     if (searchValueSection) searchValueSection.style.display = 'block';
-    if (dateFilterSection) dateFilterSection.style.display = 'none';
   }
 }
 
@@ -269,7 +276,13 @@ async function searchRecords() {
   let fromDate = null;
   let toDate = null;
   
-  if (searchBy === 'Booking Date') {
+  if (searchBy === 'Executive Name') {
+    searchValue = document.getElementById('executiveDropdown').value;
+    if (!searchValue) {
+      showMessage('Please select an executive', 'error');
+      return;
+    }
+  } else if (searchBy === 'Booking Date') {
     dateFilter = document.getElementById('dateFilter').value;
     
     if (dateFilter === 'single') {
@@ -1069,6 +1082,7 @@ async function exportToExcel() {
   
   const params = window.lastSearchParams || {};
   const month = document.getElementById('monthFilter').value;
+  const sessionId = SessionManager.getSessionId();
   
   let filename = 'Accounts_Export_';
   if (params.searchBy === 'Booking Date' && params.dateFilter === 'range') {
@@ -1078,7 +1092,27 @@ async function exportToExcel() {
   }
   filename += '.csv';
   
-  exportResultsToCSV(window.lastSearchResults, filename);
+  console.log('Exporting', window.lastSearchResults.length, 'search results');
+  
+  // Fetch full records for each result
+  const fullRecords = [];
+  for (let i = 0; i < window.lastSearchResults.length; i++) {
+    const receiptNo = window.lastSearchResults[i].receiptNo;
+    try {
+      const fullRecord = await API.getRecordByReceiptNo(sessionId, receiptNo);
+      if (fullRecord.success && fullRecord.record) {
+        fullRecords.push(fullRecord.record);
+      }
+    } catch (err) {
+      console.log('Could not get full record for:', receiptNo);
+    }
+  }
+  
+  if (fullRecords.length > 0) {
+    exportResultsToCSV(fullRecords, filename);
+  } else {
+    showMessage('No complete data to export', 'error');
+  }
 }
 
 /**
@@ -1088,15 +1122,35 @@ async function exportCardData(status) {
   const month = document.getElementById('monthFilter').value;
   const sessionId = SessionManager.getSessionId();
   
+  console.log('Exporting card data for status:', status, 'month:', month);
+  
   try {
-    const response = await API.exportAccountsToCSV(sessionId, month, status);
+    // Use getAccountsByStatus to get the records (same as card click)
+    const response = await API.getAccountsByStatus(sessionId, month, status);
     
-    if (response.success) {
-      const filename = 'Accounts_' + status.toUpperCase() + '_' + month + '.csv';
-      downloadCSV(response.csv, filename);
-      showMessage('Exported successfully', 'success');
+    if (response.success && response.results) {
+      // Get full record data for each receipt
+      const fullRecords = [];
+      for (let i = 0; i < response.results.length; i++) {
+        const receiptNo = response.results[i].receiptNo;
+        try {
+          const fullRecord = await API.getRecordByReceiptNo(sessionId, receiptNo);
+          if (fullRecord.success && fullRecord.record) {
+            fullRecords.push(fullRecord.record);
+          }
+        } catch (err) {
+          console.log('Could not get full record for:', receiptNo);
+        }
+      }
+      
+      if (fullRecords.length > 0) {
+        const filename = 'Accounts_' + status.toUpperCase() + '_' + month + '.csv';
+        exportResultsToCSV(fullRecords, filename);
+      } else {
+        showMessage('No data to export', 'error');
+      }
     } else {
-      showMessage('Export failed: ' + response.message, 'error');
+      showMessage('Export failed: ' + (response.message || 'No records found'), 'error');
     }
   } catch (error) {
     console.error('Export error:', error);

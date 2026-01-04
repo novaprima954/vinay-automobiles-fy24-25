@@ -464,21 +464,21 @@
       </div>
       
       <div class="dashboard-cards">
-        <div class="stat-card yes" onclick="filterByStatus('Yes')">
+        <div class="stat-card yes" onclick="filterByStatus('yes')">
           <div class="card-icon">✅</div>
           <div class="card-count" id="countYes">0</div>
           <div class="card-label">Account Check: YES</div>
           <button class="card-export-btn" onclick="event.stopPropagation(); exportCardData('yes')" title="Export">📊</button>
         </div>
         
-        <div class="stat-card no" onclick="filterByStatus('No')">
+        <div class="stat-card no" onclick="filterByStatus('no')">
           <div class="card-icon">⚠️</div>
           <div class="card-count" id="countNo">0</div>
           <div class="card-label">Account Check: NO</div>
           <button class="card-export-btn" onclick="event.stopPropagation(); exportCardData('no')" title="Export">📊</button>
         </div>
         
-        <div class="stat-card blank" onclick="filterByStatus('')">
+        <div class="stat-card blank" onclick="filterByStatus('blank')">
           <div class="card-icon">❌</div>
           <div class="card-count" id="countBlank">0</div>
           <div class="card-label">Account Check: BLANK</div>
@@ -510,6 +510,18 @@
         <div class="form-group" id="searchValueSection">
           <label>Search For</label>
           <input type="text" id="searchValue" placeholder="Enter search term...">
+        </div>
+        
+        <!-- Executive Name Dropdown -->
+        <div class="form-group" id="executiveDropdownSection" style="display: none;">
+          <label>Executive Name</label>
+          <select id="executiveDropdown">
+            <option value="">-- Select Executive --</option>
+            <option value="Sagar">Sagar</option>
+            <option value="Punam">Punam</option>
+            <option value="Manisha">Manisha</option>
+            <option value="Hemant">Hemant</option>
+          </select>
         </div>
         
         <!-- Date Filter Section (for Booking Date) -->
