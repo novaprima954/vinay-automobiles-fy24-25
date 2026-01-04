@@ -625,6 +625,7 @@ async function handleUpdate(e) {
   // Collect form data
   const data = {
     receiptNo: receiptNo,
+    bookingDate: window.currentFullRecord?.bookingDate || window.currentRecord?.bookingDate || '',  // Preserve booking date from loaded record
     customerName: getValue('customerName'),
     mobileNo: getValue('mobileNo'),
     model: getValue('model'),
@@ -657,6 +658,8 @@ async function handleUpdate(e) {
   });
   
   console.log('💾 Updating:', data);
+  console.log('📅 Booking Date being sent:', data.bookingDate);
+  console.log('📦 Current record booking date:', window.currentFullRecord?.bookingDate || window.currentRecord?.bookingDate);
   
   const updateBtn = document.getElementById('updateBtn');
   if (updateBtn) {
