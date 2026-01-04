@@ -255,42 +255,7 @@ function handleDateFilterChange() {
     if (dateRangeSection) dateRangeSection.style.display = 'none';
   }
 }
-  if (searchBy === 'Booking Date' && dateFilterSection) {
-    if (valueSection) valueSection.style.display = 'none';
-    dateFilterSection.style.display = 'block';
-  } else {
-    if (valueSection) valueSection.style.display = 'block';
-    if (dateFilterSection) dateFilterSection.style.display = 'none';
-  }
-}
 
-/**
- * Handle date filter change
- */
-function handleDateFilterChange() {
-  const dateFilter = document.getElementById('dateFilter');
-  if (!dateFilter) return;
-  
-  const singleDateSection = document.getElementById('singleDateSection');
-  const dateRangeFromSection = document.getElementById('dateRangeFromSection');
-  const dateRangeToSection = document.getElementById('dateRangeToSection');
-  
-  if (!singleDateSection) return;
-  
-  if (dateFilter.value === 'Single Date') {
-    singleDateSection.style.display = 'block';
-    if (dateRangeFromSection) dateRangeFromSection.style.display = 'none';
-    if (dateRangeToSection) dateRangeToSection.style.display = 'none';
-  } else if (dateFilter.value === 'Date Range') {
-    singleDateSection.style.display = 'none';
-    if (dateRangeFromSection) dateRangeFromSection.style.display = 'block';
-    if (dateRangeToSection) dateRangeToSection.style.display = 'block';
-  }
-}
-
-/**
- * Search records
- */
 /**
  * Search records with date filter support
  */
