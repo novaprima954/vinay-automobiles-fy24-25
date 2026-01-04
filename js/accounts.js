@@ -725,7 +725,9 @@ async function handleUpdate(e) {
   
   const data = {
     receiptNo: currentReceiptNo,
-    // variant and colour are read-only (from sales)
+    // Preserve variant and colour (read-only but must be sent to prevent deletion)
+    variant: document.getElementById('protectedVariant')?.textContent || '',
+    colour: document.getElementById('protectedColour')?.textContent || '',
     discount: document.getElementById('discount').value,
     finalPrice: document.getElementById('finalPrice').value,
     financierName: financierValue,
@@ -743,13 +745,27 @@ async function handleUpdate(e) {
     disbursedAmount: document.getElementById('disbursedAmount').value
   };
   
-  // Add finance commission if field exists
+  // Add finance commission (Column BD)
   const financeComm = document.getElementById('financeComm');
   if (financeComm) {
-    data.financeComm = financeComm.value;
+    data.financeComm = financeComm.value || '';
   }
   
-  console.log('Updating record:', data);
+  // Add price verification fields if they exist
+  // These are set by the "Calculate from PriceMaster" button
+  if (window.lastPriceVerification) {
+    data.priceMaster = window.lastPriceVerification.calculatedTotal || '';  // Column BE
+    data.priceMatched = window.lastPriceVerification.matched ? 'Yes' : 'No';  // Column BF
+  }
+  
+  console.log('💾 Updating account record:');
+  console.log('   Receipt No:', data.receiptNo);
+  console.log('   Variant:', data.variant);
+  console.log('   Colour:', data.colour);
+  console.log('   Finance Commission:', data.financeComm);
+  console.log('   Price Master:', data.priceMaster);
+  console.log('   Price Matched:', data.priceMatched);
+  console.log('   Full data:', data);
   
   try {
     const updateBtn = document.getElementById('updateBtn');
@@ -1053,11 +1069,19 @@ async function savePriceVerification(calculatedTotal, matched) {
     return;
   }
   
+  // Store verification data for use in handleUpdate
+  window.lastPriceVerification = {
+    calculatedTotal: calculatedTotal,
+    matched: matched
+  };
+  
+  console.log('💾 Stored price verification:', window.lastPriceVerification);
+  
   try {
     const response = await API.savePriceVerification(currentReceiptNo, calculatedTotal, matched);
     
     if (response.success) {
-      alert('✅ Price verification saved successfully!');
+      alert('✅ Price verification saved successfully!\n\nRemember to click "Update Record" to save all changes.');
     } else {
       alert('❌ ' + response.message);
     }
