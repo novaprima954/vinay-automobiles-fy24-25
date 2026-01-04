@@ -916,24 +916,26 @@ async function calculatePrice() {
       }
     }
     
-    // Get entered total (Final Price - Discount per Q2)
+    // Get entered values
     const finalPrice = parseFloat(document.getElementById('finalPrice').value) || 0;
     const discount = parseFloat(document.getElementById('discount').value) || 0;
-    const enteredTotal = finalPrice - discount;
+    
+    // Calculate: (PriceMaster Total - Discount) should equal Final Price
+    const afterDiscount = total - discount;
     
     console.log('💰 Price Comparison:');
-    console.log('   Calculated Total:', total);
-    console.log('   Final Price:', finalPrice);
+    console.log('   Calculated Total (PriceMaster):', total);
     console.log('   Discount:', discount);
-    console.log('   Entered Total (Final - Discount):', enteredTotal);
+    console.log('   After Discount:', afterDiscount);
+    console.log('   Final Price (Entered):', finalPrice);
     
     // Display breakdown
     displayPriceBreakdown({
       breakdown: breakdownData,
       calculatedTotal: Math.round(total),
-      enteredTotal: enteredTotal,
-      finalPrice: finalPrice,
-      discount: discount
+      discount: discount,
+      afterDiscount: Math.round(afterDiscount),
+      finalPrice: finalPrice
     });
     
   } catch (error) {
@@ -948,10 +950,10 @@ async function calculatePrice() {
 function displayPriceBreakdown(calculation) {
   const breakdown = calculation.breakdown;
   const calculatedTotal = calculation.calculatedTotal;
-  const finalPrice = calculation.finalPrice || 0;
   const discount = calculation.discount || 0;
-  const enteredTotal = calculation.enteredTotal || 0;
-  const matched = Math.abs(calculatedTotal - enteredTotal) < 1;
+  const afterDiscount = calculation.afterDiscount || 0;
+  const finalPrice = calculation.finalPrice || 0;
+  const matched = Math.abs(afterDiscount - finalPrice) < 1;
   
   let html = '<div style="background: white; padding: 15px; border-radius: 8px;">';
   
@@ -987,35 +989,40 @@ function displayPriceBreakdown(calculation) {
   
   html += '</div>';
   
-  // Totals comparison
+  // Totals comparison - Q3 Option B & Q4 Display Format
   html += '<div style="margin-top: 15px; padding: 15px; background: ' + (matched ? '#d4edda' : '#fff3cd') + '; border-radius: 8px; border: 2px solid ' + (matched ? '#28a745' : '#ffc107') + ';">';
+  
+  // Calculated Total
   html += '<div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; margin-bottom: 8px;">';
   html += `<span>CALCULATED TOTAL:</span><span style="color: #667eea;">₹${calculatedTotal.toLocaleString()}</span></div>`;
   
-  // Show Final Price and Discount breakdown
-  html += '<div style="font-size: 13px; color: #666; margin-bottom: 8px; padding: 8px; background: #f8f9fa; border-radius: 5px;">';
-  html += `<div style="display: flex; justify-content: space-between; margin-bottom: 3px;">`;
-  html += `<span>Final Price:</span><span style="font-weight: 600;">₹${finalPrice.toLocaleString()}</span></div>`;
-  html += `<div style="display: flex; justify-content: space-between;">`;
-  html += `<span>Discount:</span><span style="font-weight: 600; color: #e74c3c;">- ₹${discount.toLocaleString()}</span></div>`;
-  html += '</div>';
-  
+  // Discount
   html += '<div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; margin-bottom: 8px;">';
-  html += `<span>ENTERED TOTAL (Final - Discount):</span><span>₹${enteredTotal.toLocaleString()}</span></div>`;
+  html += `<span>DISCOUNT:</span><span style="color: #e74c3c;">- ₹${discount.toLocaleString()}</span></div>`;
+  
+  // After Discount (Calculated - Discount)
+  html += '<div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 2px solid ' + (matched ? '#28a74550' : '#ffc10750') + ';">';
+  html += `<span>AFTER DISCOUNT:</span><span style="color: #667eea;">₹${afterDiscount.toLocaleString()}</span></div>`;
+  
+  // Final Price (Entered)
+  html += '<div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; margin-bottom: 8px;">';
+  html += `<span>FINAL PRICE (Entered):</span><span>₹${finalPrice.toLocaleString()}</span></div>`;
+  
+  // Result
   html += '<div style="text-align: center; font-size: 18px; font-weight: 700; margin-top: 10px; padding-top: 10px; border-top: 2px solid ' + (matched ? '#28a74550' : '#ffc10750') + ';">';
   
   if (matched) {
     html += '<span style="color: #28a745;">✅ MATCHED</span>';
   } else {
-    const diff = calculatedTotal - enteredTotal;
+    const diff = afterDiscount - finalPrice;
     html += '<span style="color: #ffc107;">⚠️ MISMATCH</span>';
-    html += `<div style="font-size: 13px; margin-top: 5px; color: #666;">Difference: ₹${Math.abs(diff).toLocaleString()} ${diff > 0 ? '(Undercharged)' : '(Overcharged)'}</div>`;
+    html += `<div style="font-size: 13px; margin-top: 5px; color: #666;">(₹${Math.abs(diff).toLocaleString()} difference)</div>`;
   }
   
   html += '</div></div>';
   
-  // Save button
-  html += '<button type="button" onclick="savePriceVerification(' + calculatedTotal + ', ' + matched + ')" class="btn-primary" style="width: 100%; margin-top: 15px; padding: 12px; font-size: 15px;">';
+  // Save button - save afterDiscount value
+  html += '<button type="button" onclick="savePriceVerification(' + afterDiscount + ', ' + matched + ')" class="btn-primary" style="width: 100%; margin-top: 15px; padding: 12px; font-size: 15px;">';
   html += '💾 Save Verification';
   html += '</button>';
   
