@@ -165,10 +165,10 @@ async function loadDashboard() {
     console.log('  Response.success:', response.success);
     
     if (response.success) {
-      // Backend returns: accountCheckYes, accountCheckNo, accountCheckBlank
-      const yesCount = response.accountCheckYes || 0;
-      const noCount = response.accountCheckNo || 0;
-      const blankCount = response.accountCheckBlank || 0;
+      // Backend returns: dashboard.accountCheckYes, dashboard.accountCheckNo, dashboard.accountCheckBlank
+      const yesCount = response.dashboard.accountCheckYes || 0;
+      const noCount = response.dashboard.accountCheckNo || 0;
+      const blankCount = response.dashboard.accountCheckBlank || 0;
       
       console.log('  ✅ Yes Count:', yesCount);
       console.log('  ⚠️ No Count:', noCount);
@@ -224,10 +224,37 @@ async function filterByStatus(status) {
  */
 function handleSearchByChange() {
   const searchBy = document.getElementById('searchBy').value;
-  const valueSection = document.getElementById('searchValueSection');
+  const searchValueSection = document.getElementById('searchValueSection');
   const dateFilterSection = document.getElementById('dateFilterSection');
   
-  // These sections may not exist in simplified HTML
+  if (searchBy === 'Booking Date') {
+    if (searchValueSection) searchValueSection.style.display = 'none';
+    if (dateFilterSection) dateFilterSection.style.display = 'block';
+  } else {
+    if (searchValueSection) searchValueSection.style.display = 'block';
+    if (dateFilterSection) dateFilterSection.style.display = 'none';
+  }
+}
+
+/**
+ * Handle date filter change
+ */
+function handleDateFilterChange() {
+  const dateFilter = document.getElementById('dateFilter').value;
+  const singleDateSection = document.getElementById('singleDateSection');
+  const dateRangeSection = document.getElementById('dateRangeSection');
+  
+  if (dateFilter === 'single') {
+    if (singleDateSection) singleDateSection.style.display = 'block';
+    if (dateRangeSection) dateRangeSection.style.display = 'none';
+  } else if (dateFilter === 'range') {
+    if (singleDateSection) singleDateSection.style.display = 'none';
+    if (dateRangeSection) dateRangeSection.style.display = 'block';
+  } else {
+    if (singleDateSection) singleDateSection.style.display = 'none';
+    if (dateRangeSection) dateRangeSection.style.display = 'none';
+  }
+}
   if (searchBy === 'Booking Date' && dateFilterSection) {
     if (valueSection) valueSection.style.display = 'none';
     dateFilterSection.style.display = 'block';
@@ -264,24 +291,64 @@ function handleDateFilterChange() {
 /**
  * Search records
  */
+/**
+ * Search records with date filter support
+ */
 async function searchRecords() {
   const searchBy = document.getElementById('searchBy').value;
-  const searchValue = document.getElementById('searchValue').value.trim();
   const sessionId = SessionManager.getSessionId();
   
-  if (!searchValue) {
-    showMessage('Please enter a search value', 'error');
-    return;
+  let searchValue = '';
+  let dateFilter = null;
+  let singleDate = null;
+  let fromDate = null;
+  let toDate = null;
+  
+  if (searchBy === 'Booking Date') {
+    dateFilter = document.getElementById('dateFilter').value;
+    
+    if (dateFilter === 'single') {
+      singleDate = document.getElementById('singleDate').value;
+      if (!singleDate) {
+        showMessage('Please select a date', 'error');
+        return;
+      }
+      searchValue = singleDate;
+    } else if (dateFilter === 'range') {
+      fromDate = document.getElementById('fromDate').value;
+      toDate = document.getElementById('toDate').value;
+      if (!fromDate || !toDate) {
+        showMessage('Please select both from and to dates', 'error');
+        return;
+      }
+      searchValue = 'range';
+    } else {
+      searchValue = 'preset';
+    }
+  } else {
+    searchValue = document.getElementById('searchValue').value.trim();
+    if (!searchValue) {
+      showMessage('Please enter a search value', 'error');
+      return;
+    }
   }
   
   console.log('Searching:', searchBy, '=', searchValue);
   
+  // Store search params for export
+  window.lastSearchParams = {searchBy, searchValue, dateFilter, singleDate, fromDate, toDate};
+  
   try {
-    const response = await API.searchAccountsRecords(sessionId, searchBy, searchValue, null, null, null, null);
+    const response = await API.searchAccountsRecords(sessionId, searchBy, searchValue, dateFilter, singleDate, fromDate, toDate);
     
     if (response.success) {
+      window.lastSearchResults = response.results;
       displayResults(response.results);
       showMessage(response.results.length + ' record(s) found', 'success');
+      
+      // Show export button
+      const exportBtn = document.getElementById('exportBtn');
+      if (exportBtn) exportBtn.style.display = 'inline-block';
     } else {
       showMessage(response.message, 'error');
     }
@@ -884,14 +951,24 @@ async function calculatePrice() {
       }
     }
     
-    // Get entered total (Final Price)
-    const enteredTotal = parseFloat(document.getElementById('finalPrice').value) || 0;
+    // Get entered total (Final Price - Discount per Q2)
+    const finalPrice = parseFloat(document.getElementById('finalPrice').value) || 0;
+    const discount = parseFloat(document.getElementById('discount').value) || 0;
+    const enteredTotal = finalPrice - discount;
+    
+    console.log('💰 Price Comparison:');
+    console.log('   Calculated Total:', total);
+    console.log('   Final Price:', finalPrice);
+    console.log('   Discount:', discount);
+    console.log('   Entered Total (Final - Discount):', enteredTotal);
     
     // Display breakdown
     displayPriceBreakdown({
       breakdown: breakdownData,
       calculatedTotal: Math.round(total),
-      enteredTotal: enteredTotal
+      enteredTotal: enteredTotal,
+      finalPrice: finalPrice,
+      discount: discount
     });
     
   } catch (error) {
@@ -906,6 +983,8 @@ async function calculatePrice() {
 function displayPriceBreakdown(calculation) {
   const breakdown = calculation.breakdown;
   const calculatedTotal = calculation.calculatedTotal;
+  const finalPrice = calculation.finalPrice || 0;
+  const discount = calculation.discount || 0;
   const enteredTotal = calculation.enteredTotal || 0;
   const matched = Math.abs(calculatedTotal - enteredTotal) < 1;
   
@@ -947,8 +1026,17 @@ function displayPriceBreakdown(calculation) {
   html += '<div style="margin-top: 15px; padding: 15px; background: ' + (matched ? '#d4edda' : '#fff3cd') + '; border-radius: 8px; border: 2px solid ' + (matched ? '#28a745' : '#ffc107') + ';">';
   html += '<div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; margin-bottom: 8px;">';
   html += `<span>CALCULATED TOTAL:</span><span style="color: #667eea;">₹${calculatedTotal.toLocaleString()}</span></div>`;
+  
+  // Show Final Price and Discount breakdown
+  html += '<div style="font-size: 13px; color: #666; margin-bottom: 8px; padding: 8px; background: #f8f9fa; border-radius: 5px;">';
+  html += `<div style="display: flex; justify-content: space-between; margin-bottom: 3px;">`;
+  html += `<span>Final Price:</span><span style="font-weight: 600;">₹${finalPrice.toLocaleString()}</span></div>`;
+  html += `<div style="display: flex; justify-content: space-between;">`;
+  html += `<span>Discount:</span><span style="font-weight: 600; color: #e74c3c;">- ₹${discount.toLocaleString()}</span></div>`;
+  html += '</div>';
+  
   html += '<div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; margin-bottom: 8px;">';
-  html += `<span>ENTERED TOTAL:</span><span>₹${enteredTotal.toLocaleString()}</span></div>`;
+  html += `<span>ENTERED TOTAL (Final - Discount):</span><span>₹${enteredTotal.toLocaleString()}</span></div>`;
   html += '<div style="text-align: center; font-size: 18px; font-weight: 700; margin-top: 10px; padding-top: 10px; border-top: 2px solid ' + (matched ? '#28a74550' : '#ffc10750') + ';">';
   
   if (matched) {
@@ -992,4 +1080,128 @@ async function savePriceVerification(calculatedTotal, matched) {
     console.error('Save verification error:', error);
     alert('❌ Error saving verification');
   }
+}
+
+// ==========================================
+// EXPORT FUNCTIONS
+// ==========================================
+
+/**
+ * Export search results to Excel
+ */
+async function exportToExcel() {
+  if (!window.lastSearchResults || window.lastSearchResults.length === 0) {
+    showMessage('No results to export', 'error');
+    return;
+  }
+  
+  const params = window.lastSearchParams || {};
+  const month = document.getElementById('monthFilter').value;
+  
+  let filename = 'Accounts_Export_';
+  if (params.searchBy === 'Booking Date' && params.dateFilter === 'range') {
+    filename += params.fromDate + '_to_' + params.toDate;
+  } else {
+    filename += month;
+  }
+  filename += '.csv';
+  
+  exportResultsToCSV(window.lastSearchResults, filename);
+}
+
+/**
+ * Export card data (from dashboard cards)
+ */
+async function exportCardData(status) {
+  const month = document.getElementById('monthFilter').value;
+  const sessionId = SessionManager.getSessionId();
+  
+  try {
+    const response = await API.exportAccountsToCSV(sessionId, month, status);
+    
+    if (response.success) {
+      const filename = 'Accounts_' + status.toUpperCase() + '_' + month + '.csv';
+      downloadCSV(response.csv, filename);
+      showMessage('Exported successfully', 'success');
+    } else {
+      showMessage('Export failed: ' + response.message, 'error');
+    }
+  } catch (error) {
+    console.error('Export error:', error);
+    showMessage('Export failed', 'error');
+  }
+}
+
+/**
+ * Export results to CSV
+ */
+function exportResultsToCSV(results, filename) {
+  if (!results || results.length === 0) {
+    showMessage('No data to export', 'error');
+    return;
+  }
+  
+  // CSV header
+  let csv = 'Receipt No,Executive Name,Booking Date,Customer Name,Mobile No,Model,Variant,Colour,Discount,Final Price,Financier Name,Delivery Date,Guard,Grip Cover,Seat Cover,Matin,Tank Cover,Handle Hook,Helmet,Sales Remark,Accountant Name,Account Check,Account Remark,Receipt No 1,Receipt 1 Amount,Receipt No 2,Receipt 2 Amount,Receipt No 3,Receipt 3 Amount,Receipt No 4,Receipt 4 Amount,DO Number,Disbursed Amount\n';
+  
+  // CSV rows
+  results.forEach(function(r) {
+    csv += [
+      r.receiptNo || '',
+      r.executiveName || '',
+      r.bookingDate || '',
+      r.customerName || '',
+      r.mobileNo || '',
+      r.model || '',
+      r.variant || '',
+      r.colour || '',
+      r.discount || '',
+      r.finalPrice || '',
+      r.financierName || '',
+      r.deliveryDate || '',
+      r.guard || '',
+      r.gripcover || '',
+      r.seatcover || '',
+      r.matin || '',
+      r.tankcover || '',
+      r.handlehook || '',
+      r.helmet || '',
+      r.salesRemark || '',
+      r.accountantName || '',
+      r.accountCheck || '',
+      r.accountRemark || '',
+      r.receiptNo1 || '',
+      r.receipt1Amount || '',
+      r.receiptNo2 || '',
+      r.receipt2Amount || '',
+      r.receiptNo3 || '',
+      r.receipt3Amount || '',
+      r.receiptNo4 || '',
+      r.receipt4Amount || '',
+      r.doNumber || '',
+      r.disbursedAmount || ''
+    ].map(function(field) {
+      return '"' + String(field).replace(/"/g, '""') + '"';
+    }).join(',') + '\n';
+  });
+  
+  downloadCSV(csv, filename);
+}
+
+/**
+ * Download CSV file
+ */
+function downloadCSV(csvContent, filename) {
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  showMessage('Downloaded: ' + filename, 'success');
 }

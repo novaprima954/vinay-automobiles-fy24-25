@@ -134,6 +134,35 @@
       letter-spacing: 0.5px;
     }
     
+    .card-export-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.3s;
+      opacity: 0;
+      z-index: 10;
+    }
+    
+    .stat-card {
+      position: relative;
+    }
+    
+    .stat-card:hover .card-export-btn {
+      opacity: 1;
+    }
+    
+    .card-export-btn:hover {
+      background: #45a049;
+      transform: scale(1.1);
+    }
+    
     .search-section {
       background: white;
       padding: 25px;
@@ -439,18 +468,21 @@
           <div class="card-icon">✅</div>
           <div class="card-count" id="countYes">0</div>
           <div class="card-label">Account Check: YES</div>
+          <button class="card-export-btn" onclick="event.stopPropagation(); exportCardData('yes')" title="Export">📊</button>
         </div>
         
         <div class="stat-card no" onclick="filterByStatus('No')">
           <div class="card-icon">⚠️</div>
           <div class="card-count" id="countNo">0</div>
           <div class="card-label">Account Check: NO</div>
+          <button class="card-export-btn" onclick="event.stopPropagation(); exportCardData('no')" title="Export">📊</button>
         </div>
         
         <div class="stat-card blank" onclick="filterByStatus('')">
           <div class="card-icon">❌</div>
           <div class="card-count" id="countBlank">0</div>
           <div class="card-label">Account Check: BLANK</div>
+          <button class="card-export-btn" onclick="event.stopPropagation(); exportCardData('blank')" title="Export">📊</button>
         </div>
       </div>
     </div>
@@ -464,22 +496,59 @@
       <div class="search-controls">
         <div class="form-group">
           <label>Search By</label>
-          <select id="searchBy">
+          <select id="searchBy" onchange="handleSearchByChange()">
             <option value="Receipt No">Receipt No</option>
             <option value="Customer Name">Customer Name</option>
             <option value="Mobile No">Mobile No</option>
             <option value="Executive Name">Executive Name</option>
             <option value="Variant">Variant</option>
+            <option value="Booking Date">Booking Date</option>
           </select>
         </div>
         
-        <div class="form-group">
+        <!-- Regular Search Input -->
+        <div class="form-group" id="searchValueSection">
           <label>Search For</label>
           <input type="text" id="searchValue" placeholder="Enter search term...">
         </div>
         
+        <!-- Date Filter Section (for Booking Date) -->
+        <div id="dateFilterSection" style="display: none;">
+          <div class="form-group">
+            <label>Date Filter</label>
+            <select id="dateFilter" onchange="handleDateFilterChange()">
+              <option value="today">Today</option>
+              <option value="last7">Last 7 Days</option>
+              <option value="last30">Last 30 Days</option>
+              <option value="single">Single Date</option>
+              <option value="range">Date Range</option>
+            </select>
+          </div>
+          
+          <div class="form-group" id="singleDateSection" style="display: none;">
+            <label>Select Date</label>
+            <input type="date" id="singleDate">
+          </div>
+          
+          <div id="dateRangeSection" style="display: none;">
+            <div class="form-group">
+              <label>From Date</label>
+              <input type="date" id="fromDate">
+            </div>
+            <div class="form-group">
+              <label>To Date</label>
+              <input type="date" id="toDate">
+            </div>
+          </div>
+        </div>
+        
         <button class="btn-primary" onclick="searchRecords()">
           🔍 Search
+        </button>
+        
+        <!-- Export Button (appears after search) -->
+        <button class="btn-secondary" id="exportBtn" onclick="exportToExcel()" style="display: none;">
+          📊 Export to Excel
         </button>
       </div>
       
