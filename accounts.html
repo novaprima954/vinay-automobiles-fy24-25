@@ -661,7 +661,7 @@
           
           <div class="form-group">
             <label>Financier Name <span class="required">*</span></label>
-            <select id="financierName" required class="editable-highlight">
+            <select id="financierName" required class="editable-highlight" onchange="handleFinancierChange()">
               <option value="">-- Select --</option>
               <option>Cash</option>
               <option>TVS Credit</option>
@@ -672,7 +672,14 @@
               <option>Indusind Bank</option>
               <option>Berar Finance</option>
               <option>IDFC</option>
+              <option>Other</option>
             </select>
+          </div>
+          
+          <!-- Other Financier Input -->
+          <div class="form-group" id="otherFinancierSection" style="display: none;">
+            <label>Enter Financier Name <span class="required">*</span></label>
+            <input type="text" id="otherFinancierInput" placeholder="Enter financier name..." class="editable-highlight">
           </div>
           
           <!-- Accessory Fields (Dynamic) -->

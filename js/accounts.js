@@ -437,10 +437,12 @@ async function populateDetails(record) {
     document.getElementById('financierName').value = record.financierName;
   } else if (record.financierName) {
     document.getElementById('financierName').value = 'Other';
+    const otherSection = document.getElementById('otherFinancierSection');
     const otherInput = document.getElementById('otherFinancierInput');
+    if (otherSection) otherSection.style.display = 'block';
     if (otherInput) {
-      otherInput.style.display = 'block';
       otherInput.value = record.financierName;
+      otherInput.required = true;
     }
   }
   
@@ -612,15 +614,20 @@ async function renderAccessoriesFromPriceMaster(model, variant, record) {
  */
 function handleFinancierChange() {
   const financierSelect = document.getElementById('financierName');
+  const otherSection = document.getElementById('otherFinancierSection');
   const otherInput = document.getElementById('otherFinancierInput');
   
-  if (!financierSelect || !otherInput) return;
+  if (!financierSelect) return;
   
   if (financierSelect.value === 'Other') {
-    otherInput.style.display = 'block';
+    if (otherSection) otherSection.style.display = 'block';
+    if (otherInput) otherInput.required = true;
   } else {
-    otherInput.style.display = 'none';
-    otherInput.value = '';
+    if (otherSection) otherSection.style.display = 'none';
+    if (otherInput) {
+      otherInput.value = '';
+      otherInput.required = false;
+    }
   }
 }
 
@@ -734,7 +741,9 @@ async function handleUpdate(e) {
     ...accessories,
     accountCheck: document.getElementById('accountCheck').value,
     accountRemark: document.getElementById('accountRemark').value,
-    // receipt1Amount is read-only (from sales)
+    // Preserve receipt1 fields (read-only from sales)
+    receiptNo1: document.getElementById('protectedReceiptNo1')?.textContent || '',
+    receipt1Amount: currentReceipt1Amount || '',
     receiptNo2: document.getElementById('receiptNo2').value,
     receipt2Amount: document.getElementById('receipt2Amount').value,
     receiptNo3: document.getElementById('receiptNo3').value,
@@ -760,6 +769,9 @@ async function handleUpdate(e) {
   
   console.log('💾 Updating account record:');
   console.log('   Receipt No:', data.receiptNo);
+  console.log('   Financier Name:', data.financierName);
+  console.log('   Receipt No 1:', data.receiptNo1);
+  console.log('   Receipt 1 Amount:', data.receipt1Amount);
   console.log('   Variant:', data.variant);
   console.log('   Colour:', data.colour);
   console.log('   Finance Commission:', data.financeComm);
