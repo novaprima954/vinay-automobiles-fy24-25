@@ -362,16 +362,7 @@ const API = {
     });
   },
   
-  /**
-   * Get Accounts Dashboard
-   */
-  async getAccountsDashboard(dateFilter) {
-    const sessionId = SessionManager.getSessionId();
-    return await this.call('getAccountsDashboard', {
-      sessionId,
-      dateFilter
-    });
-  },
+
   
   /**
    * Get Accessories Dashboard
