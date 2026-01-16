@@ -48,6 +48,28 @@ const MODEL_VARIANTS = {
 // Additional pending items to add to all models
 const ADDITIONAL_PENDING_ITEMS = ['Buzzer', 'Mirror', 'Side Stand', 'Center Stand'];
 
+/**
+ * Get model config - case insensitive lookup
+ */
+function getModelConfig(modelName) {
+  if (!modelName) return null;
+  
+  // Try exact match first
+  if (MODEL_VARIANTS[modelName]) {
+    return MODEL_VARIANTS[modelName];
+  }
+  
+  // Try case-insensitive match
+  const modelLower = modelName.toLowerCase();
+  for (const key in MODEL_VARIANTS) {
+    if (key.toLowerCase() === modelLower) {
+      return MODEL_VARIANTS[key];
+    }
+  }
+  
+  return null;
+}
+
 let currentDashboardData = null;
 let currentFilterStatus = null;
 
@@ -452,10 +474,12 @@ function populateDetails(record, user) {
   accessoriesContainer.innerHTML = '';
   
   console.log('Checking MODEL_VARIANTS for:', record.model);
-  console.log('MODEL_VARIANTS has this model?', MODEL_VARIANTS.hasOwnProperty(record.model));
   
-  if (record.model && MODEL_VARIANTS[record.model]) {
-    const accessories = MODEL_VARIANTS[record.model].accessories;
+  const modelConfig = getModelConfig(record.model);
+  console.log('Model config found:', modelConfig ? 'YES' : 'NO');
+  
+  if (modelConfig) {
+    const accessories = modelConfig.accessories;
     console.log('Accessories for this model:', accessories);
     
     accessories.forEach(function(accessory) {
@@ -549,8 +573,10 @@ function populatePendingItems(record) {
   const pendingItemsStr = record.pending || '';
   const refusedItemsStr = record.customerRefused || ''; // New field for customer refused items
   
-  if (record.model && MODEL_VARIANTS[record.model]) {
-    const accessories = MODEL_VARIANTS[record.model].accessories;
+  const modelConfig = getModelConfig(record.model);
+  
+  if (modelConfig) {
+    const accessories = modelConfig.accessories;
     const allPendingOptions = accessories.concat(ADDITIONAL_PENDING_ITEMS);
     
     console.log('All pending options for this model:', allPendingOptions);
@@ -744,8 +770,10 @@ async function updateRecord() {
   const pendingItems = [];
   const refusedItems = [];
   
-  if (MODEL_VARIANTS[model]) {
-    const accessories = MODEL_VARIANTS[model].accessories;
+  const modelConfig = getModelConfig(model);
+  
+  if (modelConfig) {
+    const accessories = modelConfig.accessories;
     const allPendingOptions = accessories.concat(ADDITIONAL_PENDING_ITEMS);
     
     allPendingOptions.forEach(function(accessory) {
