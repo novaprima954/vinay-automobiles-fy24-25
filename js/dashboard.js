@@ -3,7 +3,7 @@
 // ==========================================
 
 let currentUser = null;
-let currentFilter = 'all'; // Changed from 'month' to 'all'
+let currentFilter = 'month'; // Default to 'This Month'
 let dashboardData = null;
 
 document.addEventListener('DOMContentLoaded', async function() {
