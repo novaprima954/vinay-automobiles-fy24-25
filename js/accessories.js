@@ -365,7 +365,7 @@ function displayResults(results) {
     row.insertCell(0).textContent = record.receiptNo || '';
     row.insertCell(1).textContent = record.customerName || '';
     row.insertCell(2).textContent = record.mobileNo || '';
-    row.insertCell(3).textContent = record.model || '';
+    row.insertCell(3).textContent = record.variant || '';  // CHANGED: Show variant instead of model
     row.insertCell(4).textContent = record.deliveryDate || '';
     row.insertCell(5).textContent = accessoryStatus;
   });
@@ -451,18 +451,30 @@ function populateDetails(record, user) {
       const value = document.createElement('span');
       value.className = 'detail-value';
       
-      if (accessory === 'Guard') value.textContent = record.guard || '-';
-      else if (accessory === 'Grip Cover') value.textContent = record.gripCover || '-';
-      else if (accessory === 'Seat Cover') value.textContent = record.seatCover || '-';
-      else if (accessory === 'Matin') value.textContent = record.matin || '-';
-      else if (accessory === 'Tank Cover') value.textContent = record.tankCover || '-';
-      else if (accessory === 'Handle Hook') value.textContent = record.handleHook || '-';
-      else if (accessory === 'Helmet') value.textContent = record.helmet || '-';
+      // Check both camelCase and lowercase variants of field names
+      if (accessory === 'Guard') {
+        value.textContent = record.guard || '-';
+      } else if (accessory === 'Grip Cover') {
+        value.textContent = record.gripCover || record.gripcover || '-';
+      } else if (accessory === 'Seat Cover') {
+        value.textContent = record.seatCover || record.seatcover || '-';
+      } else if (accessory === 'Matin') {
+        value.textContent = record.matin || '-';
+      } else if (accessory === 'Tank Cover') {
+        value.textContent = record.tankCover || record.tankcover || '-';
+      } else if (accessory === 'Handle Hook') {
+        value.textContent = record.handleHook || record.handlehook || '-';
+      } else if (accessory === 'Helmet') {
+        value.textContent = record.helmet || '-';
+      }
       
       detailItem.appendChild(label);
       detailItem.appendChild(value);
       accessoriesContainer.appendChild(detailItem);
     });
+  } else {
+    // If no model match, show a message
+    accessoriesContainer.innerHTML = '<div style="color: #999; padding: 10px;">No accessories defined for this model</div>';
   }
   
   // Editable fields
@@ -501,32 +513,93 @@ function populateDetails(record, user) {
 }
 
 /**
- * Populate pending items checkboxes
+ * Populate pending items with radio buttons for Pending/Customer Refused
  */
 function populatePendingItems(record) {
   const pendingContainer = document.getElementById('pendingCheckboxes');
   pendingContainer.innerHTML = '';
   
-  const pendingItems = record.pending || '';
+  const pendingItemsStr = record.pending || '';
+  const refusedItemsStr = record.customerRefused || ''; // New field for customer refused items
   
   if (record.model && MODEL_VARIANTS[record.model]) {
     const accessories = MODEL_VARIANTS[record.model].accessories;
     const allPendingOptions = accessories.concat(ADDITIONAL_PENDING_ITEMS);
     
     allPendingOptions.forEach(function(accessory) {
-      const label = document.createElement('label');
+      const itemDiv = document.createElement('div');
+      itemDiv.className = 'pending-item';
       
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.id = 'pending_' + accessory.toLowerCase().replace(/ /g, '');
-      checkbox.checked = pendingItems.indexOf(accessory) !== -1;
+      // Check status
+      const isPending = pendingItemsStr.indexOf(accessory) !== -1;
+      const isRefused = refusedItemsStr.indexOf(accessory) !== -1;
       
-      const span = document.createElement('span');
-      span.textContent = accessory;
+      if (isPending) {
+        itemDiv.classList.add('status-pending');
+      } else if (isRefused) {
+        itemDiv.classList.add('status-refused');
+      }
       
-      label.appendChild(checkbox);
-      label.appendChild(span);
-      pendingContainer.appendChild(label);
+      // Item name
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'pending-item-name';
+      nameSpan.textContent = accessory;
+      
+      // Radio options
+      const optionsDiv = document.createElement('div');
+      optionsDiv.className = 'pending-item-options';
+      
+      const radioName = 'pending_' + accessory.toLowerCase().replace(/ /g, '');
+      
+      // None option (default)
+      const noneLabel = document.createElement('label');
+      const noneRadio = document.createElement('input');
+      noneRadio.type = 'radio';
+      noneRadio.name = radioName;
+      noneRadio.value = 'none';
+      noneRadio.checked = !isPending && !isRefused;
+      noneLabel.appendChild(noneRadio);
+      noneLabel.appendChild(document.createTextNode('None'));
+      
+      // Pending option
+      const pendingLabel = document.createElement('label');
+      const pendingRadio = document.createElement('input');
+      pendingRadio.type = 'radio';
+      pendingRadio.name = radioName;
+      pendingRadio.value = 'pending';
+      pendingRadio.checked = isPending;
+      pendingLabel.appendChild(pendingRadio);
+      pendingLabel.appendChild(document.createTextNode('🔔 Pending'));
+      
+      // Customer Refused option
+      const refusedLabel = document.createElement('label');
+      const refusedRadio = document.createElement('input');
+      refusedRadio.type = 'radio';
+      refusedRadio.name = radioName;
+      refusedRadio.value = 'refused';
+      refusedRadio.checked = isRefused;
+      refusedLabel.appendChild(refusedRadio);
+      refusedLabel.appendChild(document.createTextNode('❌ Refused'));
+      
+      optionsDiv.appendChild(noneLabel);
+      optionsDiv.appendChild(pendingLabel);
+      optionsDiv.appendChild(refusedLabel);
+      
+      itemDiv.appendChild(nameSpan);
+      itemDiv.appendChild(optionsDiv);
+      pendingContainer.appendChild(itemDiv);
+      
+      // Add change listener to update visual state
+      [noneRadio, pendingRadio, refusedRadio].forEach(function(radio) {
+        radio.addEventListener('change', function() {
+          itemDiv.classList.remove('status-pending', 'status-refused');
+          if (pendingRadio.checked) {
+            itemDiv.classList.add('status-pending');
+          } else if (refusedRadio.checked) {
+            itemDiv.classList.add('status-refused');
+          }
+        });
+      });
     });
   }
 }
@@ -548,9 +621,9 @@ function setFieldsMode(mode) {
       document.getElementById(id).disabled = true;
     });
     
-    // Disable all pending checkboxes
-    document.querySelectorAll('#pendingCheckboxes input[type="checkbox"]').forEach(function(cb) {
-      cb.disabled = true;
+    // Disable all pending radio buttons
+    document.querySelectorAll('#pendingCheckboxes input[type="radio"]').forEach(function(radio) {
+      radio.disabled = true;
     });
     
     updateBtn.disabled = true;
@@ -569,17 +642,9 @@ function setFieldsMode(mode) {
       document.getElementById(id).disabled = false;
     });
     
-    // Pending checkboxes: Can only UNTICK (clear), cannot TICK
-    document.querySelectorAll('#pendingCheckboxes input[type="checkbox"]').forEach(function(cb) {
-      cb.disabled = false;
-      
-      // Prevent checking (only allow unchecking)
-      cb.addEventListener('change', function() {
-        if (this.checked) {
-          this.checked = false;
-          showMessage('You can only clear pending items in limited edit mode', 'error');
-        }
-      });
+    // Enable all pending radio buttons (they can change status)
+    document.querySelectorAll('#pendingCheckboxes input[type="radio"]').forEach(function(radio) {
+      radio.disabled = false;
     });
     
     updateBtn.disabled = false;
@@ -595,9 +660,9 @@ function setFieldsMode(mode) {
       document.getElementById(id).disabled = false;
     });
     
-    // Enable all pending checkboxes
-    document.querySelectorAll('#pendingCheckboxes input[type="checkbox"]').forEach(function(cb) {
-      cb.disabled = false;
+    // Enable all pending radio buttons
+    document.querySelectorAll('#pendingCheckboxes input[type="radio"]').forEach(function(radio) {
+      radio.disabled = false;
     });
     
     updateBtn.disabled = false;
@@ -640,24 +705,31 @@ async function updateRecord() {
     return;
   }
   
-  // Get pending items
+  // Get pending and customer refused items
   const model = document.getElementById('currentModel').value;
   const pendingItems = [];
+  const refusedItems = [];
   
   if (MODEL_VARIANTS[model]) {
     const accessories = MODEL_VARIANTS[model].accessories;
     const allPendingOptions = accessories.concat(ADDITIONAL_PENDING_ITEMS);
     
     allPendingOptions.forEach(function(accessory) {
-      const checkboxId = 'pending_' + accessory.toLowerCase().replace(/ /g, '');
-      const checkbox = document.getElementById(checkboxId);
-      if (checkbox && checkbox.checked) {
-        pendingItems.push(accessory);
+      const radioName = 'pending_' + accessory.toLowerCase().replace(/ /g, '');
+      const selectedRadio = document.querySelector('input[name="' + radioName + '"]:checked');
+      
+      if (selectedRadio) {
+        if (selectedRadio.value === 'pending') {
+          pendingItems.push(accessory);
+        } else if (selectedRadio.value === 'refused') {
+          refusedItems.push(accessory);
+        }
       }
     });
   }
   
   const pendingString = pendingItems.join(', ');
+  const refusedString = refusedItems.join(', ');
   
   const sessionId = SessionManager.getSessionId();
   const updateBtn = document.getElementById('updateBtn');
@@ -672,6 +744,7 @@ async function updateRecord() {
       fitted: fitted,
       remark: document.getElementById('accessoryRemark').value,
       pending: pendingString,
+      customerRefused: refusedString,
       receipt1: document.getElementById('accessoryReceipt1').value,
       extra: document.getElementById('accessoryExtra').value
     });

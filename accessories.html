@@ -213,6 +213,55 @@
       margin-top: 10px;
     }
 
+    .pending-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      padding: 12px;
+      margin: 8px 0;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #ddd;
+    }
+
+    .pending-item.status-pending {
+      border-left-color: #ffc107;
+      background: #fff3e0;
+    }
+
+    .pending-item.status-refused {
+      border-left-color: #dc3545;
+      background: #ffebee;
+    }
+
+    .pending-item-name {
+      font-weight: 600;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .pending-item-options {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .pending-item-options label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin: 0;
+      font-size: 13px;
+      font-weight: normal;
+      cursor: pointer;
+    }
+
+    .pending-item-options input[type="radio"] {
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+    }
+
     .pending-checklist label {
       display: flex;
       align-items: center;
@@ -399,7 +448,7 @@
                 <th>Receipt No</th>
                 <th>Customer Name</th>
                 <th>Mobile No</th>
-                <th>Model</th>
+                <th>Variant</th>
                 <th>Delivery Date</th>
                 <th>Accessory Status</th>
               </tr>
@@ -526,7 +575,7 @@
 
           <div class="form-group" style="grid-column: 1 / -1;">
             <label>Remark:</label>
-            <textarea id="accessoryRemark"></textarea>
+            <textarea id="accessoryRemark" rows="5" style="min-height: 120px; resize: vertical;"></textarea>
           </div>
 
           <div class="form-group" style="grid-column: 1 / -1;">
