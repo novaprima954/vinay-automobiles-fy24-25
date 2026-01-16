@@ -465,7 +465,8 @@ function showWhatsAppModal(data) {
       accessoriesText += `Handle Hook - ${data.handlehook}\n`;  // Changed to handlehook
     }
     if (priceMasterDetails.helmetPrice) {
-      const helmetText = data.helmet ? `Yes (Qty: ${data.helmet})` : 'No';
+      // Show Yes/No based on whether helmet is checked
+      const helmetText = data.helmet ? 'Yes' : 'No';
       accessoriesText += `Helmet - ${helmetText}`;
     }
   }
@@ -473,12 +474,19 @@ function showWhatsAppModal(data) {
   // Remove trailing newline if exists
   accessoriesText = accessoriesText.replace(/\n$/, '');
   
+  // Calculate total cash collected (sum of all receipts)
+  const r1 = parseFloat(data.receipt1Amount) || 0;
+  const r2 = parseFloat(data.receipt2Amount) || 0;
+  const r3 = parseFloat(data.receipt3Amount) || 0;
+  const r4 = parseFloat(data.receipt4Amount) || 0;
+  const totalCashCollected = r1 + r2 + r3 + r4;
+  
   const message = `Customer Name - ${data.customerName}
 Variant - ${data.model} ${data.variant}
 Colour - ${data.colour}
 Finance - ${data.financierName}
 Passing Date - ${data.deliveryDate}
-Cash Collected - ${data.receipt1Amount || 0}
+Cash Collected - ₹${totalCashCollected.toLocaleString('en-IN')}
 Final price after discount - ${data.finalPrice}
 Discount - ${data.discount}
 Accessories -
