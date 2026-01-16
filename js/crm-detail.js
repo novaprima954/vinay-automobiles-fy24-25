@@ -71,8 +71,6 @@ function displayLeadDetails(lead) {
   
   // Info tab (read-only fields)
   document.getElementById('infoMobile').textContent = lead.mobileNo || '-';
-  document.getElementById('infoEmail').textContent = lead.email || '-';
-  document.getElementById('infoAddress').textContent = lead.address || '-';
   document.getElementById('infoModel').textContent = lead.model || '-';
   document.getElementById('infoSource').textContent = lead.source || '-';
   document.getElementById('infoAssigned').textContent = lead.assignedTo || 'Unassigned';

@@ -55,8 +55,6 @@ async function handleSubmit(e) {
   const data = {
     customerName: document.getElementById('customerName').value.trim(),
     mobileNo: document.getElementById('mobileNo').value.trim(),
-    email: document.getElementById('email').value.trim(),
-    address: document.getElementById('address').value.trim(),
     model: document.getElementById('model').value,
     source: selectedSource,
     expectedDate: document.getElementById('expectedDate').value,

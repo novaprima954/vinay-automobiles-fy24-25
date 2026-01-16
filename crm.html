@@ -404,16 +404,16 @@
     <div id="dashboardTab" class="tab-content active">
       <!-- Dashboard Cards -->
       <div class="dashboard-cards">
-        <div class="stat-card new" onclick="switchTab('myLeads')">
-          <div class="stat-card-icon">🆕</div>
-          <div class="stat-card-label">My New</div>
-          <div class="stat-card-count" id="myNewCount">0</div>
+        <div class="stat-card hot" onclick="switchTab('myLeads')">
+          <div class="stat-card-icon">🔔</div>
+          <div class="stat-card-label">Today's Follow-up</div>
+          <div class="stat-card-count" id="todayFollowUpCount">0</div>
         </div>
 
-        <div class="stat-card hot" onclick="switchTab('myLeads')">
-          <div class="stat-card-icon">🔥</div>
-          <div class="stat-card-label">My Hot</div>
-          <div class="stat-card-count" id="myHotCount">0</div>
+        <div class="stat-card new" onclick="switchTab('myLeads')">
+          <div class="stat-card-icon">📋</div>
+          <div class="stat-card-label">My Leads</div>
+          <div class="stat-card-count" id="myLeadsCount">0</div>
         </div>
 
         <div class="stat-card available" onclick="switchTab('available')">
@@ -450,6 +450,20 @@
 
     <!-- My Leads Tab -->
     <div id="myLeadsTab" class="tab-content">
+      <!-- Status Filter -->
+      <div style="padding: 0 0 15px 0;">
+        <select id="statusFilter" class="form-select" onchange="filterMyLeads()" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 14px; background: white;">
+          <option value="all">📋 All Leads</option>
+          <option value="New">🆕 New</option>
+          <option value="Contacted">📞 Contacted</option>
+          <option value="Interested">👀 Interested</option>
+          <option value="Negotiating">💬 Negotiating</option>
+          <option value="Hot Lead">🔥 Hot Lead</option>
+          <option value="Cold Lead">❄️ Cold Lead</option>
+          <option value="Lost">❌ Lost</option>
+        </select>
+      </div>
+      
       <div class="loading" id="myLeadsLoading">
         <div class="spinner"></div>
         <div>Loading your leads...</div>

@@ -4,6 +4,8 @@
 
 let currentUser = null;
 let dashboardData = null;
+let myLeadsCache = []; // Cache my leads for filtering
+let availableLeadsCache = []; // Cache available leads
 
 document.addEventListener('DOMContentLoaded', async function() {
   console.log('=== CRM PAGE ===');
@@ -51,8 +53,8 @@ async function loadDashboard() {
  */
 function displayDashboard(data) {
   // Update counts
-  document.getElementById('myNewCount').textContent = data.myNew || 0;
-  document.getElementById('myHotCount').textContent = data.myHot || 0;
+  document.getElementById('todayFollowUpCount').textContent = data.todayFollowUps || 0;
+  document.getElementById('myLeadsCount').textContent = data.totalLeads || 0;
   document.getElementById('availableCount').textContent = data.available || 0;
   document.getElementById('convertedCount').textContent = data.converted || 0;
   
@@ -70,7 +72,7 @@ function displayDashboard(data) {
           <div class="urgent-name">${lead.name}</div>
           <div class="urgent-details">${lead.model} • ${lead.mobile}</div>
         </div>
-        <button class="btn-call" onclick="callLead('${lead.mobile}')">📞 CALL</button>
+        <button class="btn-call" onclick="viewLeadDetails('${lead.leadId}')">✏️ OPEN</button>
       `;
       urgentList.appendChild(item);
     });
@@ -103,13 +105,16 @@ function switchTab(tab) {
 }
 
 /**
- * Load available leads
+ * Load available leads (with caching for speed)
  */
 async function loadAvailableLeads() {
   const container = document.getElementById('availableLeads');
   const loading = document.getElementById('availableLoading');
   
-  loading.style.display = 'block';
+  // Show loading only if cache is empty
+  if (availableLeadsCache.length === 0) {
+    loading.style.display = 'block';
+  }
   container.innerHTML = '';
   
   try {
@@ -118,6 +123,8 @@ async function loadAvailableLeads() {
     loading.style.display = 'none';
     
     if (response.success && response.leads.length > 0) {
+      availableLeadsCache = response.leads; // Cache the data
+      
       response.leads.forEach(lead => {
         const card = createAvailableLeadCard(lead);
         container.appendChild(card);
@@ -150,25 +157,27 @@ function createAvailableLeadCard(lead) {
     </div>
     <div class="lead-details">
       🏍️ ${lead.model}<br>
-      📱 ${lead.mobile}<br>
+      📱 ${lead.mobileNo}<br>
       📅 Added: ${lead.createdDate} ${lead.createdBy ? 'by ' + lead.createdBy : ''}
     </div>
     <div class="lead-actions">
-      <button class="btn-action btn-primary-action" onclick="callLead('${lead.mobileNo}')">📞 CALL</button>
-      <button class="btn-action btn-claim" onclick="claimLead('${lead.leadId}')">✋ CLAIM</button>
+      <button class="btn-action btn-primary-action" onclick="callAndClaimLead('${lead.leadId}', '${lead.mobileNo}')">📞 CALL</button>
     </div>
   `;
   return card;
 }
 
 /**
- * Load my leads
+ * Load my leads (with caching for speed)
  */
 async function loadMyLeads() {
   const container = document.getElementById('myLeads');
   const loading = document.getElementById('myLeadsLoading');
   
-  loading.style.display = 'block';
+  // Show loading only if cache is empty
+  if (myLeadsCache.length === 0) {
+    loading.style.display = 'block';
+  }
   container.innerHTML = '';
   
   try {
@@ -177,10 +186,8 @@ async function loadMyLeads() {
     loading.style.display = 'none';
     
     if (response.success && response.leads.length > 0) {
-      response.leads.forEach(lead => {
-        const card = createMyLeadCard(lead);
-        container.appendChild(card);
-      });
+      myLeadsCache = response.leads; // Cache the data
+      filterMyLeads(); // Display with filter
     } else {
       container.innerHTML = `
         <div class="empty-state">
@@ -193,6 +200,36 @@ async function loadMyLeads() {
   } catch (error) {
     loading.style.display = 'none';
     showMessage('Error loading your leads', 'error');
+  }
+}
+
+/**
+ * Filter my leads by status
+ */
+function filterMyLeads() {
+  const container = document.getElementById('myLeads');
+  const filterValue = document.getElementById('statusFilter').value;
+  
+  container.innerHTML = '';
+  
+  let filteredLeads = myLeadsCache;
+  if (filterValue !== 'all') {
+    filteredLeads = myLeadsCache.filter(lead => lead.status === filterValue);
+  }
+  
+  if (filteredLeads.length > 0) {
+    filteredLeads.forEach(lead => {
+      const card = createMyLeadCard(lead);
+      container.appendChild(card);
+    });
+  } else {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <div>No leads with status: ${filterValue}</div>
+        <div style="font-size: 13px; margin-top: 5px;">Try selecting a different filter</div>
+      </div>
+    `;
   }
 }
 
@@ -239,6 +276,33 @@ function createMyLeadCard(lead) {
  */
 function callLead(mobileNo) {
   window.location.href = `tel:${mobileNo}`;
+}
+
+/**
+ * Call and automatically claim lead, then redirect to detail page
+ */
+async function callAndClaimLead(leadId, mobileNo) {
+  try {
+    showMessage('Claiming lead...', 'success');
+    
+    // Claim the lead with "Contacted" status
+    const response = await API.claimLead(leadId, 'Contacted');
+    
+    if (response.success) {
+      // Open phone dialer
+      window.location.href = `tel:${mobileNo}`;
+      
+      // Redirect to detail page after short delay
+      setTimeout(() => {
+        window.location.href = `crm-detail.html?leadId=${leadId}`;
+      }, 500);
+    } else {
+      showMessage(response.message, 'error');
+    }
+  } catch (error) {
+    console.error('Call and claim error:', error);
+    showMessage('Error claiming lead', 'error');
+  }
 }
 
 /**
