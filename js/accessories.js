@@ -343,6 +343,12 @@ function displayResults(results) {
   const tbody = document.getElementById('resultsBody');
   tbody.innerHTML = '';
   
+  console.log('=== SEARCH RESULTS ===');
+  console.log('Total results:', results.length);
+  if (results.length > 0) {
+    console.log('First result sample:', results[0]);
+  }
+  
   if (results.length === 0) {
     const row = tbody.insertRow();
     const cell = row.insertCell(0);
@@ -365,7 +371,7 @@ function displayResults(results) {
     row.insertCell(0).textContent = record.receiptNo || '';
     row.insertCell(1).textContent = record.customerName || '';
     row.insertCell(2).textContent = record.mobileNo || '';
-    row.insertCell(3).textContent = record.variant || '';  // CHANGED: Show variant instead of model
+    row.insertCell(3).textContent = record.variant || record.variantName || '';  // Try both field names
     row.insertCell(4).textContent = record.deliveryDate || '';
     row.insertCell(5).textContent = accessoryStatus;
   });
@@ -412,6 +418,14 @@ async function loadRecordDetails(row) {
  * Populate record details
  */
 function populateDetails(record, user) {
+  console.log('=== POPULATE DETAILS ===');
+  console.log('Full record data:', record);
+  console.log('Model:', record.model);
+  console.log('Variant:', record.variant);
+  console.log('Guard:', record.guard);
+  console.log('GripCover:', record.gripCover, 'gripcover:', record.gripcover);
+  console.log('Pending:', record.pending);
+  
   // Store values
   document.getElementById('selectedRow').value = record.row;
   document.getElementById('currentModel').value = record.model || '';
@@ -420,8 +434,8 @@ function populateDetails(record, user) {
   
   // View-only fields
   document.getElementById('detailReceiptNo').textContent = record.receiptNo || '-';
-  document.getElementById('detailExecName').textContent = record.execName || '-';
-  document.getElementById('detailDate').textContent = record.date || '-';
+  document.getElementById('detailExecName').textContent = record.execName || record.executiveName || '-';
+  document.getElementById('detailDate').textContent = record.date || record.bookingDate || '-';
   document.getElementById('detailCustomerName').textContent = record.customerName || '-';
   document.getElementById('detailMobileNo').textContent = record.mobileNo || '-';
   document.getElementById('detailModel').textContent = record.model || '-';
@@ -437,8 +451,12 @@ function populateDetails(record, user) {
   const accessoriesContainer = document.getElementById('accessoriesOrdered');
   accessoriesContainer.innerHTML = '';
   
+  console.log('Checking MODEL_VARIANTS for:', record.model);
+  console.log('MODEL_VARIANTS has this model?', MODEL_VARIANTS.hasOwnProperty(record.model));
+  
   if (record.model && MODEL_VARIANTS[record.model]) {
     const accessories = MODEL_VARIANTS[record.model].accessories;
+    console.log('Accessories for this model:', accessories);
     
     accessories.forEach(function(accessory) {
       const detailItem = document.createElement('div');
@@ -468,13 +486,17 @@ function populateDetails(record, user) {
         value.textContent = record.helmet || '-';
       }
       
+      console.log('Accessory:', accessory, '-> Value:', value.textContent);
+      
       detailItem.appendChild(label);
       detailItem.appendChild(value);
       accessoriesContainer.appendChild(detailItem);
     });
   } else {
     // If no model match, show a message
-    accessoriesContainer.innerHTML = '<div style="color: #999; padding: 10px;">No accessories defined for this model</div>';
+    console.log('⚠️ No MODEL_VARIANTS match found!');
+    console.log('Available models in MODEL_VARIANTS:', Object.keys(MODEL_VARIANTS));
+    accessoriesContainer.innerHTML = '<div style="color: #999; padding: 10px;">No accessories defined for this model: ' + (record.model || 'Unknown') + '</div>';
   }
   
   // Editable fields
@@ -519,12 +541,19 @@ function populatePendingItems(record) {
   const pendingContainer = document.getElementById('pendingCheckboxes');
   pendingContainer.innerHTML = '';
   
+  console.log('=== POPULATE PENDING ITEMS ===');
+  console.log('Record model:', record.model);
+  console.log('Pending string:', record.pending);
+  console.log('Customer Refused string:', record.customerRefused);
+  
   const pendingItemsStr = record.pending || '';
   const refusedItemsStr = record.customerRefused || ''; // New field for customer refused items
   
   if (record.model && MODEL_VARIANTS[record.model]) {
     const accessories = MODEL_VARIANTS[record.model].accessories;
     const allPendingOptions = accessories.concat(ADDITIONAL_PENDING_ITEMS);
+    
+    console.log('All pending options for this model:', allPendingOptions);
     
     allPendingOptions.forEach(function(accessory) {
       const itemDiv = document.createElement('div');
@@ -533,6 +562,8 @@ function populatePendingItems(record) {
       // Check status
       const isPending = pendingItemsStr.indexOf(accessory) !== -1;
       const isRefused = refusedItemsStr.indexOf(accessory) !== -1;
+      
+      console.log('Accessory:', accessory, '- Pending:', isPending, '- Refused:', isRefused);
       
       if (isPending) {
         itemDiv.classList.add('status-pending');
@@ -601,6 +632,9 @@ function populatePendingItems(record) {
         });
       });
     });
+  } else {
+    console.log('⚠️ No MODEL_VARIANTS match for pending items!');
+    pendingContainer.innerHTML = '<div style="color: #999; padding: 10px;">Model not found in configuration</div>';
   }
 }
 
