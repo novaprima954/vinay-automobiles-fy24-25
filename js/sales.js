@@ -465,8 +465,8 @@ function showWhatsAppModal(data) {
       accessoriesText += `Handle Hook - ${data.handlehook}\n`;  // Changed to handlehook
     }
     if (priceMasterDetails.helmetPrice) {
-      // Show Yes/No based on whether helmet is checked
-      const helmetText = data.helmet ? 'Yes' : 'No';
+      // Show helmet quantity or No
+      const helmetText = (data.helmet && data.helmet !== 'No') ? data.helmet : 'No';
       accessoriesText += `Helmet - ${helmetText}`;
     }
   }

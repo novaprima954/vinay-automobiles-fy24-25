@@ -843,3 +843,10 @@ function closeWhatsAppModal() {
     modal.remove();
   }
 }
+
+/**
+ * Go back to home page
+ */
+function goBack() {
+  window.location.href = 'home.html';
+}
