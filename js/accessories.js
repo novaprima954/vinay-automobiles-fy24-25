@@ -369,6 +369,8 @@ function displayResults(results) {
   console.log('Total results:', results.length);
   if (results.length > 0) {
     console.log('First result sample:', results[0]);
+    console.log('Variant field:', results[0].variant);
+    console.log('All fields:', Object.keys(results[0]));
   }
   
   if (results.length === 0) {
@@ -393,7 +395,7 @@ function displayResults(results) {
     row.insertCell(0).textContent = record.receiptNo || '';
     row.insertCell(1).textContent = record.customerName || '';
     row.insertCell(2).textContent = record.mobileNo || '';
-    row.insertCell(3).textContent = record.variant || record.variantName || '';  // Try both field names
+    row.insertCell(3).textContent = record.variant || record.variantName || record.model || '';  
     row.insertCell(4).textContent = record.deliveryDate || '';
     row.insertCell(5).textContent = accessoryStatus;
   });
@@ -560,6 +562,7 @@ function populateDetails(record, user) {
 
 /**
  * Populate pending items with radio buttons for Pending/Customer Refused
+ * ONLY show accessories that were ordered (marked as "Yes")
  */
 function populatePendingItems(record) {
   const pendingContainer = document.getElementById('pendingCheckboxes');
@@ -571,7 +574,7 @@ function populatePendingItems(record) {
   console.log('Customer Refused string:', record.customerRefused);
   
   const pendingItemsStr = record.pending || '';
-  const refusedItemsStr = record.customerRefused || ''; // New field for customer refused items
+  const refusedItemsStr = record.customerRefused || ''; 
   
   const modelConfig = getModelConfig(record.model);
   
@@ -579,9 +582,48 @@ function populatePendingItems(record) {
     const accessories = modelConfig.accessories;
     const allPendingOptions = accessories.concat(ADDITIONAL_PENDING_ITEMS);
     
-    console.log('All pending options for this model:', allPendingOptions);
+    console.log('All possible pending options:', allPendingOptions);
+    
+    // Filter to only show accessories that were ordered (value = "Yes")
+    const orderedAccessories = [];
     
     allPendingOptions.forEach(function(accessory) {
+      let isOrdered = false;
+      
+      // Check if this accessory was ordered (value = "Yes")
+      if (accessory === 'Guard') {
+        isOrdered = record.guard === 'Yes';
+      } else if (accessory === 'Grip Cover') {
+        isOrdered = (record.gripCover === 'Yes' || record.gripcover === 'Yes');
+      } else if (accessory === 'Seat Cover') {
+        isOrdered = (record.seatCover === 'Yes' || record.seatcover === 'Yes');
+      } else if (accessory === 'Matin') {
+        isOrdered = record.matin === 'Yes';
+      } else if (accessory === 'Tank Cover') {
+        isOrdered = (record.tankCover === 'Yes' || record.tankcover === 'Yes');
+      } else if (accessory === 'Handle Hook') {
+        isOrdered = (record.handleHook === 'Yes' || record.handlehook === 'Yes');
+      } else if (accessory === 'Helmet') {
+        isOrdered = record.helmet === 'Yes';
+      } else {
+        // For ADDITIONAL_PENDING_ITEMS (Buzzer, Mirror, Side Stand, Center Stand)
+        // These are always available as they might be dealer-added items
+        isOrdered = true;
+      }
+      
+      if (isOrdered) {
+        orderedAccessories.push(accessory);
+      }
+    });
+    
+    console.log('Accessories that were ordered (showing only these):', orderedAccessories);
+    
+    if (orderedAccessories.length === 0) {
+      pendingContainer.innerHTML = '<div style="color: #999; padding: 10px; text-align: center;">No accessories were ordered for this sale</div>';
+      return;
+    }
+    
+    orderedAccessories.forEach(function(accessory) {
       const itemDiv = document.createElement('div');
       itemDiv.className = 'pending-item';
       
