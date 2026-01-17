@@ -548,19 +548,22 @@
 
         <!-- Editable Section -->
         <div class="section-header">🔧 Accessory Information (Edit)</div>
+        <div style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); padding: 18px; border-radius: 12px; margin: 15px 0; border-left: 5px solid #2196f3; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <div style="display: flex; align-items: start; gap: 12px;">
+            <div style="font-size: 24px;">ℹ️</div>
+            <div>
+              <div style="font-weight: 600; font-size: 15px; color: #1565c0; margin-bottom: 8px;">Status Auto-Calculated</div>
+              <div style="font-size: 13px; line-height: 1.6; color: #37474f;">
+                • <strong>Complete:</strong> When ANY item is marked "Refused" OR all items are "None"<br>
+                • <strong>Partially Complete:</strong> When ANY item is marked "Pending"
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="search-grid" style="margin-top: 15px;">
           <div class="form-group">
             <label class="required">Accessory Checker Name:</label>
             <input type="text" id="accessoryCheckerName" readonly style="background: #e9ecef;">
-          </div>
-
-          <div class="form-group">
-            <label class="required">Accessory Fitted:</label>
-            <select id="accessoryFitted" required>
-              <option value="">-- Select --</option>
-              <option>Yes</option>
-              <option>No</option>
-            </select>
           </div>
 
           <div class="form-group">

@@ -78,13 +78,11 @@ let currentFilterStatus = null;
 // ==========================================
 
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('=== ACCESSORIES PAGE ===');
   
   // Check authentication
   const session = SessionManager.getSession();
   
   if (!session) {
-    console.log('❌ No session - redirecting to login');
     alert('Please login first');
     window.location.href = 'index.html';
     return;
@@ -94,13 +92,11 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Check role access (admin and accessories)
   if (user.role !== 'admin' && user.role !== 'accessories') {
-    console.log('❌ Access denied for role:', user.role);
     alert('Access denied. Only admin and accessories can access this page.');
     window.location.href = 'home.html';
     return;
   }
   
-  console.log('✅ Access granted:', user.name, '/', user.role);
   
   // Initialize page
   initializeAccessoriesPage(user);
@@ -118,7 +114,6 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 function initializeAccessoriesPage(user) {
   document.getElementById('currentUser').textContent = user.name + ' (' + user.role + ')';
-  console.log('✅ Accessories page initialized for:', user.name);
 }
 
 /**
@@ -173,7 +168,6 @@ async function loadDashboard() {
   const month = document.getElementById('monthSelector').value;
   const sessionId = SessionManager.getSessionId();
   
-  console.log('Loading dashboard for month:', month);
   
   try {
     const response = await API.call('getAccessoryDashboardData', {
@@ -188,7 +182,6 @@ async function loadDashboard() {
       showMessage(response.message, 'error');
     }
   } catch (error) {
-    console.error('Dashboard error:', error);
     showMessage('Failed to load dashboard', 'error');
   }
 }
@@ -234,7 +227,6 @@ async function filterByStatus(status) {
     document.querySelector('.partial-card').classList.add('active');
   }
   
-  console.log('Filtering by status:', status, 'for month:', month);
   
   try {
     const response = await API.call('getAccessoryFilteredData', {
@@ -255,7 +247,6 @@ async function filterByStatus(status) {
       showMessage(response.message, 'error');
     }
   } catch (error) {
-    console.error('Filter error:', error);
     showMessage('Failed to filter records', 'error');
   }
 }
@@ -326,7 +317,6 @@ async function searchRecords() {
   
   const sessionId = SessionManager.getSessionId();
   
-  console.log('Searching:', searchBy, '=', searchValue || dateFilter);
   
   // Clear dashboard filter
   document.querySelectorAll('.stat-card').forEach(function(card) {
@@ -353,7 +343,6 @@ async function searchRecords() {
       showMessage(response.message, 'error');
     }
   } catch (error) {
-    console.error('Search error:', error);
     showMessage('Search failed. Please try again.', 'error');
   }
 }
@@ -365,12 +354,7 @@ function displayResults(results) {
   const tbody = document.getElementById('resultsBody');
   tbody.innerHTML = '';
   
-  console.log('=== SEARCH RESULTS ===');
-  console.log('Total results:', results.length);
   if (results.length > 0) {
-    console.log('First result sample:', results[0]);
-    console.log('Variant field:', results[0].variant);
-    console.log('All fields:', Object.keys(results[0]));
   }
   
   if (results.length === 0) {
@@ -417,7 +401,6 @@ async function loadRecordDetails(row) {
   const sessionId = SessionManager.getSessionId();
   const user = SessionManager.getCurrentUser();
   
-  console.log('Loading record at row:', row);
   
   try {
     const response = await API.call('getAccessoryRecordByRow', {
@@ -433,7 +416,6 @@ async function loadRecordDetails(row) {
       showMessage(response.message, 'error');
     }
   } catch (error) {
-    console.error('Load record error:', error);
     showMessage('Failed to load record details', 'error');
   }
 }
@@ -442,13 +424,6 @@ async function loadRecordDetails(row) {
  * Populate record details
  */
 function populateDetails(record, user) {
-  console.log('=== POPULATE DETAILS ===');
-  console.log('Full record data:', record);
-  console.log('Model:', record.model);
-  console.log('Variant:', record.variant);
-  console.log('Guard:', record.guard);
-  console.log('GripCover:', record.gripCover, 'gripcover:', record.gripcover);
-  console.log('Pending:', record.pending);
   
   // Store values
   document.getElementById('selectedRow').value = record.row;
@@ -475,14 +450,11 @@ function populateDetails(record, user) {
   const accessoriesContainer = document.getElementById('accessoriesOrdered');
   accessoriesContainer.innerHTML = '';
   
-  console.log('Checking MODEL_VARIANTS for:', record.model);
   
   const modelConfig = getModelConfig(record.model);
-  console.log('Model config found:', modelConfig ? 'YES' : 'NO');
   
   if (modelConfig) {
     const accessories = modelConfig.accessories;
-    console.log('Accessories for this model:', accessories);
     
     accessories.forEach(function(accessory) {
       const detailItem = document.createElement('div');
@@ -512,7 +484,6 @@ function populateDetails(record, user) {
         value.textContent = record.helmet || '-';
       }
       
-      console.log('Accessory:', accessory, '-> Value:', value.textContent);
       
       detailItem.appendChild(label);
       detailItem.appendChild(value);
@@ -520,14 +491,11 @@ function populateDetails(record, user) {
     });
   } else {
     // If no model match, show a message
-    console.log('⚠️ No MODEL_VARIANTS match found!');
-    console.log('Available models in MODEL_VARIANTS:', Object.keys(MODEL_VARIANTS));
     accessoriesContainer.innerHTML = '<div style="color: #999; padding: 10px;">No accessories defined for this model: ' + (record.model || 'Unknown') + '</div>';
   }
   
   // Editable fields
   document.getElementById('accessoryCheckerName').value = record.accessoryCheckerName || user.name;
-  document.getElementById('accessoryFitted').value = record.accessoryFitted || '';
   document.getElementById('accessoryRemark').value = record.accessoryRemark || '';
   document.getElementById('accessoryReceipt1').value = record.accessoryReceipt1 || '';
   document.getElementById('accessoryExtra').value = record.accessoryExtra || '';
@@ -535,9 +503,8 @@ function populateDetails(record, user) {
   // Pending items
   populatePendingItems(record);
   
-  // Check edit mode
+  // Check edit mode - only based on Account Check
   const accountCheck = record.accountCheck || '';
-  const accessoryFitted = record.accessoryFitted || '';
   
   if (accountCheck !== 'Yes') {
     // BLOCKED - Account Check not Yes
@@ -545,14 +512,9 @@ function populateDetails(record, user) {
     document.getElementById('accountWarning').style.display = 'block';
     document.getElementById('limitedEditNote').style.display = 'none';
     setFieldsMode('blocked');
-  } else if (accessoryFitted === 'Yes') {
-    // LIMITED EDIT - Accessory Fitted is Yes
-    document.getElementById('viewOnlyBanner').style.display = 'block';
-    document.getElementById('accountWarning').style.display = 'none';
-    document.getElementById('limitedEditNote').style.display = 'block';
-    setFieldsMode('limited');
   } else {
-    // FULL EDIT - Account Check = Yes and Accessory Fitted ≠ Yes
+    // FULL EDIT - Account Check = Yes
+    // Allow editing regardless of Accessory Fitted status
     document.getElementById('viewOnlyBanner').style.display = 'none';
     document.getElementById('accountWarning').style.display = 'none';
     document.getElementById('limitedEditNote').style.display = 'none';
@@ -568,10 +530,6 @@ function populatePendingItems(record) {
   const pendingContainer = document.getElementById('pendingCheckboxes');
   pendingContainer.innerHTML = '';
   
-  console.log('=== POPULATE PENDING ITEMS ===');
-  console.log('Record model:', record.model);
-  console.log('Pending string:', record.pending);
-  console.log('Customer Refused string:', record.customerRefused);
   
   const pendingItemsStr = record.pending || '';
   const refusedItemsStr = record.customerRefused || ''; 
@@ -582,7 +540,6 @@ function populatePendingItems(record) {
     const accessories = modelConfig.accessories;
     const allPendingOptions = accessories.concat(ADDITIONAL_PENDING_ITEMS);
     
-    console.log('All possible pending options:', allPendingOptions);
     
     // Filter to only show accessories that were ordered (value = "Yes")
     const orderedAccessories = [];
@@ -616,7 +573,6 @@ function populatePendingItems(record) {
       }
     });
     
-    console.log('Accessories that were ordered (showing only these):', orderedAccessories);
     
     if (orderedAccessories.length === 0) {
       pendingContainer.innerHTML = '<div style="color: #999; padding: 10px; text-align: center;">No accessories were ordered for this sale</div>';
@@ -631,7 +587,6 @@ function populatePendingItems(record) {
       const isPending = pendingItemsStr.indexOf(accessory) !== -1;
       const isRefused = refusedItemsStr.indexOf(accessory) !== -1;
       
-      console.log('Accessory:', accessory, '- Pending:', isPending, '- Refused:', isRefused);
       
       if (isPending) {
         itemDiv.classList.add('status-pending');
@@ -701,16 +656,15 @@ function populatePendingItems(record) {
       });
     });
   } else {
-    console.log('⚠️ No MODEL_VARIANTS match for pending items!');
     pendingContainer.innerHTML = '<div style="color: #999; padding: 10px;">Model not found in configuration</div>';
   }
 }
 
 /**
- * Set fields mode (blocked, limited, full)
+ * Set fields mode (blocked, full)
  */
 function setFieldsMode(mode) {
-  const fields = ['accessoryFitted', 'accessoryRemark'];
+  const fields = ['accessoryRemark'];
   const alwaysEditableFields = ['accessoryReceipt1', 'accessoryExtra'];
   const updateBtn = document.getElementById('updateBtn');
   
@@ -732,29 +686,9 @@ function setFieldsMode(mode) {
     updateBtn.textContent = '🚫 Blocked - Account Check Required';
     updateBtn.style.background = '#dc3545';
     
-  } else if (mode === 'limited') {
-    // LIMITED EDIT MODE: Accessory Fitted = Yes
-    // Disable main fields
-    fields.forEach(function(id) {
-      document.getElementById(id).disabled = true;
-    });
-    
-    // Enable always-editable fields
-    alwaysEditableFields.forEach(function(id) {
-      document.getElementById(id).disabled = false;
-    });
-    
-    // Enable all pending radio buttons (they can change status)
-    document.querySelectorAll('#pendingCheckboxes input[type="radio"]').forEach(function(radio) {
-      radio.disabled = false;
-    });
-    
-    updateBtn.disabled = false;
-    updateBtn.textContent = '💾 Update (Limited)';
-    updateBtn.style.background = '#ff9800';
-    
   } else {
-    // FULL EDIT MODE: Account Check = Yes AND Accessory Fitted ≠ Yes
+    // FULL EDIT MODE: Account Check = Yes
+    // Allow editing regardless of Accessory Fitted status
     fields.forEach(function(id) {
       document.getElementById(id).disabled = false;
     });
@@ -769,7 +703,7 @@ function setFieldsMode(mode) {
     
     updateBtn.disabled = false;
     updateBtn.textContent = '💾 Update';
-    updateBtn.style.background = '#28a745';
+    updateBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
   }
 }
 
@@ -793,17 +727,10 @@ async function updateRecord() {
   
   // Validate mandatory fields
   const checkerName = document.getElementById('accessoryCheckerName').value.trim();
-  const fitted = document.getElementById('accessoryFitted').value;
   
   if (!checkerName) {
     showMessage('⚠️ Accessory Checker Name is mandatory!', 'error');
     document.getElementById('accessoryCheckerName').focus();
-    return;
-  }
-  
-  if (!fitted) {
-    showMessage('⚠️ Accessory Fitted is mandatory!', 'error');
-    document.getElementById('accessoryFitted').focus();
     return;
   }
   
@@ -835,6 +762,19 @@ async function updateRecord() {
   const pendingString = pendingItems.join(', ');
   const refusedString = refusedItems.join(', ');
   
+  // AUTO-DETERMINE FITTED STATUS based on pending/refused items
+  let fittedStatus;
+  if (refusedItems.length > 0) {
+    // If ANY item is refused → Complete (customer doesn't want it)
+    fittedStatus = 'Yes';
+  } else if (pendingItems.length > 0) {
+    // If ANY item is pending → Partially Complete
+    fittedStatus = 'No';
+  } else {
+    // All items are "None" → Complete
+    fittedStatus = 'Yes';
+  }
+  
   const sessionId = SessionManager.getSessionId();
   const updateBtn = document.getElementById('updateBtn');
   updateBtn.disabled = true;
@@ -845,7 +785,7 @@ async function updateRecord() {
       sessionId: sessionId,
       row: row,
       checkerName: checkerName,
-      fitted: fitted,
+      fitted: fittedStatus,
       remark: document.getElementById('accessoryRemark').value,
       pending: pendingString,
       customerRefused: refusedString,
@@ -861,7 +801,6 @@ async function updateRecord() {
       showMessage('❌ ' + response.message, 'error');
     }
   } catch (error) {
-    console.error('Update error:', error);
     showMessage('❌ Update failed. Please try again.', 'error');
   } finally {
     updateBtn.disabled = false;
@@ -897,7 +836,6 @@ async function exportToExcel() {
       showMessage(response.message, 'error');
     }
   } catch (error) {
-    console.error('Export error:', error);
     showMessage('Export failed', 'error');
   }
 }
