@@ -763,13 +763,14 @@ async function updateRecord() {
   const refusedString = refusedItems.join(', ');
   
   // AUTO-DETERMINE FITTED STATUS based on pending/refused items
+  // PRIORITY: Pending > Refused > None
   let fittedStatus;
-  if (refusedItems.length > 0) {
-    // If ANY item is refused → Complete (customer doesn't want it)
-    fittedStatus = 'Yes';
-  } else if (pendingItems.length > 0) {
-    // If ANY item is pending → Partially Complete
+  if (pendingItems.length > 0) {
+    // If ANY item is pending → Partially Complete (HIGHEST PRIORITY)
     fittedStatus = 'No';
+  } else if (refusedItems.length > 0) {
+    // If ANY item is refused (and NO pending) → Complete
+    fittedStatus = 'Yes';
   } else {
     // All items are "None" → Complete
     fittedStatus = 'Yes';
