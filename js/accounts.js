@@ -751,6 +751,7 @@ async function handleUpdate(e) {
     finalPrice: document.getElementById('finalPrice').value,
     financierName: financierValue,
     ...accessories,
+    accountantName: SessionManager.getCurrentUser()?.name || '',  // Add accountant name from session
     accountCheck: document.getElementById('accountCheck').value,
     accountRemark: document.getElementById('accountRemark').value,
     // Preserve receipt1 fields (read-only from sales)
@@ -781,6 +782,7 @@ async function handleUpdate(e) {
   
   console.log('💾 Updating account record:');
   console.log('   Receipt No:', data.receiptNo);
+  console.log('   Accountant Name:', data.accountantName);
   console.log('   Financier Name:', data.financierName);
   console.log('   Receipt No 1:', data.receiptNo1);
   console.log('   Receipt 1 Amount:', data.receipt1Amount);
