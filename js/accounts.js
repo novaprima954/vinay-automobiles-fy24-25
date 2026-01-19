@@ -982,7 +982,10 @@ async function calculatePrice() {
     const finalPrice = parseFloat(document.getElementById('finalPrice').value) || 0;
     const discount = parseFloat(document.getElementById('discount').value) || 0;
     
-    // Calculate: (PriceMaster Total - Discount) should equal Final Price
+    // Add finance commission to Final Price for comparison
+    const finalPriceWithFinanceComm = finalPrice + breakdownData.financeComm;
+    
+    // Calculate: (PriceMaster Total - Discount) should equal (Final Price + Finance Commission)
     const afterDiscount = total - discount;
     
     console.log('💰 Price Comparison:');
@@ -990,6 +993,8 @@ async function calculatePrice() {
     console.log('   Discount:', discount);
     console.log('   After Discount:', afterDiscount);
     console.log('   Final Price (Entered):', finalPrice);
+    console.log('   Finance Commission:', breakdownData.financeComm);
+    console.log('   Final Price + Finance Comm:', finalPriceWithFinanceComm);
     
     // Display breakdown
     displayPriceBreakdown({
@@ -997,7 +1002,8 @@ async function calculatePrice() {
       calculatedTotal: Math.round(total),
       discount: discount,
       afterDiscount: Math.round(afterDiscount),
-      finalPrice: finalPrice
+      finalPrice: finalPrice,
+      finalPriceWithFinanceComm: Math.round(finalPriceWithFinanceComm)
     });
     
   } catch (error) {
@@ -1015,7 +1021,8 @@ function displayPriceBreakdown(calculation) {
   const discount = calculation.discount || 0;
   const afterDiscount = calculation.afterDiscount || 0;
   const finalPrice = calculation.finalPrice || 0;
-  const matched = Math.abs(afterDiscount - finalPrice) < 1;
+  const finalPriceWithFinanceComm = calculation.finalPriceWithFinanceComm || 0;
+  const matched = Math.abs(afterDiscount - finalPriceWithFinanceComm) < 1;
   
   let html = '<div style="background: white; padding: 15px; border-radius: 8px;">';
   
@@ -1072,9 +1079,15 @@ function displayPriceBreakdown(calculation) {
   html += '<div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 2px solid ' + (matched ? '#28a74550' : '#ffc10750') + ';">';
   html += `<span>AFTER DISCOUNT:</span><span style="color: #667eea;">₹${afterDiscount.toLocaleString()}</span></div>`;
   
-  // Final Price (Entered)
+  // Final Price (Entered) + Finance Commission
   html += '<div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; margin-bottom: 8px;">';
   html += `<span>FINAL PRICE (Entered):</span><span>₹${finalPrice.toLocaleString()}</span></div>`;
+  
+  html += '<div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; margin-bottom: 8px;">';
+  html += `<span>+ FINANCE COMMISSION:</span><span style="color: #667eea;">₹${breakdown.financeComm.toLocaleString()}</span></div>`;
+  
+  html += '<div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid ' + (matched ? '#28a74550' : '#ffc10750') + ';">';
+  html += `<span>TOTAL TO MATCH:</span><span style="color: #333;">₹${finalPriceWithFinanceComm.toLocaleString()}</span></div>`;
   
   // Result
   html += '<div style="text-align: center; font-size: 18px; font-weight: 700; margin-top: 10px; padding-top: 10px; border-top: 2px solid ' + (matched ? '#28a74550' : '#ffc10750') + ';">';
@@ -1082,9 +1095,11 @@ function displayPriceBreakdown(calculation) {
   if (matched) {
     html += '<span style="color: #28a745;">✅ MATCHED</span>';
   } else {
-    const diff = afterDiscount - finalPrice;
-    html += '<span style="color: #ffc107;">⚠️ MISMATCH</span>';
-    html += `<div style="font-size: 13px; margin-top: 5px; color: #666;">(₹${Math.abs(diff).toLocaleString()} difference)</div>`;
+    const diff = afterDiscount - finalPriceWithFinanceComm;
+    const excessOrShort = diff > 0 ? 'EXCESS' : 'SHORT';
+    const color = diff > 0 ? '#ff9800' : '#f44336';
+    html += `<span style="color: ${color};">⚠️ ${excessOrShort}</span>`;
+    html += `<div style="font-size: 13px; margin-top: 5px; color: #666;">₹${Math.abs(diff).toLocaleString()}</div>`;
   }
   
   html += '</div></div>';
