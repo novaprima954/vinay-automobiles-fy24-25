@@ -421,8 +421,6 @@ async function populateDetails(record) {
   document.getElementById('protectedVariant').textContent = record.variant || '-';
   document.getElementById('protectedColour').textContent = record.colour || '-';
   document.getElementById('protectedDeliveryDate').textContent = record.deliveryDate || '-';
-  document.getElementById('protectedReceiptNo1').textContent = record.receiptNo1 || '-';
-  document.getElementById('protectedReceipt1Amount').textContent = record.receipt1Amount ? '₹' + record.receipt1Amount : '-';
   document.getElementById('protectedSalesRemark').textContent = record.salesRemark || 'N/A';
   
   // Editable sales fields
@@ -452,7 +450,12 @@ async function populateDetails(record) {
   // Accounts fields
   document.getElementById('accountCheck').value = record.accountCheck || '';
   document.getElementById('accountRemark').value = record.accountRemark || '';
-  // Receipt 1 Amount is now read-only in protected section
+  
+  // Receipt 1 fields (read-only display above Receipt 2)
+  document.getElementById('receiptNo1Display').value = record.receiptNo1 || '';
+  document.getElementById('receipt1AmountDisplay').value = record.receipt1Amount || '';
+  
+  // Receipt 2-4 fields
   document.getElementById('receiptNo2').value = record.receiptNo2 || '';
   document.getElementById('receipt2Amount').value = record.receipt2Amount || '';
   document.getElementById('receiptNo3').value = record.receiptNo3 || '';
@@ -706,7 +709,8 @@ async function handleUpdate(e) {
     }
   });
   
-  // VALIDATION: Block Account Check = "Yes" if Grand Total doesn't match Final Price
+  // VALIDATION: Block Account Check = "Yes" if calculation doesn't match Final Price
+  // New formula: Receipt1 + Receipt2 + Receipt3 + Receipt4 + Disbursed Amount - Finance Commission = Final Price
   const accountCheck = document.getElementById('accountCheck').value;
   if (accountCheck === 'Yes') {
     const r1 = currentReceipt1Amount;
@@ -714,17 +718,25 @@ async function handleUpdate(e) {
     const r3 = parseFloat(document.getElementById('receipt3Amount').value) || 0;
     const r4 = parseFloat(document.getElementById('receipt4Amount').value) || 0;
     const disbursed = parseFloat(document.getElementById('disbursedAmount').value) || 0;
-    const grandTotal = r1 + r2 + r3 + r4 + disbursed;
+    const financeCommission = parseFloat(document.getElementById('financeComm').value) || 0;
+    const calculatedTotal = r1 + r2 + r3 + r4 + disbursed - financeCommission;
     const finalPrice = parseFloat(document.getElementById('finalPrice').value) || 0;
     
     // Check if they match (allow 1 rupee difference for rounding)
-    if (Math.abs(grandTotal - finalPrice) >= 1) {
-      showMessage(
+    if (Math.abs(calculatedTotal - finalPrice) >= 1) {
+      alert(
         `❌ Cannot mark Account Check as "Yes".\n\n` +
-        `Grand Total: ₹${grandTotal.toFixed(2)}\n` +
+        `Formula: Receipt1 + Receipt2 + Receipt3 + Receipt4 + Disbursed - Finance Commission = Final Price\n\n` +
+        `Receipt 1: ₹${r1.toFixed(2)}\n` +
+        `Receipt 2: ₹${r2.toFixed(2)}\n` +
+        `Receipt 3: ₹${r3.toFixed(2)}\n` +
+        `Receipt 4: ₹${r4.toFixed(2)}\n` +
+        `Disbursed: ₹${disbursed.toFixed(2)}\n` +
+        `Finance Commission: ₹${financeCommission.toFixed(2)}\n\n` +
+        `Calculated Total: ₹${calculatedTotal.toFixed(2)}\n` +
         `Final Price: ₹${finalPrice.toFixed(2)}\n\n` +
-        `These amounts must match!`,
-        'error'
+        `Difference: ₹${Math.abs(calculatedTotal - finalPrice).toFixed(2)}\n\n` +
+        `These amounts must match!`
       );
       return;
     }
@@ -742,7 +754,7 @@ async function handleUpdate(e) {
     accountCheck: document.getElementById('accountCheck').value,
     accountRemark: document.getElementById('accountRemark').value,
     // Preserve receipt1 fields (read-only from sales)
-    receiptNo1: document.getElementById('protectedReceiptNo1')?.textContent || '',
+    receiptNo1: document.getElementById('receiptNo1Display')?.value || '',
     receipt1Amount: currentReceipt1Amount || '',
     receiptNo2: document.getElementById('receiptNo2').value,
     receipt2Amount: document.getElementById('receipt2Amount').value,
@@ -957,6 +969,15 @@ async function calculatePrice() {
       }
     }
     
+    // Add Hypothecation Rs 500 if financier is not Cash
+    const financierEl = document.getElementById('financierName');
+    let hypothecation = 0;
+    if (financierEl && financierEl.value && financierEl.value !== 'Cash') {
+      hypothecation = 500;
+      total += hypothecation;
+    }
+    breakdownData.hypothecation = hypothecation;
+    
     // Get entered values
     const finalPrice = parseFloat(document.getElementById('finalPrice').value) || 0;
     const discount = parseFloat(document.getElementById('discount').value) || 0;
@@ -1026,6 +1047,12 @@ function displayPriceBreakdown(calculation) {
   if (breakdown.financeComm > 0) {
     html += `<div style="display: flex; justify-content: space-between; border-top: 1px solid #f0f0f0; padding: 8px 0; margin-top: 5px;">`;
     html += `<span style="color: #666;">Finance Comm:</span><span style="font-weight: 600;">₹${breakdown.financeComm.toLocaleString()}</span></div>`;
+  }
+  
+  // Hypothecation
+  if (breakdown.hypothecation > 0) {
+    html += `<div style="display: flex; justify-content: space-between; border-top: 1px solid #f0f0f0; padding: 8px 0; margin-top: 5px;">`;
+    html += `<span style="color: #666;">Hypothecation:</span><span style="font-weight: 600;">₹${breakdown.hypothecation.toLocaleString()}</span></div>`;
   }
   
   html += '</div>';
