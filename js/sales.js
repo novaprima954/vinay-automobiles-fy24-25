@@ -497,7 +497,6 @@ ${accessoriesText}`;
   
   // Store for WhatsApp sharing
   window.currentWhatsAppData = {
-    mobile: data.mobileNo,
     message: message
   };
 }
@@ -508,9 +507,20 @@ ${accessoriesText}`;
 function shareOnWhatsApp() {
   if (window.currentWhatsAppData) {
     const message = window.currentWhatsAppData.message;
-    const mobile = window.currentWhatsAppData.mobile;
-    const url = `https://wa.me/91${mobile}?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
+    
+    // Check if it's mobile device
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      // For mobile devices, open WhatsApp app with message ready to share
+      const url = `whatsapp://send?text=${encodeURIComponent(message)}`;
+      window.location.href = url;
+    } else {
+      // For desktop, open WhatsApp Web with message ready to share
+      const url = `https://web.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+      window.open(url, '_blank');
+    }
+    
     closeWhatsAppModal();
   }
 }
