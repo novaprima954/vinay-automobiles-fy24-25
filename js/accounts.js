@@ -686,6 +686,12 @@ async function handleUpdate(e) {
     return;
   }
   
+  // VALIDATION: Require price verification to be saved before updating
+  if (!window.lastPriceVerification) {
+    alert('❌ Price Verification Required!\n\nPlease click "Calculate from PriceMaster" and save the price verification before updating the record.');
+    return;
+  }
+  
   const sessionId = SessionManager.getSessionId();
   
   // Get financier value
@@ -990,6 +996,14 @@ async function calculatePrice() {
     // Calculate: (PriceMaster Total - Discount) should equal (Final Price + Finance Commission)
     const afterDiscount = total - discount;
     
+    // Calculate Amount Collected (Receipt 1-4 + Disbursed Amount)
+    const r1 = currentReceipt1Amount || 0;
+    const r2 = parseFloat(document.getElementById('receipt2Amount').value) || 0;
+    const r3 = parseFloat(document.getElementById('receipt3Amount').value) || 0;
+    const r4 = parseFloat(document.getElementById('receipt4Amount').value) || 0;
+    const disbursed = parseFloat(document.getElementById('disbursedAmount').value) || 0;
+    const amountCollected = r1 + r2 + r3 + r4 + disbursed;
+    
     console.log('💰 Price Comparison:');
     console.log('   Calculated Total (PriceMaster):', total);
     console.log('   Discount:', discount);
@@ -997,6 +1011,7 @@ async function calculatePrice() {
     console.log('   Final Price (Entered):', finalPrice);
     console.log('   Finance Commission:', breakdownData.financeComm);
     console.log('   Final Price + Finance Comm:', finalPriceWithFinanceComm);
+    console.log('   Amount Collected (R1-4 + Disbursed):', amountCollected);
     
     // Display breakdown
     displayPriceBreakdown({
@@ -1005,7 +1020,8 @@ async function calculatePrice() {
       discount: discount,
       afterDiscount: Math.round(afterDiscount),
       finalPrice: finalPrice,
-      finalPriceWithFinanceComm: Math.round(finalPriceWithFinanceComm)
+      finalPriceWithFinanceComm: Math.round(finalPriceWithFinanceComm),
+      amountCollected: Math.round(amountCollected)
     });
     
   } catch (error) {
@@ -1024,7 +1040,12 @@ function displayPriceBreakdown(calculation) {
   const afterDiscount = calculation.afterDiscount || 0;
   const finalPrice = calculation.finalPrice || 0;
   const finalPriceWithFinanceComm = calculation.finalPriceWithFinanceComm || 0;
-  const matched = Math.abs(afterDiscount - finalPriceWithFinanceComm) < 1;
+  const amountCollected = calculation.amountCollected || 0;
+  
+  // All three amounts must match
+  const matched = Math.abs(afterDiscount - finalPriceWithFinanceComm) < 1 && 
+                  Math.abs(afterDiscount - amountCollected) < 1 &&
+                  Math.abs(finalPriceWithFinanceComm - amountCollected) < 1;
   
   let html = '<div style="background: white; padding: 15px; border-radius: 8px;">';
   
@@ -1088,20 +1109,28 @@ function displayPriceBreakdown(calculation) {
   html += '<div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; margin-bottom: 8px;">';
   html += `<span>+ FINANCE COMMISSION:</span><span style="color: #667eea;">₹${breakdown.financeComm.toLocaleString()}</span></div>`;
   
-  html += '<div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid ' + (matched ? '#28a74550' : '#ffc10750') + ';">';
+  html += '<div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid ' + (matched ? '#28a74550' : '#ffc10750') + ';">';
   html += `<span>TOTAL TO MATCH:</span><span style="color: #333;">₹${finalPriceWithFinanceComm.toLocaleString()}</span></div>`;
   
-  // Result
+  // Section 3: Amount Collected (Receipt 1-4 + Disbursed Amount)
+  const amountCollected = calculation.amountCollected || 0;
+  html += '<div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px; color: #666;">';
+  html += `<span>Receipt 1-4 + Disbursed Amount:</span><span style="font-weight: 600;">-</span></div>`;
+  
+  html += '<div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; margin-bottom: 8px;">';
+  html += `<span>AMOUNT COLLECTED:</span><span style="color: #333;">₹${amountCollected.toLocaleString()}</span></div>`;
+  
+  // Result - Compare all three amounts
   html += '<div style="text-align: center; font-size: 18px; font-weight: 700; margin-top: 10px; padding-top: 10px; border-top: 2px solid ' + (matched ? '#28a74550' : '#ffc10750') + ';">';
   
   if (matched) {
     html += '<span style="color: #28a745;">✅ MATCHED</span>';
   } else {
-    const diff = afterDiscount - finalPriceWithFinanceComm;
+    const diff = afterDiscount - amountCollected;
     const excessOrShort = diff > 0 ? 'EXCESS' : 'SHORT';
     const color = diff > 0 ? '#ff9800' : '#f44336';
     html += `<span style="color: ${color};">⚠️ ${excessOrShort}</span>`;
-    html += `<div style="font-size: 13px; margin-top: 5px; color: #666;">₹${Math.abs(diff).toLocaleString()}</div>`;
+    html += `<div style="font-size: 13px; margin-top: 5px; color: #666;">After Discount vs Amount Collected: ₹${Math.abs(diff).toLocaleString()}</div>`;
   }
   
   html += '</div></div>';
