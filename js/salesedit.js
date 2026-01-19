@@ -805,33 +805,31 @@ function showWhatsAppModal(data) {
   
   // Store for sending
   window.whatsappMessage = message;
-  window.whatsappMobile = data.mobileNo;
 }
 
 function sendWhatsAppMessage() {
-  const mobile = window.whatsappMobile;
   const message = window.whatsappMessage;
   
-  if (!mobile) {
-    alert('Mobile number not found!');
+  if (!message) {
+    alert('Message not found!');
     return;
   }
   
-  // Clean mobile number (remove spaces, dashes, etc.)
-  const cleanMobile = mobile.toString().replace(/\D/g, '');
-  
-  // Format for India (+91)
-  let formattedMobile = cleanMobile;
-  if (cleanMobile.length === 10) {
-    formattedMobile = '91' + cleanMobile;
-  }
+  // Check if it's mobile device
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   
   // Encode message for URL
   const encodedMessage = encodeURIComponent(message);
   
-  // Open WhatsApp
-  const whatsappURL = 'https://wa.me/' + formattedMobile + '?text=' + encodedMessage;
-  window.open(whatsappURL, '_blank');
+  if (isMobile) {
+    // For mobile devices, open WhatsApp app with message ready to share
+    const whatsappURL = 'whatsapp://send?text=' + encodedMessage;
+    window.location.href = whatsappURL;
+  } else {
+    // For desktop, open WhatsApp Web with message ready to share
+    const whatsappURL = 'https://web.whatsapp.com/send?text=' + encodedMessage;
+    window.open(whatsappURL, '_blank');
+  }
   
   // Close modal after short delay
   setTimeout(closeWhatsAppModal, 1000);
