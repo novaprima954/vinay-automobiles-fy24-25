@@ -1113,7 +1113,6 @@ function displayPriceBreakdown(calculation) {
   html += `<span>TOTAL TO MATCH:</span><span style="color: #333;">₹${finalPriceWithFinanceComm.toLocaleString()}</span></div>`;
   
   // Section 3: Amount Collected (Receipt 1-4 + Disbursed Amount)
-  const amountCollected = calculation.amountCollected || 0;
   html += '<div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px; color: #666;">';
   html += `<span>Receipt 1-4 + Disbursed Amount:</span><span style="font-weight: 600;">-</span></div>`;
   
