@@ -104,63 +104,129 @@ function renderSalesDashboard(data) {
     <!-- Target Progress -->
     <div class="section">
       <div class="section-header">🎯 Target Progress</div>
-      <div class="progress-container">
-        <div class="progress-label">
-          <span>Target: ${data.target} sales</span>
-          <span>${data.targetProgress}%</span>
+      ${data.target > 0 ? `
+        <div class="progress-container">
+          <div class="progress-label">
+            <span>Target: ${data.target} sales</span>
+            <span>${data.targetProgress}%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: ${Math.min(data.targetProgress, 100)}%"></div>
+          </div>
+          <div style="margin-top: 8px; font-size: 13px; color: #666;">
+            ${data.target - data.myCompletedSales > 0 ? (data.target - data.myCompletedSales) + ' more sales needed' : 'Target achieved! 🎉'}
+          </div>
         </div>
-        <div class="progress-bar">
-          <div class="progress-fill" style="width: ${data.targetProgress}%"></div>
+      ` : '<div class="empty-state">No target set for this month</div>'}
+    </div>
+
+    <!-- Model Breakdown -->
+    <div class="section">
+      <div class="section-header">🏍️ My Models Sold (Completed Sales)</div>
+      ${data.modelBreakdown && data.modelBreakdown.length > 0 ? `
+        <div class="accessories-grid">
+          ${data.modelBreakdown.map(model => `
+            <div class="accessory-item">
+              <div class="accessory-name">${model.model}</div>
+              <div class="accessory-count">${model.count}</div>
+            </div>
+          `).join('')}
         </div>
-        <div style="margin-top: 8px; font-size: 13px; color: #666;">
-          ${data.target - data.mySales > 0 ? (data.target - data.mySales) + ' more sales needed' : 'Target achieved! 🎉'}
-        </div>
+      ` : '<div class="empty-state">No completed sales yet</div>'}
+    </div>
+
+    <!-- Monthly Trend -->
+    ${data.monthlyTrend && data.monthlyTrend.length > 0 ? `
+    <div class="section">
+      <div class="section-header">📈 Monthly Trend (Last 6 Months)</div>
+      <div style="margin-top: 15px;">
+        ${data.monthlyTrend.map(month => `
+          <div style="margin-bottom: 12px;">
+            <div class="progress-label">
+              <span style="font-weight: 600;">${month.month}</span>
+              <span style="font-weight: 700; color: #667eea;">${month.count} sales</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: ${month.percentage}%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);"></div>
+            </div>
+          </div>
+        `).join('')}
       </div>
     </div>
+    ` : ''}
 
     <!-- Pending Tasks -->
     <div class="section">
       <div class="section-header">⚠️ Pending Tasks</div>
-      ${data.accessoriesPending > 0 ? `
-        <div class="list-item">
-          <div class="list-item-main">
-            <div class="list-item-title">Accessories Pending Fitting</div>
-            <div class="list-item-subtitle">${data.accessoriesPending} of your sales need accessories</div>
+      ${(data.dmsPending > 0 || data.insurancePending > 0 || data.rtoPending > 0 || data.accessoriesPending > 0) ? `
+        ${data.dmsPending > 0 ? `
+          <div class="list-item" onclick="showPendingDetails('dms', 'DMS')">
+            <div class="list-item-main">
+              <div class="list-item-title">DMS Pending</div>
+              <div class="list-item-subtitle">${data.dmsPending} sales need DMS completion</div>
+            </div>
+            <span class="badge">${data.dmsPending}</span>
           </div>
-          <span class="badge">${data.accessoriesPending}</span>
-        </div>
+        ` : ''}
+        ${data.insurancePending > 0 ? `
+          <div class="list-item" onclick="showPendingDetails('insurance', 'Insurance')">
+            <div class="list-item-main">
+              <div class="list-item-title">Insurance Pending</div>
+              <div class="list-item-subtitle">${data.insurancePending} sales need insurance processing</div>
+            </div>
+            <span class="badge">${data.insurancePending}</span>
+          </div>
+        ` : ''}
+        ${data.rtoPending > 0 ? `
+          <div class="list-item" onclick="showPendingDetails('rto', 'RTO')">
+            <div class="list-item-main">
+              <div class="list-item-title">RTO Pending</div>
+              <div class="list-item-subtitle">${data.rtoPending} sales need RTO registration</div>
+            </div>
+            <span class="badge">${data.rtoPending}</span>
+          </div>
+        ` : ''}
+        ${data.accessoriesPending > 0 ? `
+          <div class="list-item" onclick="showPendingDetails('accessories', 'Accessories')">
+            <div class="list-item-main">
+              <div class="list-item-title">Accessories Pending Fitting</div>
+              <div class="list-item-subtitle">${data.accessoriesPending} sales need accessories</div>
+            </div>
+            <span class="badge">${data.accessoriesPending}</span>
+          </div>
+        ` : ''}
       ` : '<div class="empty-state">No pending tasks ✅</div>'}
     </div>
 
     <!-- My Accessories -->
     <div class="section">
-      <div class="section-header">🔩 My Accessories Count</div>
+      <div class="section-header">🔩 My Accessories Count (Completed Sales)</div>
       <div class="accessories-grid">
-        <div class="accessory-item">
+        <div class="accessory-item" onclick="showAccessoryBreakdown('guard', 'Guard')">
           <div class="accessory-name">Guard</div>
           <div class="accessory-count">${data.myAccessories.guard}</div>
         </div>
-        <div class="accessory-item">
+        <div class="accessory-item" onclick="showAccessoryBreakdown('gripcover', 'Grip Cover')">
           <div class="accessory-name">Grip Cover</div>
           <div class="accessory-count">${data.myAccessories.grip}</div>
         </div>
-        <div class="accessory-item">
+        <div class="accessory-item" onclick="showAccessoryBreakdown('helmet', 'Helmet')">
           <div class="accessory-name">Helmet</div>
           <div class="accessory-count">${data.myAccessories.helmet}</div>
         </div>
-        <div class="accessory-item">
+        <div class="accessory-item" onclick="showAccessoryBreakdown('seatcover', 'Seat Cover')">
           <div class="accessory-name">Seat Cover</div>
           <div class="accessory-count">${data.myAccessories.seatCover}</div>
         </div>
-        <div class="accessory-item">
+        <div class="accessory-item" onclick="showAccessoryBreakdown('matin', 'Matin')">
           <div class="accessory-name">Matin</div>
           <div class="accessory-count">${data.myAccessories.matin}</div>
         </div>
-        <div class="accessory-item">
+        <div class="accessory-item" onclick="showAccessoryBreakdown('tankcover', 'Tank Cover')">
           <div class="accessory-name">Tank Cover</div>
           <div class="accessory-count">${data.myAccessories.tankCover}</div>
         </div>
-        <div class="accessory-item">
+        <div class="accessory-item" onclick="showAccessoryBreakdown('handlehook', 'Handle Hook')">
           <div class="accessory-name">Handle Hook</div>
           <div class="accessory-count">${data.myAccessories.handleHook}</div>
         </div>
@@ -219,8 +285,42 @@ function renderAccountsDashboard(data) {
       </div>
     </div>
 
+    <!-- Executive-wise Completed Sales -->
+    <div class="section">
+      <div class="section-header">👥 Executive-wise Sales (Account Check: Yes)</div>
+      ${data.executiveSales && data.executiveSales.length > 0 ? data.executiveSales.map((exec, index) => `
+        <div class="list-item" onclick="showExecutiveModels('${exec.executive}', 'models')">
+          <div class="list-item-main">
+            <div class="list-item-title">
+              ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : ''}
+              ${exec.executive}
+            </div>
+            <div class="list-item-subtitle">Click to see model breakdown</div>
+          </div>
+          <div class="list-item-value">${exec.completedSales}</div>
+        </div>
+      `).join('') : '<div class="empty-state">No completed sales</div>'}
+    </div>
+
+    <!-- Executive-wise Accessories -->
+    <div class="section">
+      <div class="section-header">🔩 Executive-wise Accessories (Account Check: Yes)</div>
+      ${data.executiveAccessories && data.executiveAccessories.length > 0 ? data.executiveAccessories.map((exec, index) => `
+        <div class="list-item" onclick="showExecutiveModels('${exec.executive}', 'accessories')">
+          <div class="list-item-main">
+            <div class="list-item-title">
+              ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : ''}
+              ${exec.executive}
+            </div>
+            <div class="list-item-subtitle">Click to see accessory breakdown</div>
+          </div>
+          <div class="list-item-value">${exec.totalAccessories}</div>
+        </div>
+      `).join('') : '<div class="empty-state">No accessories data</div>'}
+    </div>
+
     <!-- Today's Work -->
-    ${data.todaysWork.length > 0 ? `
+    ${data.todaysWork && data.todaysWork.length > 0 ? `
     <div class="section">
       <div class="section-header">📅 Today's Work (${data.todaysWork.length})</div>
       ${data.todaysWork.map(record => `
@@ -237,8 +337,8 @@ function renderAccountsDashboard(data) {
 
     <!-- Pending Reviews -->
     <div class="section">
-      <div class="section-header">⏳ Pending Reviews (${data.pendingReviews.length})</div>
-      ${data.pendingReviews.length > 0 ? data.pendingReviews.map(record => `
+      <div class="section-header">⏳ Pending Reviews (${data.pendingReviews ? data.pendingReviews.length : 0})</div>
+      ${data.pendingReviews && data.pendingReviews.length > 0 ? data.pendingReviews.map(record => `
         <div class="list-item">
           <div class="list-item-main">
             <div class="list-item-title">${record.customerName}</div>
@@ -482,14 +582,14 @@ function renderAdminDashboard(data) {
 }
 
 /**
- * Show accessory breakdown by model
+ * Show accessory breakdown by model (for sales dashboard)
  */
 async function showAccessoryBreakdown(type, name) {
   try {
-    const response = await API.getAccessoryBreakdown(type, currentFilter);
+    const response = await API.getMyAccessoryBreakdown(type, currentFilter);
     
-    if (response.success && response.breakdown.length > 0) {
-      document.getElementById('modalTitle').textContent = name + ' Breakdown';
+    if (response.success && response.breakdown && response.breakdown.length > 0) {
+      document.getElementById('modalTitle').textContent = name + ' - Model Breakdown';
       
       const modalContent = document.getElementById('modalContent');
       modalContent.innerHTML = response.breakdown.map(item => `
@@ -507,6 +607,70 @@ async function showAccessoryBreakdown(type, name) {
     }
   } catch (error) {
     console.error('Breakdown error:', error);
+    showMessage('Error loading breakdown', 'error');
+  }
+}
+
+/**
+ * Show pending details (DMS, Insurance, RTO, Accessories)
+ */
+async function showPendingDetails(type, name) {
+  try {
+    const response = await API.getMyPendingDetails(type, currentFilter);
+    
+    if (response.success && response.pending && response.pending.length > 0) {
+      document.getElementById('modalTitle').textContent = name + ' Pending';
+      
+      const modalContent = document.getElementById('modalContent');
+      modalContent.innerHTML = response.pending.map(item => `
+        <div class="list-item">
+          <div class="list-item-main">
+            <div class="list-item-title">${item.customerName}</div>
+            <div class="list-item-subtitle">${item.model} • Receipt: ${item.receiptNo}</div>
+          </div>
+        </div>
+      `).join('');
+      
+      document.getElementById('accessoryModal').classList.add('active');
+    } else {
+      showMessage('No pending items', 'error');
+    }
+  } catch (error) {
+    console.error('Pending details error:', error);
+    showMessage('Error loading pending details', 'error');
+  }
+}
+
+/**
+ * Show executive models or accessories breakdown (for accounts dashboard)
+ */
+async function showExecutiveModels(executive, type) {
+  try {
+    const response = await API.getExecutiveBreakdown(executive, type, currentFilter);
+    
+    if (response.success && response.breakdown && response.breakdown.length > 0) {
+      if (type === 'models') {
+        document.getElementById('modalTitle').textContent = executive + ' - Models Sold';
+      } else {
+        document.getElementById('modalTitle').textContent = executive + ' - Accessories';
+      }
+      
+      const modalContent = document.getElementById('modalContent');
+      modalContent.innerHTML = response.breakdown.map(item => `
+        <div class="list-item">
+          <div class="list-item-main">
+            <div class="list-item-title">${type === 'models' ? item.model : item.accessory}</div>
+          </div>
+          <div class="list-item-value">${item.count}</div>
+        </div>
+      `).join('');
+      
+      document.getElementById('accessoryModal').classList.add('active');
+    } else {
+      showMessage('No data available', 'error');
+    }
+  } catch (error) {
+    console.error('Executive breakdown error:', error);
     showMessage('Error loading breakdown', 'error');
   }
 }
