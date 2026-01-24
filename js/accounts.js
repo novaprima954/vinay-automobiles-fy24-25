@@ -556,6 +556,13 @@ async function renderAccessoriesFromPriceMaster(model, variant, record) {
     if (response.success) {
       const details = response.details;
       
+      // Create a wrapper div for 2-column grid layout
+      const gridWrapper = document.createElement('div');
+      gridWrapper.style.display = 'grid';
+      gridWrapper.style.gridTemplateColumns = 'repeat(2, 1fr)';
+      gridWrapper.style.gap = '15px';
+      gridWrapper.style.gridColumn = '1 / -1'; // Span full width in parent form-grid
+      
       // Render accessories that have prices
       const accessories = [
         { key: 'guardPrice', name: 'Guard', id: 'guard' },
@@ -582,7 +589,7 @@ async function renderAccessoriesFromPriceMaster(model, variant, record) {
           
           formGroup.appendChild(label);
           formGroup.appendChild(select);
-          accessoryContainer.appendChild(formGroup);
+          gridWrapper.appendChild(formGroup);
         }
       });
       
@@ -602,8 +609,10 @@ async function renderAccessoriesFromPriceMaster(model, variant, record) {
         
         formGroup.appendChild(label);
         formGroup.appendChild(select);
-        accessoryContainer.appendChild(formGroup);
+        gridWrapper.appendChild(formGroup);
       }
+      
+      accessoryContainer.appendChild(gridWrapper);
       
       console.log('✅ Rendered accessories for', model, variant);
     }
@@ -715,8 +724,8 @@ async function handleUpdate(e) {
     }
   });
   
-  // VALIDATION: Block Account Check = "Yes" if calculation doesn't match Final Price
-  // New formula: Receipt1 + Receipt2 + Receipt3 + Receipt4 + Disbursed Amount - Finance Commission = Final Price
+  // VALIDATION: Block Account Check = "Yes" if calculation is SHORT (less than Final Price)
+  // Allow "Yes" if: calculatedTotal equals OR is greater than (EXCESS) Final Price
   const accountCheck = document.getElementById('accountCheck').value;
   if (accountCheck === 'Yes') {
     const r1 = currentReceipt1Amount;
@@ -728,10 +737,11 @@ async function handleUpdate(e) {
     const calculatedTotal = r1 + r2 + r3 + r4 + disbursed - financeCommission;
     const finalPrice = parseFloat(document.getElementById('finalPrice').value) || 0;
     
-    // Check if they match (allow 1 rupee difference for rounding)
-    if (Math.abs(calculatedTotal - finalPrice) >= 1) {
+    // Only block if SHORT (calculatedTotal < finalPrice)
+    // Allow if MATCHED or EXCESS (calculatedTotal >= finalPrice)
+    if (calculatedTotal < finalPrice) {
       alert(
-        `❌ Cannot mark Account Check as "Yes".\n\n` +
+        `❌ Cannot mark Account Check as "Yes" - Amount is SHORT.\n\n` +
         `Formula: Receipt1 + Receipt2 + Receipt3 + Receipt4 + Disbursed - Finance Commission = Final Price\n\n` +
         `Receipt 1: ₹${r1.toFixed(2)}\n` +
         `Receipt 2: ₹${r2.toFixed(2)}\n` +
@@ -741,8 +751,8 @@ async function handleUpdate(e) {
         `Finance Commission: ₹${financeCommission.toFixed(2)}\n\n` +
         `Calculated Total: ₹${calculatedTotal.toFixed(2)}\n` +
         `Final Price: ₹${finalPrice.toFixed(2)}\n\n` +
-        `Difference: ₹${Math.abs(calculatedTotal - finalPrice).toFixed(2)}\n\n` +
-        `These amounts must match!`
+        `SHORT by: ₹${(finalPrice - calculatedTotal).toFixed(2)}\n\n` +
+        `Collected amount must be equal to or greater than Final Price!`
       );
       return;
     }
@@ -1126,8 +1136,8 @@ function displayPriceBreakdown(calculation) {
     html += '<span style="color: #28a745;">✅ MATCHED</span>';
   } else {
     const diff = afterDiscount - amountCollected;
-    const excessOrShort = diff > 0 ? 'EXCESS' : 'SHORT';
-    const color = diff > 0 ? '#ff9800' : '#f44336';
+    const excessOrShort = diff > 0 ? 'SHORT' : 'EXCESS';
+    const color = diff > 0 ? '#f44336' : '#ff9800';
     html += `<span style="color: ${color};">⚠️ ${excessOrShort}</span>`;
     html += `<div style="font-size: 13px; margin-top: 5px; color: #666;">After Discount vs Amount Collected: ₹${Math.abs(diff).toLocaleString()}</div>`;
   }
