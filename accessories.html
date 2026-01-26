@@ -1,432 +1,669 @@
-// ==========================================
-// VEHICLE SCANNER PAGE LOGIC
-// ==========================================
-
-let currentStream = null;
-let currentReceiptNo = null;
-let currentRecord = null;
-
-// ==========================================
-// PAGE INITIALIZATION
-// ==========================================
-
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('=== VEHICLE SCANNER PAGE ===');
-  
-  // Check authentication
-  const session = SessionManager.getSession();
-  
-  if (!session) {
-    console.log('âŒ No session - redirecting to login');
-    alert('Please login first');
-    window.location.href = 'index.html';
-    return;
-  }
-  
-  const user = session.user;
-  
-  // Check role access (only sales and admin)
-  if (user.role !== 'admin' && user.role !== 'sales') {
-    console.log('âŒ Access denied for role:', user.role);
-    alert('Access denied. Only sales executives can access this page.');
-    window.location.href = 'home.html';
-    return;
-  }
-  
-  console.log('âœ… Access granted:', user.name, '/', user.role);
-  
-  // Load pending records
-  loadPendingRecords();
-});
-
-/**
- * Load records that need vehicle number scanning
- */
-async function loadPendingRecords() {
-  const sessionId = SessionManager.getSessionId();
-  const user = SessionManager.getCurrentUser();
-  
-  console.log('Loading pending vehicle records for:', user.name);
-  
-  try {
-    const response = await API.call('getPendingVehicleRecords', {
-      sessionId: sessionId
-    });
-    
-    if (response.success) {
-      displayRecords(response.records);
-    } else {
-      showMessage(response.message, 'error');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accessory Management - Vinay Automobiles</title>
+  <link rel="stylesheet" href="css/common.css">
+  <style>
+    /* ==========================================
+       ACCESSORIES PAGE SPECIFIC STYLES
+       ========================================== */
+    .dashboard-section {
+      background: #f8f9fa;
+      padding: 25px;
+      border-radius: 12px;
+      margin-bottom: 25px;
+      border: 2px solid #e9ecef;
     }
-  } catch (error) {
-    console.error('Error loading records:', error);
-    showMessage('Failed to load records', 'error');
-  }
-}
 
-/**
- * Display records in list
- */
-function displayRecords(records) {
-  const listContainer = document.getElementById('recordsList');
-  const emptyState = document.getElementById('emptyState');
-  
-  if (!records || records.length === 0) {
-    listContainer.style.display = 'none';
-    emptyState.style.display = 'block';
-    return;
-  }
-  
-  listContainer.style.display = 'block';
-  emptyState.style.display = 'none';
-  
-  let html = '';
-  
-  records.forEach(function(record) {
-    html += '<div class="record-item" onclick="openScanner(\'' + record.receiptNo + '\')">';
-    html += '  <div style="display: flex; gap: 15px; align-items: center;">';
-    html += '    <div class="scan-icon">ðŸ“·</div>';
-    html += '    <div style="flex: 1;">';
-    html += '      <div class="record-header">';
-    html += '        <div class="record-receipt">' + record.receiptNo + '</div>';
-    html += '        <div class="record-date">' + record.bookingDate + '</div>';
-    html += '      </div>';
-    html += '      <div class="record-customer">' + record.customerName + '</div>';
-    html += '      <div class="record-mobile">ðŸ“± ' + record.mobileNo + '</div>';
-    html += '    </div>';
-    html += '  </div>';
-    html += '</div>';
-  });
-  
-  listContainer.innerHTML = html;
-}
-
-/**
- * Open scanner modal for a record
- */
-async function openScanner(receiptNo) {
-  currentReceiptNo = receiptNo;
-  
-  const sessionId = SessionManager.getSessionId();
-  
-  try {
-    // Get full record details
-    const response = await API.call('getRecordByReceiptNo', {
-      sessionId: sessionId,
-      receiptNo: receiptNo
-    });
-    
-    if (response.success) {
-      currentRecord = response.record;
-      
-      // Populate modal
-      document.getElementById('modalReceiptNo').textContent = currentRecord.receiptNo;
-      document.getElementById('modalCustomer').textContent = currentRecord.customerName;
-      document.getElementById('modalMobile').textContent = currentRecord.mobileNo;
-      
-      // Pre-fill if already exists
-      document.getElementById('engineNumber').value = currentRecord.engineNumber || '';
-      document.getElementById('frameNumber').value = currentRecord.frameNumber || '';
-      
-      // Show modal
-      document.getElementById('scannerModal').classList.add('active');
-      
-      // Reset camera state
-      resetCameraState();
-      
-    } else {
-      showMessage(response.message, 'error');
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 15px;
     }
-  } catch (error) {
-    console.error('Error loading record:', error);
-    showMessage('Failed to load record details', 'error');
-  }
-}
 
-/**
- * Close scanner modal
- */
-function closeScanner() {
-  // Stop camera if running
-  stopCamera();
-  
-  // Hide modal
-  document.getElementById('scannerModal').classList.remove('active');
-  
-  // Clear current record
-  currentReceiptNo = null;
-  currentRecord = null;
-}
+    .month-selector {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
-/**
- * Reset camera state
- */
-function resetCameraState() {
-  const video = document.getElementById('videoElement');
-  const image = document.getElementById('capturedImage');
-  const startBtn = document.getElementById('startCameraBtn');
-  const captureBtn = document.getElementById('captureBtn');
-  const retakeBtn = document.getElementById('retakeBtn');
-  const ocrStatus = document.getElementById('ocrStatus');
-  
-  video.style.display = 'block';
-  image.style.display = 'none';
-  
-  startBtn.style.display = 'block';
-  captureBtn.style.display = 'none';
-  retakeBtn.style.display = 'none';
-  
-  ocrStatus.style.display = 'none';
-  
-  stopCamera();
-}
+    .month-selector label {
+      font-weight: 600;
+      color: #333;
+      font-size: 15px;
+    }
 
-/**
- * Start camera
- */
-async function startCamera() {
-  const video = document.getElementById('videoElement');
-  const startBtn = document.getElementById('startCameraBtn');
-  const captureBtn = document.getElementById('captureBtn');
-  
-  try {
-    // Request camera access
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: 'environment' // Use back camera on mobile
+    .month-selector select {
+      padding: 8px 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      min-width: 180px;
+      cursor: pointer;
+      background: white;
+    }
+
+    .dashboard-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 15px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: 3px solid transparent;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    }
+
+    .stat-card.active {
+      border-color: #667eea;
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .stat-card.complete-card {
+      border-left: 5px solid #28a745;
+    }
+
+    .stat-card.accounts-verified-card {
+      border-left: 5px solid #ff9800;
+    }
+
+    .stat-card.not-started-card {
+      border-left: 5px solid #ffc107;
+    }
+
+    .stat-card.partial-card {
+      border-left: 5px solid #17a2b8;
+    }
+
+    .stat-card.today-delivery-card {
+      border-left: 5px solid #e74c3c;
+      background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
+    }
+
+    .today-delivery-section {
+      margin-bottom: 20px;
+    }
+
+    .today-card-wrapper {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+
+    .today-delivery-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px 30px;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: 3px solid transparent;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-left: 5px solid #e74c3c;
+      min-width: 250px;
+      text-align: center;
+    }
+
+    .today-delivery-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(231, 76, 60, 0.3);
+      border-color: #e74c3c;
+    }
+
+    .today-delivery-card.active {
+      border-color: #e74c3c;
+      box-shadow: 0 8px 20px rgba(231, 76, 60, 0.4);
+      background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
+    }
+
+    .today-card-icon {
+      font-size: 36px;
+      margin-bottom: 8px;
+    }
+
+    .today-card-label {
+      font-size: 13px;
+      color: #666;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 5px;
+      letter-spacing: 0.5px;
+    }
+
+    .today-card-count {
+      font-size: 32px;
+      font-weight: 700;
+      color: #e74c3c;
+    }
+
+    .today-card-date {
+      font-size: 11px;
+      color: #999;
+      margin-top: 5px;
+    }
+
+    .card-icon {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .card-label {
+      font-size: 12px;
+      color: #666;
+      font-weight: 600;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .card-count {
+      font-size: 36px;
+      font-weight: 700;
+      color: #333;
+    }
+
+    .dashboard-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 15px;
+      border-top: 2px solid #dee2e6;
+    }
+
+    .total-records {
+      font-size: 16px;
+      color: #333;
+      font-weight: 600;
+    }
+
+    .btn-export {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s;
+      display: none;
+    }
+
+    .btn-export:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+    }
+
+    .view-only-banner {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 16px;
+      display: none;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.8; }
+    }
+
+    .account-warning {
+      background: #fff3cd;
+      border: 3px solid #ffc107;
+      color: #856404;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      font-weight: 600;
+      text-align: center;
+      font-size: 16px;
+      display: none;
+      animation: pulse 2s infinite;
+    }
+
+    .view-only-section {
+      background: #e3f2fd;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      border-left: 4px solid #1a73e8;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+
+    .detail-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .detail-label {
+      font-weight: 600;
+      width: 150px;
+      color: #555;
+      flex-shrink: 0;
+    }
+
+    .detail-value {
+      color: #333;
+      flex: 1;
+    }
+
+    .pending-checklist {
+      background: white;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-top: 10px;
+    }
+
+    .pending-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      padding: 12px;
+      margin: 8px 0;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #ddd;
+    }
+
+    .pending-item.status-pending {
+      border-left-color: #ffc107;
+      background: #fff3e0;
+    }
+
+    .pending-item.status-refused {
+      border-left-color: #dc3545;
+      background: #ffebee;
+    }
+
+    .pending-item-name {
+      font-weight: 600;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .pending-item-options {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .pending-item-options label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin: 0;
+      font-size: 13px;
+      font-weight: normal;
+      cursor: pointer;
+    }
+
+    .pending-item-options input[type="radio"] {
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+    }
+
+    .pending-checklist label {
+      display: flex;
+      align-items: center;
+      margin: 10px 0;
+      font-weight: normal;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .pending-checklist input[type="checkbox"] {
+      margin-right: 10px;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .pending-checklist input[type="checkbox"]:disabled {
+      cursor: not-allowed;
+    }
+
+    .limited-edit-note {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 12px;
+      margin: 15px 0;
+      border-radius: 4px;
+      font-size: 14px;
+      color: #856404;
+    }
+
+    @media (max-width: 768px) {
+      .dashboard-cards {
+        grid-template-columns: repeat(2, 1fr);
       }
-    });
-    
-    currentStream = stream;
-    video.srcObject = stream;
-    
-    // Update buttons
-    startBtn.style.display = 'none';
-    captureBtn.style.display = 'block';
-    
-    console.log('âœ… Camera started');
-    
-  } catch (error) {
-    console.error('Camera error:', error);
-    alert('Failed to access camera. Please ensure camera permissions are granted.');
-  }
-}
 
-/**
- * Stop camera
- */
-function stopCamera() {
-  if (currentStream) {
-    currentStream.getTracks().forEach(function(track) {
-      track.stop();
-    });
-    currentStream = null;
-  }
-}
-
-/**
- * Capture image from camera
- */
-function captureImage() {
-  const video = document.getElementById('videoElement');
-  const image = document.getElementById('capturedImage');
-  const captureBtn = document.getElementById('captureBtn');
-  const retakeBtn = document.getElementById('retakeBtn');
-  
-  // Create canvas to capture frame
-  const canvas = document.createElement('canvas');
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0);
-  
-  // Convert to image
-  const imageDataUrl = canvas.toDataURL('image/jpeg', 0.9);
-  image.src = imageDataUrl;
-  
-  // Update UI
-  video.style.display = 'none';
-  image.style.display = 'block';
-  captureBtn.style.display = 'none';
-  retakeBtn.style.display = 'block';
-  
-  // Stop camera
-  stopCamera();
-  
-  console.log('ðŸ“¸ Image captured');
-  
-  // Process with OCR
-  processImageWithOCR(imageDataUrl);
-}
-
-/**
- * Retake image
- */
-function retakeImage() {
-  const video = document.getElementById('videoElement');
-  const image = document.getElementById('capturedImage');
-  const captureBtn = document.getElementById('captureBtn');
-  const retakeBtn = document.getElementById('retakeBtn');
-  const ocrStatus = document.getElementById('ocrStatus');
-  
-  // Reset UI
-  video.style.display = 'block';
-  image.style.display = 'none';
-  retakeBtn.style.display = 'none';
-  ocrStatus.style.display = 'none';
-  
-  // Restart camera
-  startCamera();
-}
-
-/**
- * Process captured image with OCR
- */
-async function processImageWithOCR(imageDataUrl) {
-  const ocrStatus = document.getElementById('ocrStatus');
-  const engineInput = document.getElementById('engineNumber');
-  const frameInput = document.getElementById('frameNumber');
-  const engineBadge = document.getElementById('engineExtractedBadge');
-  const frameBadge = document.getElementById('frameExtractedBadge');
-  
-  // Show processing status
-  ocrStatus.style.display = 'block';
-  
-  try {
-    console.log('ðŸ” Starting OCR processing...');
-    
-    // Use Tesseract.js to extract text
-    const result = await Tesseract.recognize(
-      imageDataUrl,
-      'eng',
-      {
-        logger: function(m) {
-          if (m.status === 'recognizing text') {
-            console.log('OCR Progress:', Math.round(m.progress * 100) + '%');
-          }
-        }
+      .card-count {
+        font-size: 24px;
       }
-    );
-    
-    const text = result.data.text;
-    console.log('OCR Result:', text);
-    
-    // Extract Engine Number (E:)
-    const engineMatch = text.match(/E[:\s]*([A-Z0-9]+)/i);
-    if (engineMatch && engineMatch[1]) {
-      const engineNumber = engineMatch[1].trim();
-      engineInput.value = engineNumber;
-      engineBadge.style.display = 'inline-block';
-      console.log('âœ… Engine Number extracted:', engineNumber);
-    }
-    
-    // Extract Frame Number (F:)
-    const frameMatch = text.match(/F[:\s]*([A-Z0-9]+)/i);
-    if (frameMatch && frameMatch[1]) {
-      const frameNumber = frameMatch[1].trim();
-      frameInput.value = frameNumber;
-      frameBadge.style.display = 'inline-block';
-      console.log('âœ… Frame Number extracted:', frameNumber);
-    }
-    
-    // Hide processing status
-    ocrStatus.style.display = 'none';
-    
-    if (engineMatch || frameMatch) {
-      showMessage('âœ… Numbers extracted! Please verify and edit if needed.', 'success');
-    } else {
-      showMessage('âš ï¸ Could not extract numbers automatically. Please enter manually.', 'error');
-    }
-    
-  } catch (error) {
-    console.error('OCR Error:', error);
-    ocrStatus.style.display = 'none';
-    showMessage('OCR failed. Please enter numbers manually.', 'error');
-  }
-}
 
-/**
- * Save vehicle numbers
- */
-async function saveVehicleNumbers() {
-  const engineNumber = document.getElementById('engineNumber').value.trim();
-  const frameNumber = document.getElementById('frameNumber').value.trim();
-  const saveBtn = document.getElementById('saveBtn');
-  
-  // Validate
-  if (!engineNumber) {
-    alert('âš ï¸ Please enter Engine Number');
-    document.getElementById('engineNumber').focus();
-    return;
-  }
-  
-  if (!frameNumber) {
-    alert('âš ï¸ Please enter Frame Number');
-    document.getElementById('frameNumber').focus();
-    return;
-  }
-  
-  const sessionId = SessionManager.getSessionId();
-  
-  saveBtn.disabled = true;
-  saveBtn.textContent = 'â³ Saving...';
-  
-  try {
-    const response = await API.call('saveVehicleNumbers', {
-      sessionId: sessionId,
-      receiptNo: currentReceiptNo,
-      engineNumber: engineNumber,
-      frameNumber: frameNumber
-    });
-    
-    if (response.success) {
-      showMessage('âœ… Vehicle numbers saved successfully!', 'success');
-      
-      // Close modal after 1 second
-      setTimeout(function() {
-        closeScanner();
-        // Reload records list
-        loadPendingRecords();
-      }, 1000);
-      
-    } else {
-      showMessage('âŒ ' + response.message, 'error');
-      saveBtn.disabled = false;
-      saveBtn.textContent = 'ðŸ’¾ Save Vehicle Numbers';
+      .card-label {
+        font-size: 10px;
+      }
     }
-    
-  } catch (error) {
-    console.error('Save error:', error);
-    showMessage('âŒ Failed to save. Please try again.', 'error');
-    saveBtn.disabled = false;
-    saveBtn.textContent = 'ðŸ’¾ Save Vehicle Numbers';
-  }
-}
 
-/**
- * Show message
- */
-function showMessage(text, type) {
-  const msg = document.getElementById('statusMessage');
-  if (!msg) return;
-  
-  msg.textContent = text;
-  msg.className = 'message ' + type;
-  msg.classList.remove('hidden');
-  
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-  
-  if (type === 'success') {
-    setTimeout(function() {
-      msg.classList.add('hidden');
-    }, 3000);
-  }
-}
+    @media (max-width: 480px) {
+      .dashboard-cards {
+        grid-template-columns: 1fr;
+      }
 
-/**
- * Go back to home
- */
-function goBack() {
-  window.location.href = 'home.html';
-}
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-title">
+        <span style="font-size: 30px;">🔧</span>
+        <h1>Accessory Management</h1>
+      </div>
+      <div class="header-right">
+        <span id="currentUser"></span>
+        <button class="btn-secondary" onclick="goBack()">← Back</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div id="statusMessage" class="message hidden"></div>
+
+      <!-- View-Only Banner -->
+      <div class="view-only-banner" id="viewOnlyBanner">
+        🔒 VIEW-ONLY MODE: Accessory Fitted is marked as "Yes" - Limited editing available
+      </div>
+
+      <!-- Dashboard Section -->
+      <div class="dashboard-section">
+        <!-- Today's Delivery Card -->
+        <div class="today-delivery-section">
+          <div class="today-card-wrapper">
+            <div class="today-delivery-card" id="todayDeliveryCard" onclick="filterByTodayDelivery()">
+              <div class="today-card-icon">🛵</div>
+              <div class="today-card-label">Today's Delivery</div>
+              <div class="today-card-count" id="todayDeliveryCount">0</div>
+              <div class="today-card-date" id="todayDeliveryDate">--</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-header">
+          <h3 style="margin: 0; color: #333;">📊 Accessory Dashboard</h3>
+          <div class="month-selector">
+            <label>📅 Month:</label>
+            <select id="monthSelector">
+              <!-- Populated by JS -->
+            </select>
+          </div>
+        </div>
+
+        <div class="dashboard-cards">
+          <div class="stat-card complete-card" onclick="filterByStatus('yes')">
+            <div class="card-icon">✅</div>
+            <div class="card-label">Complete</div>
+            <div class="card-count" id="yesCount">0</div>
+          </div>
+
+          <div class="stat-card accounts-verified-card" onclick="filterByStatus('accountsyes_accessoryblank')">
+            <div class="card-icon">🔔</div>
+            <div class="card-label">Acc Yes, Acc Blank</div>
+            <div class="card-count" id="accountsYesAccessoryBlankCount">0</div>
+          </div>
+
+          <div class="stat-card not-started-card" onclick="filterByStatus('blank')">
+            <div class="card-icon">⚠️</div>
+            <div class="card-label">Not Started</div>
+            <div class="card-count" id="blankCount">0</div>
+          </div>
+
+          <div class="stat-card partial-card" onclick="filterByStatus('partial')">
+            <div class="card-icon">🔄</div>
+            <div class="card-label">Partially Complete</div>
+            <div class="card-count" id="partialCount">0</div>
+          </div>
+        </div>
+
+        <div class="dashboard-footer">
+          <div class="total-records">
+            Total Records: <strong id="totalCount">0</strong>
+          </div>
+          <button class="btn-export" id="exportBtn" onclick="exportToExcel()">
+            📥 Export to Excel
+          </button>
+        </div>
+      </div>
+
+      <!-- Manual Search Section -->
+      <div class="search-section">
+        <h3>🔍 Manual Search</h3>
+        <div class="search-grid">
+          <div class="form-group">
+            <label>Search By:</label>
+            <select id="searchBy">
+              <option value="">-- Select --</option>
+              <option>Customer Name</option>
+              <option>Mobile No</option>
+              <option>Delivery Date</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="searchValueSection">
+            <label>Search For:</label>
+            <input type="text" id="searchValue" placeholder="Enter search term...">
+          </div>
+
+          <div class="form-group" id="dateFilterSection" style="display: none;">
+            <label>Date Filter:</label>
+            <select id="dateFilter">
+              <option value="">-- Select --</option>
+              <option value="today">Today</option>
+              <option value="next7">Next 7 Days</option>
+              <option value="thismonth">This Month</option>
+              <option value="single">Custom Single Date</option>
+              <option value="range">Custom Date Range</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="singleDateSection" style="display: none;">
+            <label>Select Date:</label>
+            <input type="date" id="singleDate">
+          </div>
+
+          <div class="form-group" id="dateRangeFromSection" style="display: none;">
+            <label>From Date:</label>
+            <input type="date" id="fromDate">
+          </div>
+
+          <div class="form-group" id="dateRangeToSection" style="display: none;">
+            <label>To Date:</label>
+            <input type="date" id="toDate">
+          </div>
+        </div>
+
+        <div style="margin-top: 15px;">
+          <button class="btn-primary" onclick="searchRecords()">🔍 Search</button>
+        </div>
+      </div>
+
+      <!-- Results Section -->
+      <div id="resultsSection" class="results-section" style="display: none;">
+        <h3 id="resultsTitle">Search Results</h3>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Receipt No</th>
+                <th>Customer Name</th>
+                <th>Mobile No</th>
+                <th>Variant</th>
+                <th>Delivery Date</th>
+                <th>Accessory Status</th>
+              </tr>
+            </thead>
+            <tbody id="resultsBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Details Section -->
+      <div id="detailsSection" class="details-section" style="display: none;">
+        <h3>Record Details</h3>
+        <input type="hidden" id="selectedRow">
+        <input type="hidden" id="currentModel">
+        <input type="hidden" id="accountCheckValue">
+        <input type="hidden" id="accessoryFittedValue">
+
+        <!-- View-Only Info -->
+        <div class="section-header">📝 Sales & Account Info (View Only)</div>
+        <div class="view-only-section">
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="detail-label">Receipt No:</span>
+              <span class="detail-value" id="detailReceiptNo"></span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Executive Name:</span>
+              <span class="detail-value" id="detailExecName"></span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Booking Date:</span>
+              <span class="detail-value" id="detailDate"></span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Customer Name:</span>
+              <span class="detail-value" id="detailCustomerName"></span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Mobile No:</span>
+              <span class="detail-value" id="detailMobileNo"></span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Model:</span>
+              <span class="detail-value" id="detailModel"></span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Variant:</span>
+              <span class="detail-value" id="detailVariant"></span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Colour:</span>
+              <span class="detail-value" id="detailColour"></span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Delivery Date:</span>
+              <span class="detail-value" id="detailDeliveryDate"></span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Sales Remark:</span>
+              <span class="detail-value" id="detailSalesRemark"></span>
+            </div>
+          </div>
+        </div>
+
+        <h4 style="margin: 15px 0 10px 0; color: #1565c0;">Accessories Ordered:</h4>
+        <div class="view-only-section">
+          <div id="accessoriesOrdered" class="detail-grid"></div>
+        </div>
+
+        <h4 style="margin: 15px 0 10px 0; color: #1565c0;">Account Information:</h4>
+        <div class="view-only-section">
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="detail-label">Accountant Name:</span>
+              <span class="detail-value" id="detailAccountantName"></span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Account Check:</span>
+              <span class="detail-value" id="detailAccountCheck"></span>
+            </div>
+            <div class="detail-item" style="grid-column: 1 / -1;">
+              <span class="detail-label">Account Remark:</span>
+              <span class="detail-value" id="detailAccountRemark"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Warning -->
+        <div id="accountWarning" class="account-warning">
+          🚫 BLOCKED: Account Check must be "Yes" to update accessory information!
+        </div>
+
+        <!-- Limited Edit Note -->
+        <div id="limitedEditNote" class="limited-edit-note" style="display: none;">
+          ℹ️ Limited Edit Mode: Accessory Fitted is "Yes". You can only edit Receipt 1, Extra, and clear Pending items.
+        </div>
+
+        <!-- Editable Section -->
+        <div class="section-header">🔧 Accessory Information (Edit)</div>
+        <div class="search-grid" style="margin-top: 15px;">
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label style="display: block; margin-bottom: 10px; font-size: 15px;">Pending Items:</label>
+            <div class="pending-checklist" id="pendingCheckboxes"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="required">Accessory Checker Name:</label>
+            <input type="text" id="accessoryCheckerName" readonly style="background: #e9ecef;">
+          </div>
+
+          <div class="form-group">
+            <label>Accessory Receipt 1:</label>
+            <input type="text" id="accessoryReceipt1" placeholder="Numbers only">
+          </div>
+
+          <div class="form-group">
+            <label>Accessory Extra:</label>
+            <input type="text" id="accessoryExtra" placeholder="Any text">
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label>Remark:</label>
+            <textarea id="accessoryRemark" rows="5" style="min-height: 120px; resize: vertical;"></textarea>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="btn-primary" id="updateBtn" onclick="updateRecord()">💾 Update</button>
+          <button class="btn-secondary" onclick="closeDetails()">✖ Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/accessories.js"></script>
+</body>
+</html>
