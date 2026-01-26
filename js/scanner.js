@@ -47,15 +47,21 @@ async function loadPendingRecords() {
   const user = SessionManager.getCurrentUser();
   
   console.log('Loading pending vehicle records for:', user.name);
+  console.log('Session ID:', sessionId);
   
   try {
     const response = await API.call('getPendingVehicleRecords', {
       sessionId: sessionId
     });
     
+    console.log('API Response:', response);
+    
     if (response.success) {
+      console.log('Number of records received:', response.records ? response.records.length : 0);
+      console.log('Records data:', response.records);
       displayRecords(response.records);
     } else {
+      console.error('API Error:', response.message);
       showMessage(response.message, 'error');
     }
   } catch (error) {
@@ -71,9 +77,13 @@ function displayRecords(records) {
   const listContainer = document.getElementById('recordsList');
   const emptyState = document.getElementById('emptyState');
   
+  console.log('displayRecords called with:', records);
+  console.log('Number of records to display:', records ? records.length : 0);
+  
   if (!records || records.length === 0) {
     listContainer.style.display = 'none';
     emptyState.style.display = 'block';
+    console.log('No records to display - showing empty state');
     return;
   }
   
@@ -82,7 +92,8 @@ function displayRecords(records) {
   
   let html = '';
   
-  records.forEach(function(record) {
+  records.forEach(function(record, index) {
+    console.log('Processing record', index + 1, ':', record);
     html += '<div class="record-item" onclick="openScanner(\'' + record.receiptNo + '\')">';
     html += '  <div style="display: flex; gap: 15px; align-items: center;">';
     html += '    <div class="scan-icon">📷</div>';
@@ -98,7 +109,10 @@ function displayRecords(records) {
     html += '</div>';
   });
   
+  console.log('Generated HTML length:', html.length);
+  console.log('Setting innerHTML...');
   listContainer.innerHTML = html;
+  console.log('✅ Records displayed successfully');
 }
 
 /**
