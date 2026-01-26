@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
     return;
   }
   
-  console.log('✅ Access granted:', user.name, '/', user.role');
+  console.log('✅ Access granted:', user.name, '/', user.role);
   
   // Load pending records
   loadPendingRecords();
