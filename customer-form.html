@@ -91,133 +91,143 @@
       font-weight: 600;
     }
 
-    /* Printable Form */
+    /* Printable Form - A4 Size (210mm x 297mm) */
     .printable-form {
       display: none;
       background: white;
-      padding: 40px;
-      max-width: 800px;
+      width: 210mm;
+      min-height: 297mm;
       margin: 0 auto;
+      padding: 25mm 20mm;
+      box-sizing: border-box;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      border-radius: 8px;
     }
 
     .printable-form.active {
       display: block;
     }
 
-    /* Form Header with Logo */
+    /* Form Header */
     .form-document-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 20px;
+      margin-bottom: 30px;
       border-bottom: 3px solid #000;
-      padding-bottom: 15px;
+      padding-bottom: 20px;
     }
 
     .dealer-info {
       flex: 1;
     }
 
-    .dealer-name {
-      font-size: 14px;
-      margin-bottom: 3px;
-    }
-
     .dealer-brand {
-      font-size: 24px;
-      font-weight: 700;
-      margin-bottom: 5px;
+      font-size: 36px;
+      font-weight: 900;
+      font-style: italic;
+      font-family: Arial, sans-serif;
+      margin: 0;
     }
 
-    .dealer-details {
-      font-size: 11px;
-      line-height: 1.4;
-      color: #333;
-    }
-
+    /* Larger Sticker Box */
     .vehicle-sticker-space {
-      width: 200px;
-      height: 120px;
-      border: 2px dashed #ccc;
+      width: 280px;
+      height: 180px;
+      border: 3px dashed #999;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 11px;
-      color: #999;
+      font-size: 16px;
+      color: #666;
       text-align: center;
-      padding: 10px;
+      padding: 20px;
+      font-weight: 600;
+      line-height: 1.8;
+      flex-shrink: 0;
     }
 
-    /* Form Grid */
+    /* Form Grid - Better Spacing */
     .form-grid {
-      margin-bottom: 20px;
+      margin-bottom: 30px;
     }
 
     .form-row {
       display: flex;
-      margin-bottom: 12px;
+      margin-bottom: 20px;
       align-items: baseline;
     }
 
     .form-label {
-      width: 140px;
-      font-size: 13px;
+      width: 165px;
+      font-size: 16px;
       font-weight: 600;
-      color: #333;
+      color: #000;
       flex-shrink: 0;
     }
 
     .form-value {
       flex: 1;
-      font-size: 13px;
+      font-size: 16px;
       color: #000;
-      border-bottom: 1px dotted #999;
-      padding-bottom: 2px;
-      min-height: 18px;
+      border-bottom: 1px dotted #666;
+      padding-bottom: 5px;
+      min-height: 24px;
+      font-weight: 500;
     }
 
     .form-value.blank {
-      color: #ccc;
+      color: transparent;
     }
 
-    /* Branding Footer */
+    .form-value.uppercase {
+      text-transform: uppercase;
+    }
+
+    /* Footer */
     .form-footer {
-      margin-top: 40px;
-      padding-top: 20px;
-      border-top: 2px solid #000;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      margin-top: 60px;
+      padding-top: 25px;
+      border-top: 3px solid #000;
+      text-align: center;
     }
 
     .company-branding {
       text-align: center;
-      font-size: 16px;
-      font-weight: 700;
     }
 
     .tvs-logo-text {
-      font-size: 24px;
+      font-size: 42px;
       font-weight: 900;
       font-style: italic;
-      margin-bottom: 5px;
+      font-family: Arial, sans-serif;
+      margin-bottom: 10px;
+    }
+
+    .company-name {
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .company-address {
+      font-size: 15px;
+      color: #333;
+      line-height: 1.8;
     }
 
     /* Action Buttons */
     .form-actions {
       display: flex;
       gap: 10px;
-      margin-top: 20px;
+      margin-top: 25px;
     }
 
     .btn-action {
       flex: 1;
-      padding: 12px;
+      padding: 14px;
       border: none;
       border-radius: 8px;
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s;
@@ -243,6 +253,16 @@
 
     /* Print Styles */
     @media print {
+      @page {
+        size: A4;
+        margin: 0;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
       body * {
         visibility: hidden;
       }
@@ -256,9 +276,11 @@
         position: absolute;
         left: 0;
         top: 0;
-        width: 100%;
-        padding: 20px;
+        width: 210mm;
+        min-height: 297mm;
+        padding: 20mm 15mm;
         box-shadow: none;
+        margin: 0;
       }
       
       .form-actions {
@@ -325,20 +347,13 @@
 
   </div>
 
-  <!-- Printable Form -->
+  <!-- Printable Form (A4) -->
   <div id="printableForm" class="printable-form">
     
     <!-- Form Document Header -->
     <div class="form-document-header">
       <div class="dealer-info">
-        <div class="dealer-name">Sub Dealer ____________________</div>
-        <div class="dealer-brand" style="font-family: Arial, sans-serif;">
-          <span style="font-style: italic; font-weight: 900;">TVS</span>
-        </div>
-        <div class="dealer-details">
-          Mangalmurti Tvs<br>
-          Darwha
-        </div>
+        <div class="dealer-brand">TVS</div>
       </div>
       
       <div class="vehicle-sticker-space">
@@ -352,8 +367,8 @@
       <div class="form-row">
         <div class="form-label">Model</div>
         <div class="form-value" id="formModel">........................</div>
-        <div class="form-label" style="width: 80px; margin-left: 20px;">Color</div>
-        <div class="form-value" id="formColor" style="width: 150px;">........................</div>
+        <div class="form-label" style="width: 110px; margin-left: 35px;">Color</div>
+        <div class="form-value" id="formColor" style="width: 200px;">........................</div>
       </div>
 
       <div class="form-row">
@@ -368,7 +383,7 @@
 
       <div class="form-row">
         <div class="form-label">Customers Name</div>
-        <div class="form-value" id="formCustomerName">........................................................................................</div>
+        <div class="form-value uppercase" id="formCustomerName">........................................................................................</div>
       </div>
 
       <div class="form-row">
@@ -387,7 +402,7 @@
       </div>
 
       <div class="form-row">
-        <div class="form-label">Mo. No.</div>
+        <div class="form-label">Mobile Number</div>
         <div class="form-value" id="formMobileNo">........................................................................................</div>
       </div>
 
@@ -407,7 +422,7 @@
       </div>
 
       <div class="form-row">
-        <div class="form-label">Aadhar No.</div>
+        <div class="form-label">Aadhaar No.</div>
         <div class="form-value blank">........................................................................................</div>
       </div>
 
@@ -417,34 +432,15 @@
       </div>
     </div>
 
-    <!-- Footer Branding -->
+    <!-- Footer Branding (No logos, just text) -->
     <div class="form-footer">
-      <div style="width: 120px;">
-        <svg width="100" height="80" viewBox="0 0 100 80">
-          <!-- Simple wheel icon -->
-          <circle cx="50" cy="40" r="35" fill="none" stroke="#000" stroke-width="2"/>
-          <circle cx="50" cy="40" r="25" fill="none" stroke="#000" stroke-width="1"/>
-          <line x1="50" y1="5" x2="50" y2="75" stroke="#000" stroke-width="1"/>
-          <line x1="15" y1="40" x2="85" y2="40" stroke="#000" stroke-width="1"/>
-          <line x1="22" y1="15" x2="78" y2="65" stroke="#000" stroke-width="1"/>
-          <line x1="78" y1="15" x2="22" y2="65" stroke="#000" stroke-width="1"/>
-        </svg>
-      </div>
-      
       <div class="company-branding">
-        <div class="tvs-logo-text" style="font-style: italic;">TVS</div>
-        <div style="font-size: 18px; font-weight: 700;">VINAY AUTOMOBILES</div>
-        <div style="font-size: 11px; margin-top: 5px;">
-          Mahavir Nagar, Darwha Road, Yavatmal-445001.<br>
-          Ph. (07232) : 247187, 254981, 251058
+        <div class="tvs-logo-text">TVS</div>
+        <div class="company-name">VINAY AUTOMOBILES</div>
+        <div class="company-address">
+          Mahavir Nagar, Darwha Road, Yavatmal-445001<br>
+          Ph. 9130040050
         </div>
-      </div>
-
-      <div style="width: 120px; text-align: right;">
-        <svg width="100" height="80" viewBox="0 0 100 80">
-          <!-- TVS Logo placeholder -->
-          <text x="50" y="40" font-size="32" font-weight="900" font-style="italic" text-anchor="middle" fill="#000">TVS</text>
-        </svg>
       </div>
     </div>
 
