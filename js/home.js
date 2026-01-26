@@ -22,8 +22,8 @@ const ROLE_CARDS = {
     { title: 'CRM', icon: '👥', color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', link: 'crm.html', description: 'Manage customer leads' }
   ],
   accounts: [
-    { title: 'Dashboard', icon: '📊', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', link: 'dashboard.html', description: 'Financial overview' },
     { title: 'Accounts', icon: '💰', color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', link: 'accounts.html', description: 'Manage accounts' },
+    { title: 'Dashboard', icon: '📊', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', link: 'dashboard.html', description: 'Financial overview' },
     { title: 'View Records', icon: '📋', color: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)', link: 'view.html', description: 'View all records' }
   ],
   accessories: [

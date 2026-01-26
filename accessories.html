@@ -91,6 +91,72 @@
       border-left: 5px solid #17a2b8;
     }
 
+    .stat-card.today-delivery-card {
+      border-left: 5px solid #e74c3c;
+      background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
+    }
+
+    .today-delivery-section {
+      margin-bottom: 20px;
+    }
+
+    .today-card-wrapper {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+
+    .today-delivery-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px 30px;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: 3px solid transparent;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-left: 5px solid #e74c3c;
+      min-width: 250px;
+      text-align: center;
+    }
+
+    .today-delivery-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(231, 76, 60, 0.3);
+      border-color: #e74c3c;
+    }
+
+    .today-delivery-card.active {
+      border-color: #e74c3c;
+      box-shadow: 0 8px 20px rgba(231, 76, 60, 0.4);
+      background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
+    }
+
+    .today-card-icon {
+      font-size: 36px;
+      margin-bottom: 8px;
+    }
+
+    .today-card-label {
+      font-size: 13px;
+      color: #666;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 5px;
+      letter-spacing: 0.5px;
+    }
+
+    .today-card-count {
+      font-size: 32px;
+      font-weight: 700;
+      color: #e74c3c;
+    }
+
+    .today-card-date {
+      font-size: 11px;
+      color: #999;
+      margin-top: 5px;
+    }
+
     .card-icon {
       font-size: 32px;
       margin-bottom: 10px;
@@ -340,6 +406,18 @@
 
       <!-- Dashboard Section -->
       <div class="dashboard-section">
+        <!-- Today's Delivery Card -->
+        <div class="today-delivery-section">
+          <div class="today-card-wrapper">
+            <div class="today-delivery-card" id="todayDeliveryCard" onclick="filterByTodayDelivery()">
+              <div class="today-card-icon">🚚</div>
+              <div class="today-card-label">Today's Delivery</div>
+              <div class="today-card-count" id="todayDeliveryCount">0</div>
+              <div class="today-card-date" id="todayDeliveryDate">--</div>
+            </div>
+          </div>
+        </div>
+
         <div class="dashboard-header">
           <h3 style="margin: 0; color: #333;">📊 Accessory Dashboard</h3>
           <div class="month-selector">

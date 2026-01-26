@@ -184,6 +184,43 @@ async function loadDashboard() {
   } catch (error) {
     showMessage('Failed to load dashboard', 'error');
   }
+  
+  // Load today's delivery count
+  loadTodayDeliveryCount();
+}
+
+/**
+ * Load Today's Delivery count
+ */
+async function loadTodayDeliveryCount() {
+  const sessionId = SessionManager.getSessionId();
+  const today = new Date();
+  const todayString = today.toISOString().split('T')[0]; // YYYY-MM-DD format
+  
+  try {
+    const response = await API.call('searchAccessoryRecords', {
+      sessionId: sessionId,
+      searchBy: 'Delivery Date',
+      searchValue: '',
+      dateFilter: 'single',
+      singleDate: todayString,
+      fromDate: '',
+      toDate: ''
+    });
+    
+    if (response.success) {
+      const count = response.results ? response.results.length : 0;
+      document.getElementById('todayDeliveryCount').textContent = count;
+      
+      // Format date display
+      const dateOptions = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+      const dateString = today.toLocaleDateString('en-US', dateOptions);
+      document.getElementById('todayDeliveryDate').textContent = dateString;
+    }
+  } catch (error) {
+    console.error('Failed to load today\'s delivery count:', error);
+    document.getElementById('todayDeliveryCount').textContent = '0';
+  }
 }
 
 /**
@@ -196,10 +233,14 @@ function updateDashboardCards(data) {
   document.getElementById('partialCount').textContent = data.partial || 0;
   document.getElementById('totalCount').textContent = data.total || 0;
   
-  // Clear active state
+  // Clear active state from all cards including today delivery card
   document.querySelectorAll('.stat-card').forEach(function(card) {
     card.classList.remove('active');
   });
+  const todayCard = document.getElementById('todayDeliveryCard');
+  if (todayCard) {
+    todayCard.classList.remove('active');
+  }
   document.getElementById('exportBtn').style.display = 'none';
   currentFilterStatus = null;
 }
@@ -216,6 +257,7 @@ async function filterByStatus(status) {
   document.querySelectorAll('.stat-card').forEach(function(card) {
     card.classList.remove('active');
   });
+  document.getElementById('todayDeliveryCard').classList.remove('active');
   
   if (status === 'yes') {
     document.querySelector('.complete-card').classList.add('active');
@@ -248,6 +290,47 @@ async function filterByStatus(status) {
     }
   } catch (error) {
     showMessage('Failed to filter records', 'error');
+  }
+}
+
+/**
+ * Filter by Today's Delivery
+ */
+async function filterByTodayDelivery() {
+  const sessionId = SessionManager.getSessionId();
+  const today = new Date();
+  const todayString = today.toISOString().split('T')[0]; // YYYY-MM-DD format
+  
+  // Update active card
+  document.querySelectorAll('.stat-card').forEach(function(card) {
+    card.classList.remove('active');
+  });
+  document.getElementById('todayDeliveryCard').classList.add('active');
+  
+  try {
+    const response = await API.call('searchAccessoryRecords', {
+      sessionId: sessionId,
+      searchBy: 'Delivery Date',
+      searchValue: '',
+      dateFilter: 'single',
+      singleDate: todayString,
+      fromDate: '',
+      toDate: ''
+    });
+    
+    if (response.success) {
+      displayResults(response.results);
+      const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      const dateString = today.toLocaleDateString('en-US', dateOptions);
+      const title = `🚚 Today's Delivery - ${dateString} (${response.results.length} records)`;
+      showResultsSection(title);
+      document.getElementById('exportBtn').style.display = 'none';
+      currentFilterStatus = 'today';
+    } else {
+      showMessage(response.message, 'error');
+    }
+  } catch (error) {
+    showMessage('Failed to load today\'s deliveries', 'error');
   }
 }
 
