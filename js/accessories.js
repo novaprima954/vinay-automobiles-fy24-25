@@ -322,7 +322,7 @@ async function filterByTodayDelivery() {
       displayResults(response.results);
       const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
       const dateString = today.toLocaleDateString('en-US', dateOptions);
-      const title = `🚚 Today's Delivery - ${dateString} (${response.results.length} records)`;
+      const title = `🛵 Today's Delivery - ${dateString} (${response.results.length} records)`;
       showResultsSection(title);
       document.getElementById('exportBtn').style.display = 'none';
       currentFilterStatus = 'today';
