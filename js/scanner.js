@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const session = SessionManager.getSession();
   
   if (!session) {
-    console.log('❌ No session - redirecting to login');
+    console.log('âŒ No session - redirecting to login');
     alert('Please login first');
     window.location.href = 'index.html';
     return;
@@ -27,13 +27,13 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Check role access (only sales and admin)
   if (user.role !== 'admin' && user.role !== 'sales') {
-    console.log('❌ Access denied for role:', user.role);
+    console.log('âŒ Access denied for role:', user.role);
     alert('Access denied. Only sales executives can access this page.');
     window.location.href = 'home.html';
     return;
   }
   
-  console.log('✅ Access granted:', user.name, '/', user.role);
+  console.log('âœ… Access granted:', user.name, '/', user.role);
   
   // Load pending records
   loadPendingRecords();
@@ -47,21 +47,15 @@ async function loadPendingRecords() {
   const user = SessionManager.getCurrentUser();
   
   console.log('Loading pending vehicle records for:', user.name);
-  console.log('Session ID:', sessionId);
   
   try {
     const response = await API.call('getPendingVehicleRecords', {
       sessionId: sessionId
     });
     
-    console.log('API Response:', response);
-    
     if (response.success) {
-      console.log('Number of records received:', response.records ? response.records.length : 0);
-      console.log('Records data:', response.records);
       displayRecords(response.records);
     } else {
-      console.error('API Error:', response.message);
       showMessage(response.message, 'error');
     }
   } catch (error) {
@@ -77,13 +71,9 @@ function displayRecords(records) {
   const listContainer = document.getElementById('recordsList');
   const emptyState = document.getElementById('emptyState');
   
-  console.log('displayRecords called with:', records);
-  console.log('Number of records to display:', records ? records.length : 0);
-  
   if (!records || records.length === 0) {
     listContainer.style.display = 'none';
     emptyState.style.display = 'block';
-    console.log('No records to display - showing empty state');
     return;
   }
   
@@ -92,27 +82,23 @@ function displayRecords(records) {
   
   let html = '';
   
-  records.forEach(function(record, index) {
-    console.log('Processing record', index + 1, ':', record);
+  records.forEach(function(record) {
     html += '<div class="record-item" onclick="openScanner(\'' + record.receiptNo + '\')">';
     html += '  <div style="display: flex; gap: 15px; align-items: center;">';
-    html += '    <div class="scan-icon">📷</div>';
+    html += '    <div class="scan-icon">ðŸ“·</div>';
     html += '    <div style="flex: 1;">';
     html += '      <div class="record-header">';
     html += '        <div class="record-receipt">' + record.receiptNo + '</div>';
     html += '        <div class="record-date">' + record.bookingDate + '</div>';
     html += '      </div>';
     html += '      <div class="record-customer">' + record.customerName + '</div>';
-    html += '      <div class="record-mobile">📱 ' + record.mobileNo + '</div>';
+    html += '      <div class="record-mobile">ðŸ“± ' + record.mobileNo + '</div>';
     html += '    </div>';
     html += '  </div>';
     html += '</div>';
   });
   
-  console.log('Generated HTML length:', html.length);
-  console.log('Setting innerHTML...');
   listContainer.innerHTML = html;
-  console.log('✅ Records displayed successfully');
 }
 
 /**
@@ -218,7 +204,7 @@ async function startCamera() {
     startBtn.style.display = 'none';
     captureBtn.style.display = 'block';
     
-    console.log('✅ Camera started');
+    console.log('âœ… Camera started');
     
   } catch (error) {
     console.error('Camera error:', error);
@@ -268,7 +254,7 @@ function captureImage() {
   // Stop camera
   stopCamera();
   
-  console.log('📸 Image captured');
+  console.log('ðŸ“¸ Image captured');
   
   // Process with OCR
   processImageWithOCR(imageDataUrl);
@@ -308,7 +294,7 @@ async function processImageWithOCR(imageDataUrl) {
   ocrStatus.style.display = 'block';
   
   try {
-    console.log('🔍 Starting OCR processing...');
+    console.log('ðŸ” Starting OCR processing...');
     
     // Use Tesseract.js to extract text
     const result = await Tesseract.recognize(
@@ -332,7 +318,7 @@ async function processImageWithOCR(imageDataUrl) {
       const engineNumber = engineMatch[1].trim();
       engineInput.value = engineNumber;
       engineBadge.style.display = 'inline-block';
-      console.log('✅ Engine Number extracted:', engineNumber);
+      console.log('âœ… Engine Number extracted:', engineNumber);
     }
     
     // Extract Frame Number (F:)
@@ -341,16 +327,16 @@ async function processImageWithOCR(imageDataUrl) {
       const frameNumber = frameMatch[1].trim();
       frameInput.value = frameNumber;
       frameBadge.style.display = 'inline-block';
-      console.log('✅ Frame Number extracted:', frameNumber);
+      console.log('âœ… Frame Number extracted:', frameNumber);
     }
     
     // Hide processing status
     ocrStatus.style.display = 'none';
     
     if (engineMatch || frameMatch) {
-      showMessage('✅ Numbers extracted! Please verify and edit if needed.', 'success');
+      showMessage('âœ… Numbers extracted! Please verify and edit if needed.', 'success');
     } else {
-      showMessage('⚠️ Could not extract numbers automatically. Please enter manually.', 'error');
+      showMessage('âš ï¸ Could not extract numbers automatically. Please enter manually.', 'error');
     }
     
   } catch (error) {
@@ -370,13 +356,13 @@ async function saveVehicleNumbers() {
   
   // Validate
   if (!engineNumber) {
-    alert('⚠️ Please enter Engine Number');
+    alert('âš ï¸ Please enter Engine Number');
     document.getElementById('engineNumber').focus();
     return;
   }
   
   if (!frameNumber) {
-    alert('⚠️ Please enter Frame Number');
+    alert('âš ï¸ Please enter Frame Number');
     document.getElementById('frameNumber').focus();
     return;
   }
@@ -384,7 +370,7 @@ async function saveVehicleNumbers() {
   const sessionId = SessionManager.getSessionId();
   
   saveBtn.disabled = true;
-  saveBtn.textContent = '⏳ Saving...';
+  saveBtn.textContent = 'â³ Saving...';
   
   try {
     const response = await API.call('saveVehicleNumbers', {
@@ -395,7 +381,7 @@ async function saveVehicleNumbers() {
     });
     
     if (response.success) {
-      showMessage('✅ Vehicle numbers saved successfully!', 'success');
+      showMessage('âœ… Vehicle numbers saved successfully!', 'success');
       
       // Close modal after 1 second
       setTimeout(function() {
@@ -405,16 +391,16 @@ async function saveVehicleNumbers() {
       }, 1000);
       
     } else {
-      showMessage('❌ ' + response.message, 'error');
+      showMessage('âŒ ' + response.message, 'error');
       saveBtn.disabled = false;
-      saveBtn.textContent = '💾 Save Vehicle Numbers';
+      saveBtn.textContent = 'ðŸ’¾ Save Vehicle Numbers';
     }
     
   } catch (error) {
     console.error('Save error:', error);
-    showMessage('❌ Failed to save. Please try again.', 'error');
+    showMessage('âŒ Failed to save. Please try again.', 'error');
     saveBtn.disabled = false;
-    saveBtn.textContent = '💾 Save Vehicle Numbers';
+    saveBtn.textContent = 'ðŸ’¾ Save Vehicle Numbers';
   }
 }
 
