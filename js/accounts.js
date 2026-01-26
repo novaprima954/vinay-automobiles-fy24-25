@@ -747,7 +747,7 @@ async function handleUpdate(e) {
   
   // VALIDATION: Block Account Check = "Yes" if calculation is SHORT (less than Final Price)
   // Allow "Yes" if: calculatedTotal equals OR is greater than (EXCESS) Final Price
-  const accountCheck = document.getElementById('accountCheck').value;
+  // (accountCheck already declared above in Engine/Frame validation)
   if (accountCheck === 'Yes') {
     const r1 = currentReceipt1Amount;
     const r2 = parseFloat(document.getElementById('receipt2Amount').value) || 0;
