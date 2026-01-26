@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Form - Vinay Automobiles</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* Customer Form Page Styles */
+    .form-container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .form-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .form-header h2 {
+      margin: 0 0 5px 0;
+      font-size: 22px;
+    }
+
+    .form-header p {
+      margin: 0;
+      opacity: 0.9;
+      font-size: 14px;
+    }
+
+    /* Records List */
+    .records-list {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .record-item {
+      padding: 15px;
+      border-bottom: 1px solid #f0f0f0;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .record-item:hover {
+      background: #f8f9fa;
+    }
+
+    .record-item:last-child {
+      border-bottom: none;
+    }
+
+    .record-info {
+      flex: 1;
+    }
+
+    .record-receipt {
+      font-weight: 700;
+      color: #667eea;
+      font-size: 16px;
+      margin-bottom: 5px;
+    }
+
+    .record-customer {
+      font-size: 15px;
+      color: #333;
+      margin-bottom: 3px;
+    }
+
+    .record-details {
+      font-size: 13px;
+      color: #666;
+    }
+
+    .record-badge {
+      background: #28a745;
+      color: white;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* Printable Form */
+    .printable-form {
+      display: none;
+      background: white;
+      padding: 40px;
+      max-width: 800px;
+      margin: 0 auto;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      border-radius: 8px;
+    }
+
+    .printable-form.active {
+      display: block;
+    }
+
+    /* Form Header with Logo */
+    .form-document-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      border-bottom: 3px solid #000;
+      padding-bottom: 15px;
+    }
+
+    .dealer-info {
+      flex: 1;
+    }
+
+    .dealer-name {
+      font-size: 14px;
+      margin-bottom: 3px;
+    }
+
+    .dealer-brand {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .dealer-details {
+      font-size: 11px;
+      line-height: 1.4;
+      color: #333;
+    }
+
+    .vehicle-sticker-space {
+      width: 200px;
+      height: 120px;
+      border: 2px dashed #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: #999;
+      text-align: center;
+      padding: 10px;
+    }
+
+    /* Form Grid */
+    .form-grid {
+      margin-bottom: 20px;
+    }
+
+    .form-row {
+      display: flex;
+      margin-bottom: 12px;
+      align-items: baseline;
+    }
+
+    .form-label {
+      width: 140px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #333;
+      flex-shrink: 0;
+    }
+
+    .form-value {
+      flex: 1;
+      font-size: 13px;
+      color: #000;
+      border-bottom: 1px dotted #999;
+      padding-bottom: 2px;
+      min-height: 18px;
+    }
+
+    .form-value.blank {
+      color: #ccc;
+    }
+
+    /* Branding Footer */
+    .form-footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 2px solid #000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .company-branding {
+      text-align: center;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .tvs-logo-text {
+      font-size: 24px;
+      font-weight: 900;
+      font-style: italic;
+      margin-bottom: 5px;
+    }
+
+    /* Action Buttons */
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .btn-action {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-print {
+      background: #28a745;
+      color: white;
+    }
+
+    .btn-print:hover {
+      background: #218838;
+    }
+
+    .btn-close {
+      background: #6c757d;
+      color: white;
+    }
+
+    .btn-close:hover {
+      background: #5a6268;
+    }
+
+    /* Print Styles */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      
+      .printable-form,
+      .printable-form * {
+        visibility: visible;
+      }
+      
+      .printable-form {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 20px;
+        box-shadow: none;
+      }
+      
+      .form-actions {
+        display: none;
+      }
+      
+      .no-print {
+        display: none !important;
+      }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .empty-icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+      opacity: 0.3;
+    }
+
+    .empty-text {
+      font-size: 18px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+
+    .empty-subtext {
+      font-size: 14px;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+  
+  <div class="form-container">
+    
+    <!-- Header -->
+    <div class="form-header no-print">
+      <h2>📋 Customer Form</h2>
+      <p>Generate pre-filled customer forms for completed records</p>
+    </div>
+
+    <!-- Status Message -->
+    <div id="statusMessage" class="message hidden no-print"></div>
+
+    <!-- Records List -->
+    <div id="recordsList" class="records-list no-print">
+      <!-- Populated by JavaScript -->
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="empty-state no-print" style="display: none;">
+      <div class="empty-icon">✅</div>
+      <div class="empty-text">No records available</div>
+      <div class="empty-subtext">Records need Engine and Frame numbers to generate customer form</div>
+    </div>
+
+    <!-- Back Button -->
+    <button onclick="goBack()" class="btn-secondary no-print" style="width: 100%; margin-top: 20px;">
+      ← Back to Home
+    </button>
+
+  </div>
+
+  <!-- Printable Form -->
+  <div id="printableForm" class="printable-form">
+    
+    <!-- Form Document Header -->
+    <div class="form-document-header">
+      <div class="dealer-info">
+        <div class="dealer-name">Sub Dealer ____________________</div>
+        <div class="dealer-brand" style="font-family: Arial, sans-serif;">
+          <span style="font-style: italic; font-weight: 900;">TVS</span>
+        </div>
+        <div class="dealer-details">
+          Mangalmurti Tvs<br>
+          Darwha
+        </div>
+      </div>
+      
+      <div class="vehicle-sticker-space">
+        Vehicle No.<br>
+        (Paste QR Sticker Here)
+      </div>
+    </div>
+
+    <!-- Vehicle and Customer Details -->
+    <div class="form-grid">
+      <div class="form-row">
+        <div class="form-label">Model</div>
+        <div class="form-value" id="formModel">........................</div>
+        <div class="form-label" style="width: 80px; margin-left: 20px;">Color</div>
+        <div class="form-value" id="formColor" style="width: 150px;">........................</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">Engine No</div>
+        <div class="form-value" id="formEngineNo">........................................................................................</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">Chassis No</div>
+        <div class="form-value" id="formChassisNo">........................................................................................</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">Customers Name</div>
+        <div class="form-value" id="formCustomerName">........................................................................................</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">Address</div>
+        <div class="form-value blank">........................................................................................</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label"></div>
+        <div class="form-value blank">........................................................................................</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">Email id</div>
+        <div class="form-value blank">........................................................................................</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">Mo. No.</div>
+        <div class="form-value" id="formMobileNo">........................................................................................</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">Financer</div>
+        <div class="form-value" id="formFinancer">........................................................................................</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">Nominee</div>
+        <div class="form-value blank">.......................................................... Age......</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">Relation</div>
+        <div class="form-value blank">........................................................................................</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">Aadhar No.</div>
+        <div class="form-value blank">........................................................................................</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">Pan Card No.</div>
+        <div class="form-value blank">........................................................................................</div>
+      </div>
+    </div>
+
+    <!-- Footer Branding -->
+    <div class="form-footer">
+      <div style="width: 120px;">
+        <svg width="100" height="80" viewBox="0 0 100 80">
+          <!-- Simple wheel icon -->
+          <circle cx="50" cy="40" r="35" fill="none" stroke="#000" stroke-width="2"/>
+          <circle cx="50" cy="40" r="25" fill="none" stroke="#000" stroke-width="1"/>
+          <line x1="50" y1="5" x2="50" y2="75" stroke="#000" stroke-width="1"/>
+          <line x1="15" y1="40" x2="85" y2="40" stroke="#000" stroke-width="1"/>
+          <line x1="22" y1="15" x2="78" y2="65" stroke="#000" stroke-width="1"/>
+          <line x1="78" y1="15" x2="22" y2="65" stroke="#000" stroke-width="1"/>
+        </svg>
+      </div>
+      
+      <div class="company-branding">
+        <div class="tvs-logo-text" style="font-style: italic;">TVS</div>
+        <div style="font-size: 18px; font-weight: 700;">VINAY AUTOMOBILES</div>
+        <div style="font-size: 11px; margin-top: 5px;">
+          Mahavir Nagar, Darwha Road, Yavatmal-445001.<br>
+          Ph. (07232) : 247187, 254981, 251058
+        </div>
+      </div>
+
+      <div style="width: 120px; text-align: right;">
+        <svg width="100" height="80" viewBox="0 0 100 80">
+          <!-- TVS Logo placeholder -->
+          <text x="50" y="40" font-size="32" font-weight="900" font-style="italic" text-anchor="middle" fill="#000">TVS</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="form-actions no-print">
+      <button class="btn-action btn-print" onclick="printForm()">
+        🖨️ Print Form
+      </button>
+      <button class="btn-action btn-close" onclick="closeForm()">
+        ← Back to List
+      </button>
+    </div>
+
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/customer-form.js"></script>
+</body>
+</html>
