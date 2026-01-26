@@ -1,116 +1,87 @@
 // ==========================================
-// HOME PAGE LOGIC
+// ADD THIS TO YOUR home.js FILE
+// Update the ROLE_CARDS object to include the scanner card
 // ==========================================
 
-document.addEventListener('DOMContentLoaded', async function() {
-  console.log('=== HOME PAGE ===');
-  
-  // Check authentication
-  const session = SessionManager.getSession();
-  
-  if (!session) {
-    console.log('❌ No session - redirecting to login');
-    window.location.href = 'index.html';
-    return;
-  }
-  
-  const user = session.user;
-  console.log('✅ User:', user.name, '| Role:', user.role);
-  
-  // Display user info
-  displayUserInfo(user);
-  
-  // Create cards based on role
-  createCards(user);
-  
-  // Hide loading, show content
-  document.getElementById('loadingScreen').classList.add('hidden');
-  document.getElementById('mainContent').classList.remove('hidden');
-});
+// Find the ROLE_CARDS object in your home.js and add this card for 'sales' role:
 
-/**
- * Display user information
- */
-function displayUserInfo(user) {
-  document.getElementById('userName').textContent = user.name;
-  document.getElementById('userRole').textContent = user.role;
-  document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
-  document.getElementById('welcomeTitle').textContent = 'Welcome back, ' + user.name + '!';
-}
-
-/**
- * Create role-based cards
- */
-function createCards(user) {
-  const allowedPages = CONFIG.ROLE_ACCESS[user.role] || [];
-  const container = document.getElementById('cardsContainer');
-  container.innerHTML = '';
-  
-  allowedPages.forEach(pageKey => {
-    const pageConfig = CONFIG.PAGES[pageKey];
-    
-    if (pageConfig) {
-      const card = createCard(pageKey, pageConfig);
-      container.appendChild(card);
+const ROLE_CARDS = {
+  admin: [
+    // ... existing admin cards ...
+  ],
+  sales: [
+    {
+      title: 'Add New Sale',
+      icon: '➕',
+      color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      link: 'sales.html',
+      description: 'Create new sales entry'
+    },
+    {
+      title: 'Edit Sales',
+      icon: '✏️',
+      color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+      link: 'salesedit.html',
+      description: 'Modify existing sales'
+    },
+    {
+      title: 'Vehicle Scanner',  // NEW CARD - ADD THIS
+      icon: '📷',
+      color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+      link: 'scanner.html',
+      description: 'Scan vehicle stickers'
+    },
+    {
+      title: 'CRM',
+      icon: '👥',
+      color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+      link: 'crm.html',
+      description: 'Manage customer leads'
+    },
+    {
+      title: 'Dashboard',
+      icon: '📊',
+      color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+      link: 'dashboard.html',
+      description: 'View your performance'
     }
-  });
-  
-  console.log('✅ Created', allowedPages.length, 'cards');
-}
+  ],
+  // ... other roles ...
+};
 
-/**
- * Create a single card
- */
-function createCard(pageKey, config) {
-  const card = document.createElement('div');
-  card.className = 'card ' + config.class;
-  
-  card.onclick = function() {
-    navigateToPage(pageKey);
-  };
-  
-  card.innerHTML = `
-    <div class="card-icon">${config.icon}</div>
-    <div class="card-title">${config.title}</div>
-    <div class="card-description">${config.description}</div>
-  `;
-  
-  return card;
-}
+// ==========================================
+// COMPLETE EXAMPLE with the scanner card added
+// ==========================================
 
-/**
- * Navigate to a page
- */
-function navigateToPage(page) {
-  console.log('Navigating to:', page);
-  
-  // Map page keys to HTML files
-  const pageMap = {
-    'sales': 'sales.html',
-    'salesedit': 'salesedit.html',
-    'accounts': 'accounts.html',
-    'accessory': 'accessories.html',  // Fixed: was accessory.html, should be accessories.html
-    'view': 'view.html',
-    'operator-update': 'operator-update.html',
-    'crm': 'crm.html',
-    'dashboard': 'dashboard.html',
-    'users': 'users.html'
-  };
-  
-  const htmlFile = pageMap[page];
-  
-  if (htmlFile) {
-    window.location.href = htmlFile;
-  } else {
-    alert('Page not yet implemented: ' + page);
-  }
-}
-
-/**
- * Handle logout
- */
-async function handleLogout() {
-  if (confirm('Are you sure you want to logout?')) {
-    await SessionManager.logout();
-  }
-}
+const ROLE_CARDS = {
+  admin: [
+    { title: 'Dashboard', icon: '📊', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', link: 'dashboard.html', description: 'Overview & analytics' },
+    { title: 'Add New Sale', icon: '➕', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', link: 'sales.html', description: 'Create new sales entry' },
+    { title: 'Edit Sales', icon: '✏️', color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', link: 'salesedit.html', description: 'Modify existing sales' },
+    { title: 'Accounts', icon: '💰', color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', link: 'accounts.html', description: 'Financial records' },
+    { title: 'Accessories', icon: '🔧', color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', link: 'accessories.html', description: 'Accessory management' },
+    { title: 'CRM', icon: '👥', color: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)', link: 'crm.html', description: 'Customer relationship' },
+    { title: 'Operator', icon: '🚗', color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', link: 'operator.html', description: 'Vehicle operations' },
+    { title: 'View Records', icon: '📋', color: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)', link: 'view.html', description: 'View all records' }
+  ],
+  sales: [
+    { title: 'Dashboard', icon: '📊', color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', link: 'dashboard.html', description: 'View your performance' },
+    { title: 'Add New Sale', icon: '➕', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', link: 'sales.html', description: 'Create new sales entry' },
+    { title: 'Edit Sales', icon: '✏️', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', link: 'salesedit.html', description: 'Modify existing sales' },
+    { title: 'Vehicle Scanner', icon: '📷', color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', link: 'scanner.html', description: 'Scan vehicle stickers' },  // NEW CARD
+    { title: 'CRM', icon: '👥', color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', link: 'crm.html', description: 'Manage customer leads' }
+  ],
+  accounts: [
+    { title: 'Dashboard', icon: '📊', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', link: 'dashboard.html', description: 'Financial overview' },
+    { title: 'Accounts', icon: '💰', color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', link: 'accounts.html', description: 'Manage accounts' },
+    { title: 'View Records', icon: '📋', color: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)', link: 'view.html', description: 'View all records' }
+  ],
+  accessories: [
+    { title: 'Accessories', icon: '🔧', color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', link: 'accessories.html', description: 'Manage accessories' },
+    { title: 'View Records', icon: '📋', color: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)', link: 'view.html', description: 'View all records' }
+  ],
+  operator: [
+    { title: 'Operator', icon: '🚗', color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', link: 'operator.html', description: 'Vehicle operations' },
+    { title: 'View Records', icon: '📋', color: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)', link: 'view.html', description: 'View all records' }
+  ]
+};
