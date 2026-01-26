@@ -409,7 +409,13 @@ async function populateDetails(record) {
   currentReceiptNo = record.receiptNo;
   currentReceipt1Amount = parseFloat(record.receipt1Amount) || 0;
   
+  // STORE ENGINE AND FRAME NUMBERS for validation
+  window.currentEngineNumber = record.engineNumber || '';
+  window.currentFrameNumber = record.frameNumber || '';
+  
   console.log('Populating details for receipt:', currentReceiptNo);
+  console.log('Engine Number:', window.currentEngineNumber);
+  console.log('Frame Number:', window.currentFrameNumber);
   
   // Protected fields
   document.getElementById('receiptNoDisplay').textContent = record.receiptNo || '-';
@@ -421,6 +427,8 @@ async function populateDetails(record) {
   document.getElementById('protectedVariant').textContent = record.variant || '-';
   document.getElementById('protectedColour').textContent = record.colour || '-';
   document.getElementById('protectedDeliveryDate').textContent = record.deliveryDate || '-';
+  document.getElementById('protectedEngineNumber').textContent = record.engineNumber || 'Not Saved';
+  document.getElementById('protectedFrameNumber').textContent = record.frameNumber || 'Not Saved';
   document.getElementById('protectedSalesRemark').textContent = record.salesRemark || 'N/A';
   
   // Editable sales fields
@@ -699,6 +707,19 @@ async function handleUpdate(e) {
   if (!window.lastPriceVerification) {
     alert('❌ Price Verification Required!\n\nPlease click "Calculate from PriceMaster" and save the price verification before updating the record.');
     return;
+  }
+  
+  // VALIDATION: Check Engine and Frame numbers are filled (before Account Check = Yes)
+  const accountCheck = document.getElementById('accountCheck').value;
+  if (accountCheck === 'Yes') {
+    // Get engine and frame numbers from window scope (set when record is loaded)
+    const engineNumber = window.currentEngineNumber || '';
+    const frameNumber = window.currentFrameNumber || '';
+    
+    if (!engineNumber || engineNumber.trim() === '' || !frameNumber || frameNumber.trim() === '') {
+      alert('❌ Engine and Frame Numbers Required!\n\nCannot mark Account Check as "Yes" because Engine Number and/or Frame Number are missing.\n\nPlease ask Sales Team to save Engine and Frame Number using the Vehicle Scanner feature.');
+      return;
+    }
   }
   
   const sessionId = SessionManager.getSessionId();
