@@ -135,10 +135,9 @@ async function openCustomerForm(receiptNo) {
       document.getElementById('formMobileNo').textContent = currentRecord.mobileNo || '';
       document.getElementById('formFinancer').textContent = currentRecord.financierName || 'Cash';
       
-      // Hide records list, show page selection
-      document.querySelector('.form-container').style.display = 'none';
+      // Hide records container, show page selection
+      document.getElementById('recordsContainer').style.display = 'none';
       document.getElementById('pageSelection').classList.add('active');
-      document.getElementById('mainBackBtn').style.display = 'none';
       
       console.log('✅ Page selection displayed');
       
@@ -267,9 +266,8 @@ function closeToRecordsList() {
   // Hide page selection
   document.getElementById('pageSelection').classList.remove('active');
   
-  // Show records list
-  document.querySelector('.form-container').style.display = 'block';
-  document.getElementById('mainBackBtn').style.display = 'block';
+  // Show records container
+  document.getElementById('recordsContainer').style.display = 'block';
   
   // Clear current record
   currentRecord = null;
