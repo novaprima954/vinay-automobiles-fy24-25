@@ -478,7 +478,7 @@
 </head>
 <body>
   
-  div class="form-container" id="recordsContainer">
+  <div class="form-container" id="recordsContainer">
     
     <!-- Header -->
     <div class="form-header no-print">
@@ -501,7 +501,13 @@
       <div class="empty-subtext">Records need Engine and Frame numbers to generate forms</div>
     </div>
 
-    <!-- Page Selection -->
+
+    <!-- Main Back Button -->
+    <button id="mainBackBtn" onclick="goBack()" class="btn-secondary no-print" style="width: 100%; margin-top: 20px;">
+      ← Back to Home
+    </button>
+
+  </div>
     <div id="pageSelection" class="page-selection">
       <h3>Select Forms to Generate</h3>
       <div class="page-buttons">
@@ -525,13 +531,6 @@
         ← Back to Records List
       </button>
     </div>
-
-    <!-- Main Back Button -->
-    <button id="mainBackBtn" onclick="goBack()" class="btn-secondary no-print" style="width: 100%; margin-top: 20px;">
-      ← Back to Home
-    </button>
-
-  </div>
 
   <!-- Page 1: Customer Details Form -->
   <div id="page1" class="printable-form">
