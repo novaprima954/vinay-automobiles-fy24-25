@@ -1,10 +1,9 @@
 // ==========================================
 // CUSTOMER FORM PAGE LOGIC
-// Includes Customer Details Form + Form No. 60 (2 pages)
+// Shows all 3 forms in scrollable format
 // ==========================================
 
 let currentRecord = null;
-let currentPage = 0;
 
 // ==========================================
 // PAGE INITIALIZATION
@@ -41,8 +40,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 /**
  * Load records that meet customer form criteria
- * Criteria: Engine Number filled AND Frame Number filled
- * Access: Sales (only theirs, Account Check ≠ Yes), Admin (all), Accounts (all)
  */
 async function loadCustomerFormRecords() {
   const sessionId = SessionManager.getSessionId();
@@ -96,7 +93,7 @@ function displayRecords(records) {
     html += '    <div class="record-receipt">Receipt: ' + record.receiptNo + '</div>';
     html += '    <div class="record-customer">' + record.customerName + '</div>';
     html += '    <div class="record-details">';
-    html += '      ' + record.model + ' • ' + record.colour + ' • 📱 ' + record.mobileNo;
+    html += '      ' + record.variant + ' • ' + record.colour + ' • 📱 ' + record.mobileNo;
     html += '    </div>';
     html += '  </div>';
     html += '  <div class="record-badge">✓ Complete</div>';
@@ -109,7 +106,7 @@ function displayRecords(records) {
 }
 
 /**
- * Open customer form - show page selection
+ * Open customer form - show all 3 pages in scrollable format
  */
 async function openCustomerForm(receiptNo) {
   const sessionId = SessionManager.getSessionId();
@@ -126,8 +123,8 @@ async function openCustomerForm(receiptNo) {
     if (response.success) {
       currentRecord = response.record;
       
-      // Populate Page 1 (Customer Details)
-      document.getElementById('formModel').textContent = currentRecord.model || '';
+      // Populate Page 1 (Customer Details) - Using variant instead of model
+      document.getElementById('formVariant').textContent = currentRecord.variant || '';
       document.getElementById('formColor').textContent = currentRecord.colour || '';
       document.getElementById('formEngineNo').textContent = currentRecord.engineNumber || '';
       document.getElementById('formChassisNo').textContent = currentRecord.frameNumber || '';
@@ -135,11 +132,18 @@ async function openCustomerForm(receiptNo) {
       document.getElementById('formMobileNo').textContent = currentRecord.mobileNo || '';
       document.getElementById('formFinancer').textContent = currentRecord.financierName || 'Cash';
       
-      // Hide records container, show page selection
-      document.getElementById('recordsContainer').style.display = 'none';
-      document.getElementById('pageSelection').classList.add('active');
+      // Populate Form 60 (Page 2)
+      populateForm60();
       
-      console.log('✅ Page selection displayed');
+      // Hide records container, show forms
+      document.getElementById('recordsContainer').style.display = 'none';
+      document.getElementById('formsWrapper').classList.add('active');
+      document.getElementById('formActions').classList.add('active');
+      
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
+      console.log('✅ All forms displayed');
       
     } else {
       showMessage(response.message, 'error');
@@ -148,37 +152,6 @@ async function openCustomerForm(receiptNo) {
     console.error('Error loading record:', error);
     showMessage('Failed to load record details', 'error');
   }
-}
-
-/**
- * Show specific page
- */
-function showPage(pageNum) {
-  console.log('Showing page:', pageNum);
-  
-  // Hide all pages
-  document.getElementById('page1').classList.remove('active');
-  document.getElementById('page2').classList.remove('active');
-  document.getElementById('page3').classList.remove('active');
-  
-  // Show selected page
-  document.getElementById('page' + pageNum).classList.add('active');
-  
-  // Hide page selection, show form actions
-  document.getElementById('pageSelection').classList.remove('active');
-  document.getElementById('formActions').style.display = 'flex';
-  
-  currentPage = pageNum;
-  
-  // If showing page 2, populate Form 60 data
-  if (pageNum === 2) {
-    populateForm60();
-  }
-  
-  // Scroll to top
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-  
-  console.log('✅ Page ' + pageNum + ' displayed');
 }
 
 /**
@@ -202,7 +175,7 @@ function populateForm60() {
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 
                   'July', 'August', 'September', 'October', 'November', 'December'];
   const month = months[today.getMonth()];
-  const year = String(today.getFullYear()).slice(-1); // Last digit of year (e.g., "6" for 2026)
+  const year = String(today.getFullYear()).slice(-1);
   
   document.getElementById('form60Day').textContent = day;
   document.getElementById('form60Month').textContent = month;
@@ -220,58 +193,47 @@ function printAllForms() {
 }
 
 /**
- * Save to Google Drive (placeholder for future implementation)
+ * Share as PDF
  */
-function saveToGoogleDrive() {
-  alert('💾 Google Drive Integration\n\nThis feature will be available soon!\n\nIt will allow you to save all forms as PDF to your Google Drive.');
+async function shareAsPDF() {
+  console.log('📄 Generating PDF...');
   
-  // Future implementation:
-  // 1. Use html2canvas to capture each page
-  // 2. Generate PDF using jsPDF
-  // 3. Upload to Google Drive via API
-  // 4. Return shareable link
+  // Check if Web Share API is supported
+  if (!navigator.share) {
+    alert('❌ Share feature not supported on this browser.\n\nPlease use the Print button and save as PDF instead.');
+    return;
+  }
   
-  console.log('Google Drive save requested (not yet implemented)');
+  try {
+    showMessage('⏳ Generating PDF... Please wait.', 'info');
+    
+    // Fallback: Guide user to print to PDF
+    alert('📄 Share as PDF\n\nTo share as PDF:\n1. Click "Print All Forms" button\n2. Select "Save as PDF" as the printer\n3. Save the file\n4. Share the saved PDF file');
+    
+    console.log('Showing print dialog for PDF generation');
+    window.print();
+    
+  } catch (error) {
+    console.error('Share error:', error);
+    alert('❌ Failed to share PDF\n\nPlease use Print button and save as PDF instead.');
+  }
 }
 
 /**
- * Close all forms and return to page selection
+ * Close all forms and return to records list
  */
 function closeAllForms() {
-  console.log('Closing forms, returning to page selection');
+  console.log('Closing forms, returning to records list');
   
-  // Hide all pages
-  document.getElementById('page1').classList.remove('active');
-  document.getElementById('page2').classList.remove('active');
-  document.getElementById('page3').classList.remove('active');
-  
-  // Hide form actions
-  document.getElementById('formActions').style.display = 'none';
-  
-  // Show page selection
-  document.getElementById('pageSelection').classList.add('active');
-  
-  currentPage = 0;
-  
-  // Scroll to top
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-/**
- * Close page selection and return to records list
- */
-function closeToRecordsList() {
-  console.log('Closing to records list');
-  
-  // Hide page selection
-  document.getElementById('pageSelection').classList.remove('active');
+  // Hide forms
+  document.getElementById('formsWrapper').classList.remove('active');
+  document.getElementById('formActions').classList.remove('active');
   
   // Show records container
   document.getElementById('recordsContainer').style.display = 'block';
   
   // Clear current record
   currentRecord = null;
-  currentPage = 0;
   
   // Scroll to top
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -290,7 +252,7 @@ function showMessage(text, type) {
   
   window.scrollTo({ top: 0, behavior: 'smooth' });
   
-  if (type === 'success') {
+  if (type === 'success' || type === 'info') {
     setTimeout(function() {
       msg.classList.add('hidden');
     }, 3000);
