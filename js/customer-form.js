@@ -1,8 +1,10 @@
 // ==========================================
 // CUSTOMER FORM PAGE LOGIC
+// Includes Customer Details Form + Form No. 60 (2 pages)
 // ==========================================
 
 let currentRecord = null;
+let currentPage = 0;
 
 // ==========================================
 // PAGE INITIALIZATION
@@ -23,10 +25,10 @@ document.addEventListener('DOMContentLoaded', function() {
   
   const user = session.user;
   
-  // Check role access (only sales and admin)
-  if (user.role !== 'admin' && user.role !== 'sales') {
+  // Check role access (sales, admin, and accounts)
+  if (user.role !== 'admin' && user.role !== 'sales' && user.role !== 'accounts') {
     console.log('❌ Access denied for role:', user.role);
-    alert('Access denied. Only sales executives and admin can access this page.');
+    alert('Access denied. Only sales, admin, and accounts can access this page.');
     window.location.href = 'home.html';
     return;
   }
@@ -39,7 +41,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 /**
  * Load records that meet customer form criteria
- * Criteria: Account Check ≠ Yes AND Engine Number filled AND Frame Number filled
+ * Criteria: Engine Number filled AND Frame Number filled
+ * Access: Sales (only theirs, Account Check ≠ Yes), Admin (all), Accounts (all)
  */
 async function loadCustomerFormRecords() {
   const sessionId = SessionManager.getSessionId();
@@ -106,7 +109,7 @@ function displayRecords(records) {
 }
 
 /**
- * Open customer form with pre-filled data
+ * Open customer form - show page selection
  */
 async function openCustomerForm(receiptNo) {
   const sessionId = SessionManager.getSessionId();
@@ -123,7 +126,7 @@ async function openCustomerForm(receiptNo) {
     if (response.success) {
       currentRecord = response.record;
       
-      // Populate form
+      // Populate Page 1 (Customer Details)
       document.getElementById('formModel').textContent = currentRecord.model || '';
       document.getElementById('formColor').textContent = currentRecord.colour || '';
       document.getElementById('formEngineNo').textContent = currentRecord.engineNumber || '';
@@ -132,13 +135,12 @@ async function openCustomerForm(receiptNo) {
       document.getElementById('formMobileNo').textContent = currentRecord.mobileNo || '';
       document.getElementById('formFinancer').textContent = currentRecord.financierName || 'Cash';
       
-      // Show form
-      document.getElementById('printableForm').classList.add('active');
-      
-      // Hide list
+      // Hide records list, show page selection
       document.querySelector('.form-container').style.display = 'none';
+      document.getElementById('pageSelection').classList.add('active');
+      document.getElementById('mainBackBtn').style.display = 'none';
       
-      console.log('✅ Customer form populated and displayed');
+      console.log('✅ Page selection displayed');
       
     } else {
       showMessage(response.message, 'error');
@@ -150,22 +152,131 @@ async function openCustomerForm(receiptNo) {
 }
 
 /**
- * Close customer form and return to list
+ * Show specific page
  */
-function closeForm() {
-  document.getElementById('printableForm').classList.remove('active');
-  document.querySelector('.form-container').style.display = 'block';
-  currentRecord = null;
+function showPage(pageNum) {
+  console.log('Showing page:', pageNum);
   
-  console.log('✅ Closed customer form, returned to list');
+  // Hide all pages
+  document.getElementById('page1').classList.remove('active');
+  document.getElementById('page2').classList.remove('active');
+  document.getElementById('page3').classList.remove('active');
+  
+  // Show selected page
+  document.getElementById('page' + pageNum).classList.add('active');
+  
+  // Hide page selection, show form actions
+  document.getElementById('pageSelection').classList.remove('active');
+  document.getElementById('formActions').style.display = 'flex';
+  
+  currentPage = pageNum;
+  
+  // If showing page 2, populate Form 60 data
+  if (pageNum === 2) {
+    populateForm60();
+  }
+  
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  
+  console.log('✅ Page ' + pageNum + ' displayed');
 }
 
 /**
- * Print the customer form
+ * Populate Form 60 with customer data and today's date
  */
-function printForm() {
-  console.log('🖨️ Printing customer form...');
+function populateForm60() {
+  if (!currentRecord) {
+    console.error('No current record to populate Form 60');
+    return;
+  }
+  
+  console.log('Populating Form 60 for:', currentRecord.customerName);
+  
+  // Page 2: Name fields (uppercase)
+  document.getElementById('form60Name1').textContent = currentRecord.customerName || '';
+  document.getElementById('form60Name2').textContent = currentRecord.customerName || '';
+  
+  // Page 2: Today's date
+  const today = new Date();
+  const day = String(today.getDate()).padStart(2, '0');
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                  'July', 'August', 'September', 'October', 'November', 'December'];
+  const month = months[today.getMonth()];
+  const year = String(today.getFullYear()).slice(-1); // Last digit of year (e.g., "6" for 2026)
+  
+  document.getElementById('form60Day').textContent = day;
+  document.getElementById('form60Month').textContent = month;
+  document.getElementById('form60Year').textContent = year;
+  
+  console.log('✅ Form 60 populated with date:', day, month, '202' + year);
+}
+
+/**
+ * Print all forms
+ */
+function printAllForms() {
+  console.log('🖨️ Printing all forms...');
   window.print();
+}
+
+/**
+ * Save to Google Drive (placeholder for future implementation)
+ */
+function saveToGoogleDrive() {
+  alert('💾 Google Drive Integration\n\nThis feature will be available soon!\n\nIt will allow you to save all forms as PDF to your Google Drive.');
+  
+  // Future implementation:
+  // 1. Use html2canvas to capture each page
+  // 2. Generate PDF using jsPDF
+  // 3. Upload to Google Drive via API
+  // 4. Return shareable link
+  
+  console.log('Google Drive save requested (not yet implemented)');
+}
+
+/**
+ * Close all forms and return to page selection
+ */
+function closeAllForms() {
+  console.log('Closing forms, returning to page selection');
+  
+  // Hide all pages
+  document.getElementById('page1').classList.remove('active');
+  document.getElementById('page2').classList.remove('active');
+  document.getElementById('page3').classList.remove('active');
+  
+  // Hide form actions
+  document.getElementById('formActions').style.display = 'none';
+  
+  // Show page selection
+  document.getElementById('pageSelection').classList.add('active');
+  
+  currentPage = 0;
+  
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/**
+ * Close page selection and return to records list
+ */
+function closeToRecordsList() {
+  console.log('Closing to records list');
+  
+  // Hide page selection
+  document.getElementById('pageSelection').classList.remove('active');
+  
+  // Show records list
+  document.querySelector('.form-container').style.display = 'block';
+  document.getElementById('mainBackBtn').style.display = 'block';
+  
+  // Clear current record
+  currentRecord = null;
+  currentPage = 0;
+  
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 /**

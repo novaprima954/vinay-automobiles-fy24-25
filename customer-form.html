@@ -91,16 +91,78 @@
       font-weight: 600;
     }
 
-    /* Printable Form - A4 Size (210mm x 297mm) */
+    /* Page Selection */
+    .page-selection {
+      display: none;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 30px;
+      margin-bottom: 20px;
+    }
+
+    .page-selection.active {
+      display: block;
+    }
+
+    .page-selection h3 {
+      margin: 0 0 20px 0;
+      color: #333;
+      text-align: center;
+      font-size: 20px;
+    }
+
+    .page-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .page-btn {
+      padding: 25px 20px;
+      border: 3px solid #667eea;
+      border-radius: 12px;
+      background: white;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+    }
+
+    .page-btn:hover {
+      background: #667eea;
+      color: white;
+      transform: translateY(-3px);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    .page-btn-icon {
+      font-size: 36px;
+      margin-bottom: 12px;
+    }
+
+    .page-btn-title {
+      font-weight: 700;
+      font-size: 17px;
+      margin-bottom: 8px;
+    }
+
+    .page-btn-desc {
+      font-size: 13px;
+      opacity: 0.8;
+    }
+
+    /* Printable Forms - A4 Size */
     .printable-form {
       display: none;
       background: white;
       width: 210mm;
       min-height: 297mm;
-      margin: 0 auto;
-      padding: 25mm 20mm;
+      margin: 0 auto 20px auto;
+      padding: 20mm;
       box-sizing: border-box;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      page-break-after: always;
     }
 
     .printable-form.active {
@@ -117,19 +179,13 @@
       padding-bottom: 20px;
     }
 
-    .dealer-info {
-      flex: 1;
-    }
-
     .dealer-brand {
       font-size: 36px;
       font-weight: 900;
       font-style: italic;
       font-family: Arial, sans-serif;
-      margin: 0;
     }
 
-    /* Larger Sticker Box */
     .vehicle-sticker-space {
       width: 280px;
       height: 180px;
@@ -143,23 +199,22 @@
       padding: 20px;
       font-weight: 600;
       line-height: 1.8;
-      flex-shrink: 0;
     }
 
-    /* Form Grid - Better Spacing */
+    /* Form Grid */
     .form-grid {
       margin-bottom: 30px;
     }
 
     .form-row {
       display: flex;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
       align-items: baseline;
     }
 
     .form-label {
       width: 165px;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 600;
       color: #000;
       flex-shrink: 0;
@@ -167,11 +222,11 @@
 
     .form-value {
       flex: 1;
-      font-size: 16px;
+      font-size: 15px;
       color: #000;
       border-bottom: 1px dotted #666;
-      padding-bottom: 5px;
-      min-height: 24px;
+      padding-bottom: 4px;
+      min-height: 22px;
       font-weight: 500;
     }
 
@@ -183,43 +238,139 @@
       text-transform: uppercase;
     }
 
+    .form-value.editable {
+      background: #fffbea;
+      cursor: text;
+      border-radius: 2px;
+      padding: 3px 5px;
+    }
+
+    .form-value.editable:focus {
+      outline: 2px solid #667eea;
+      background: #fff;
+    }
+
     /* Footer */
     .form-footer {
-      margin-top: 60px;
-      padding-top: 25px;
+      margin-top: 50px;
+      padding-top: 20px;
       border-top: 3px solid #000;
       text-align: center;
     }
 
-    .company-branding {
-      text-align: center;
-    }
-
     .tvs-logo-text {
-      font-size: 42px;
+      font-size: 40px;
       font-weight: 900;
       font-style: italic;
       font-family: Arial, sans-serif;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     .company-name {
-      font-size: 26px;
+      font-size: 24px;
       font-weight: 700;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
     .company-address {
-      font-size: 15px;
+      font-size: 14px;
       color: #333;
-      line-height: 1.8;
+      line-height: 1.6;
+    }
+
+    /* Form 60 Styles */
+    .form60-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .form60-note {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .form60-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .form60-subtitle {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 12px;
+    }
+
+    .form60-description {
+      font-size: 11px;
+      color: #333;
+      line-height: 1.5;
+      text-align: justify;
+      margin-bottom: 20px;
+    }
+
+    .form60-section {
+      margin-bottom: 20px;
+    }
+
+    .form60-section-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .form60-field {
+      display: flex;
+      margin-bottom: 12px;
+      font-size: 13px;
+      align-items: baseline;
+    }
+
+    .form60-field-label {
+      flex-shrink: 0;
+      margin-right: 10px;
+    }
+
+    .form60-field-value {
+      flex: 1;
+      border-bottom: 1px dotted #666;
+      min-height: 18px;
+      padding-bottom: 2px;
+    }
+
+    .form60-field-value.editable {
+      background: #fffbea;
+      cursor: text;
+      border-radius: 2px;
+      padding: 2px 4px;
+    }
+
+    .form60-field-value.editable:focus {
+      outline: 2px solid #667eea;
+      background: #fff;
+    }
+
+    .form60-field-value.uppercase {
+      text-transform: uppercase;
+    }
+
+    .form60-instructions {
+      font-size: 10px;
+      color: #666;
+      line-height: 1.4;
+      margin-top: 15px;
     }
 
     /* Action Buttons */
     .form-actions {
-      display: flex;
+      display: none;
       gap: 10px;
-      margin-top: 25px;
+      margin: 25px auto;
+      max-width: 900px;
     }
 
     .btn-action {
@@ -240,6 +391,15 @@
 
     .btn-print:hover {
       background: #218838;
+    }
+
+    .btn-drive {
+      background: #4285f4;
+      color: white;
+    }
+
+    .btn-drive:hover {
+      background: #357ae8;
     }
 
     .btn-close {
@@ -273,21 +433,22 @@
       }
       
       .printable-form {
-        position: absolute;
-        left: 0;
-        top: 0;
+        position: relative;
         width: 210mm;
         min-height: 297mm;
-        padding: 20mm 15mm;
+        padding: 15mm;
         box-shadow: none;
         margin: 0;
+        page-break-after: always;
+      }
+
+      .printable-form:last-of-type {
+        page-break-after: auto;
       }
       
-      .form-actions {
-        display: none;
-      }
-      
-      .no-print {
+      .form-actions,
+      .no-print,
+      .page-selection {
         display: none !important;
       }
     }
@@ -322,7 +483,7 @@
     <!-- Header -->
     <div class="form-header no-print">
       <h2>📋 Customer Form</h2>
-      <p>Generate pre-filled customer forms for completed records</p>
+      <p>Generate customer forms and Form 60</p>
     </div>
 
     <!-- Status Message -->
@@ -337,48 +498,67 @@
     <div id="emptyState" class="empty-state no-print" style="display: none;">
       <div class="empty-icon">✅</div>
       <div class="empty-text">No records available</div>
-      <div class="empty-subtext">Records need Engine and Frame numbers to generate customer form</div>
+      <div class="empty-subtext">Records need Engine and Frame numbers to generate forms</div>
     </div>
 
-    <!-- Back Button -->
-    <button onclick="goBack()" class="btn-secondary no-print" style="width: 100%; margin-top: 20px;">
+    <!-- Page Selection -->
+    <div id="pageSelection" class="page-selection">
+      <h3>Select Forms to Generate</h3>
+      <div class="page-buttons">
+        <div class="page-btn" onclick="showPage(1)">
+          <div class="page-btn-icon">📄</div>
+          <div class="page-btn-title">Page 1</div>
+          <div class="page-btn-desc">Customer Details</div>
+        </div>
+        <div class="page-btn" onclick="showPage(2)">
+          <div class="page-btn-icon">📋</div>
+          <div class="page-btn-title">Page 2</div>
+          <div class="page-btn-desc">Form No. 60 (Part 1)</div>
+        </div>
+        <div class="page-btn" onclick="showPage(3)">
+          <div class="page-btn-icon">📝</div>
+          <div class="page-btn-title">Page 3</div>
+          <div class="page-btn-desc">Form No. 60 (Part 2)</div>
+        </div>
+      </div>
+      <button onclick="closeToRecordsList()" class="btn-secondary" style="width: 100%; margin-top: 10px;">
+        ← Back to Records List
+      </button>
+    </div>
+
+    <!-- Main Back Button -->
+    <button id="mainBackBtn" onclick="goBack()" class="btn-secondary no-print" style="width: 100%; margin-top: 20px;">
       ← Back to Home
     </button>
 
   </div>
 
-  <!-- Printable Form (A4) -->
-  <div id="printableForm" class="printable-form">
-    
-    <!-- Form Document Header -->
+  <!-- Page 1: Customer Details Form -->
+  <div id="page1" class="printable-form">
     <div class="form-document-header">
-      <div class="dealer-info">
-        <div class="dealer-brand">TVS</div>
-      </div>
-      
+      <div class="dealer-brand">TVS</div>
       <div class="vehicle-sticker-space">
         Vehicle No.<br>
         (Paste QR Sticker Here)
       </div>
     </div>
 
-    <!-- Vehicle and Customer Details -->
     <div class="form-grid">
       <div class="form-row">
         <div class="form-label">Model</div>
         <div class="form-value" id="formModel">........................</div>
-        <div class="form-label" style="width: 110px; margin-left: 35px;">Color</div>
-        <div class="form-value" id="formColor" style="width: 200px;">........................</div>
+        <div class="form-label" style="width: 100px; margin-left: 30px;">Color</div>
+        <div class="form-value" id="formColor" style="width: 180px;">........................</div>
       </div>
 
       <div class="form-row">
         <div class="form-label">Engine No</div>
-        <div class="form-value" id="formEngineNo">........................................................................................</div>
+        <div class="form-value uppercase" id="formEngineNo">........................................................................................</div>
       </div>
 
       <div class="form-row">
         <div class="form-label">Chassis No</div>
-        <div class="form-value" id="formChassisNo">........................................................................................</div>
+        <div class="form-value uppercase" id="formChassisNo">........................................................................................</div>
       </div>
 
       <div class="form-row">
@@ -388,17 +568,17 @@
 
       <div class="form-row">
         <div class="form-label">Address</div>
-        <div class="form-value blank">........................................................................................</div>
+        <div class="form-value blank editable" contenteditable="true">........................................................................................</div>
       </div>
 
       <div class="form-row">
         <div class="form-label"></div>
-        <div class="form-value blank">........................................................................................</div>
+        <div class="form-value blank editable" contenteditable="true">........................................................................................</div>
       </div>
 
       <div class="form-row">
         <div class="form-label">Email id</div>
-        <div class="form-value blank">........................................................................................</div>
+        <div class="form-value blank editable" contenteditable="true">........................................................................................</div>
       </div>
 
       <div class="form-row">
@@ -413,47 +593,249 @@
 
       <div class="form-row">
         <div class="form-label">Nominee</div>
-        <div class="form-value blank">.......................................................... Age......</div>
+        <div class="form-value blank editable" contenteditable="true">.......................................................... Age......</div>
       </div>
 
       <div class="form-row">
         <div class="form-label">Relation</div>
-        <div class="form-value blank">........................................................................................</div>
+        <div class="form-value blank editable" contenteditable="true">........................................................................................</div>
       </div>
 
       <div class="form-row">
         <div class="form-label">Aadhaar No.</div>
-        <div class="form-value blank">........................................................................................</div>
+        <div class="form-value blank editable" contenteditable="true">........................................................................................</div>
       </div>
 
       <div class="form-row">
         <div class="form-label">Pan Card No.</div>
-        <div class="form-value blank">........................................................................................</div>
+        <div class="form-value blank editable" contenteditable="true">........................................................................................</div>
       </div>
     </div>
 
-    <!-- Footer Branding (No logos, just text) -->
     <div class="form-footer">
-      <div class="company-branding">
-        <div class="tvs-logo-text">TVS</div>
-        <div class="company-name">VINAY AUTOMOBILES</div>
-        <div class="company-address">
-          Mahavir Nagar, Darwha Road, Yavatmal-445001<br>
-          Ph. 9130040050
+      <div class="tvs-logo-text">TVS</div>
+      <div class="company-name">VINAY AUTOMOBILES</div>
+      <div class="company-address">
+        Mahavir Nagar, Darwha Road, Yavatmal-445001<br>
+        Ph. 9130040050
+      </div>
+    </div>
+  </div>
+
+  <!-- Page 2: Form No. 60 (Part 1) -->
+  <div id="page2" class="printable-form">
+    <div class="form60-header">
+      <div class="form60-note">
+        In appendix II to the Income Tax Rules, after Form No. 59A the following forms will be inserted namely
+      </div>
+      <div class="form60-title">Form No. 60</div>
+      <div class="form60-subtitle">(See third Proviso to of Rule 114 B)</div>
+      <div class="form60-description">
+        Form of Declaration to be filled by a person who does not have either a permanent account number or General Index Register Number and who makes payment in case given in respect of the transaction specified in clauses (a) to (g) of Rule 114B.
+      </div>
+    </div>
+
+    <div class="form60-section">
+      <div class="form60-field">
+        <div class="form60-field-label" style="width: 220px;">Full Name and address of the declarant</div>
+        <div class="form60-field-value uppercase" id="form60Name1"></div>
+      </div>
+      <div class="form60-field">
+        <div class="form60-field-label" style="width: 220px;"></div>
+        <div class="form60-field-value editable" contenteditable="true"></div>
+      </div>
+      <div class="form60-field">
+        <div class="form60-field-label" style="width: 220px;"></div>
+        <div class="form60-field-value editable" contenteditable="true"></div>
+      </div>
+    </div>
+
+    <div class="form60-section">
+      <div class="form60-field">
+        <div class="form60-field-label" style="width: 220px;">Particulars of transaction</div>
+        <div class="form60-field-value editable" contenteditable="true"></div>
+      </div>
+      <div class="form60-field">
+        <div class="form60-field-label" style="width: 220px;">Account of the transaction</div>
+        <div class="form60-field-value editable" contenteditable="true"></div>
+      </div>
+      <div class="form60-field">
+        <div class="form60-field-label" style="width: 220px;">Are you assessed to tax?</div>
+        <div class="form60-field-value editable" contenteditable="true">Yes / No</div>
+      </div>
+    </div>
+
+    <div class="form60-section">
+      <div style="font-size: 12px; margin-bottom: 10px;">If yes:</div>
+      <div class="form60-field">
+        <div class="form60-field-label" style="width: 420px; font-size: 11px;">(i) Details of Ward / Circle / Range where the last return of income was filed?</div>
+        <div class="form60-field-value editable" contenteditable="true"></div>
+      </div>
+      <div class="form60-field">
+        <div class="form60-field-label" style="width: 420px; font-size: 11px;">(ii) Reasons for not having permanent account number / General Index Register Number?</div>
+        <div class="form60-field-value editable" contenteditable="true"></div>
+      </div>
+      <div class="form60-field">
+        <div class="form60-field-label" style="width: 420px; font-size: 11px;">Details of the document being produce in support of address column (f)</div>
+        <div class="form60-field-value editable" contenteditable="true"></div>
+      </div>
+    </div>
+
+    <div class="form60-section">
+      <div class="form60-section-title">VERIFICATION</div>
+      <div style="font-size: 12px; margin-bottom: 15px;">
+        <span id="form60Name2" class="uppercase"></span>, I hereby declare that what is stated above is true to best of my knowledge and belief.
+      </div>
+      <div style="display: flex; gap: 20px; margin-top: 20px; font-size: 13px;">
+        <div>
+          Verified today the 
+          <span style="border-bottom: 1px solid #000; display: inline-block; min-width: 60px; text-align: center; padding: 0 5px;" id="form60Day"></span> 
+          day of 
+          <span style="border-bottom: 1px solid #000; display: inline-block; min-width: 100px; text-align: center; padding: 0 5px;" id="form60Month"></span> 
+          202<span style="border-bottom: 1px solid #000; display: inline-block; min-width: 30px; text-align: center; padding: 0 5px;" id="form60Year"></span>
+        </div>
+      </div>
+      <div style="margin-top: 50px; text-align: right;">
+        <div style="display: inline-block; width: 250px;">
+          <div style="border-top: 1px solid #000; padding-top: 5px; font-size: 11px; text-align: center;">Signature of the declarant</div>
         </div>
       </div>
     </div>
 
-    <!-- Action Buttons -->
-    <div class="form-actions no-print">
-      <button class="btn-action btn-print" onclick="printForm()">
-        🖨️ Print Form
-      </button>
-      <button class="btn-action btn-close" onclick="closeForm()">
-        ← Back to List
-      </button>
+    <div class="form60-instructions">
+      <strong>Instructions :-</strong><br>
+      Documents which can be produced in support of the address are ><br>
+      (a) Ration card<br>
+      (b) Passport<br>
+      (c) Driving License<br>
+      (d) Identity card issued by any institution<br>
+      (e) Copy of the electricity bill or telephone bill showing residential address<br>
+      (f) Any document of communication issued by authority of Central Government or State Government or local bodies showing residential address<br>
+      (g) Any other documentary evidence in support of his address<br>
+      (h) Any other documentary evidence in support of his address given in the declaration
+    </div>
+  </div>
+
+  <!-- Page 3: Form No. 60 (Part 2) -->
+  <div id="page3" class="printable-form">
+    <div style="font-size: 12px; margin-bottom: 20px; line-height: 1.5;">
+      <strong>Note :-</strong> The Motor Vehicle above described is :-<br>
+      (i) Subject to hire purchase agreement/lease agreement with <span style="border-bottom: 1px dotted #666; display: inline-block; min-width: 200px;" contenteditable="true"></span><br>
+      (ii) Subject to hypothecation in favour of <span style="border-bottom: 1px dotted #666; display: inline-block; min-width: 250px;" contenteditable="true"></span><br>
+      (iii) Not held under the hire purchase agreement, or lease agreement or subject to hypothecation.
     </div>
 
+    <div style="margin-bottom: 20px; font-style: italic; font-size: 11px; color: #666;">
+      *Strike out whichever is inapplicable. If the vehicle is subject to any such agreement or of the person with whom such agreement has been entered into is The difference.
+    </div>
+
+    <div style="margin-top: 50px; text-align: right;">
+      <div style="display: inline-block; width: 300px;">
+        <div style="border-top: 1px solid #000; padding-top: 5px; font-size: 12px; text-align: center;">
+          Signature or thumb impression of the owner
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 40px; font-size: 13px;">
+      <div style="font-weight: 600;">Signature of the person with</div>
+      <div style="font-weight: 600;">whom as agreement of</div>
+      <div style="font-weight: 600;">hire purchase lease or hypothecation</div>
+      <div style="font-weight: 600;">has been entered into)</div>
+    </div>
+
+    <div style="margin-top: 70px; border-top: 3px solid #000; padding-top: 20px;">
+      <div style="text-align: center; font-weight: 700; font-size: 15px; margin-bottom: 25px;">
+        (For Office Endorsement)
+      </div>
+
+      <div class="form60-field">
+        <div class="form60-field-label" style="width: 80px;">Ref. No.</div>
+        <div class="form60-field-value editable" contenteditable="true" style="width: 200px;"></div>
+        <div class="form60-field-label" style="width: 100px; margin-left: 40px;">Office of the</div>
+        <div class="form60-field-value editable" contenteditable="true"></div>
+      </div>
+
+      <div class="form60-field">
+        <div class="form60-field-label" style="width: 80px;"></div>
+        <div class="form60-field-value editable" contenteditable="true" style="width: 200px;"></div>
+        <div class="form60-field-label" style="width: 100px; margin-left: 40px;">Dated</div>
+        <div class="form60-field-value editable" contenteditable="true"></div>
+      </div>
+
+      <div class="form60-field">
+        <div class="form60-field-label" style="width: 40px;">The</div>
+        <div class="form60-field-value editable" contenteditable="true" style="width: 150px;"></div>
+        <div class="form60-field-label" style="width: 160px; margin-left: 20px;">bearing Chassis No</div>
+        <div class="form60-field-value editable" contenteditable="true" style="width: 180px;"></div>
+      </div>
+
+      <div class="form60-field">
+        <div class="form60-field-label" style="width: 120px;">and Engine No</div>
+        <div class="form60-field-value editable" contenteditable="true"></div>
+      </div>
+
+      <div class="form60-field">
+        <div class="form60-field-label" style="width: 280px;">has been assigned the registration number</div>
+        <div class="form60-field-value editable" contenteditable="true" style="width: 180px;"></div>
+        <div class="form60-field-label" style="width: 280px; margin-left: 20px;">/purchase/lease/hypothecation</div>
+        <div class="form60-field-value editable" contenteditable="true"></div>
+      </div>
+
+      <div class="form60-field">
+        <div class="form60-field-label" style="width: 180px;">purchase/lease/hypothecation</div>
+        <div class="form60-field-value editable" contenteditable="true" style="width: 150px;"></div>
+        <div class="form60-field-label" style="width: 350px; margin-left: 20px;">and the vehicle is subject to an agreement or hire</div>
+      </div>
+    </div>
+
+    <div style="margin-top: 70px; border-top: 3px solid #000; padding-top: 20px;">
+      <div style="text-align: center; font-weight: 700; font-size: 15px; margin-bottom: 25px;">
+        Registering Authority
+      </div>
+
+      <div style="margin-bottom: 15px; font-size: 12px;">
+        To, <span style="border-bottom: 1px dotted #666; display: inline-block; min-width: 300px;" contenteditable="true"></span><br>
+        <span style="margin-left: 25px;">(Name and Address of the financier)</span>
+      </div>
+
+      <div style="margin-top: 25px; font-size: 11px;">
+        by registered post or deliver under proper acknowledgment
+      </div>
+
+      <div style="margin-top: 25px; font-size: 11px;">
+        Specimen signature or thumb impression<br>
+        of the person to be registered as registered owner
+      </div>
+
+      <div style="display: flex; gap: 25px; margin-top: 40px;">
+        <div style="flex: 1; text-align: center;">
+          <div style="min-height: 50px; border-bottom: 1px solid #000;"></div>
+          <div style="margin-top: 8px; font-size: 10px;">1) _________________</div>
+        </div>
+        <div style="flex: 1; text-align: center;">
+          <div style="min-height: 50px; border-bottom: 1px solid #000;"></div>
+          <div style="margin-top: 8px; font-size: 10px;">2) _________________</div>
+        </div>
+        <div style="flex: 1; text-align: center;">
+          <div style="min-height: 50px; border-bottom: 1px solid #000;"></div>
+          <div style="margin-top: 8px; font-size: 10px;">3) _________________</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div id="formActions" class="form-actions no-print">
+    <button class="btn-action btn-print" onclick="printAllForms()">
+      🖨️ Print All Forms
+    </button>
+    <button class="btn-action btn-drive" onclick="saveToGoogleDrive()">
+      💾 Save to Google Drive
+    </button>
+    <button class="btn-action btn-close" onclick="closeAllForms()">
+      ← Back to Selection
+    </button>
   </div>
 
   <script src="js/config.js"></script>
