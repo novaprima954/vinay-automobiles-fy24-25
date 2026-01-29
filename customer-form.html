@@ -468,6 +468,29 @@
       font-size: 14px;
       color: #999;
     }
+
+    /* Filter Buttons */
+    .filter-btn {
+      padding: 10px 16px;
+      border: 2px solid #667eea;
+      background: white;
+      color: #667eea;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .filter-btn:hover {
+      background: #667eea;
+      color: white;
+    }
+
+    .filter-btn-active {
+      background: #667eea;
+      color: white;
+    }
   </style>
 </head>
 <body>
@@ -483,6 +506,29 @@
 
     <!-- Status Message -->
     <div id="statusMessage" class="message hidden no-print"></div>
+
+    <!-- Filters -->
+    <div class="filters-container no-print" style="background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+        <button onclick="filterRecords('today')" class="filter-btn" id="filterToday">
+          📅 Today
+        </button>
+        <button onclick="filterRecords('next7days')" class="filter-btn" id="filterNext7">
+          📆 Next 7 Days
+        </button>
+        <button onclick="filterRecords('thisMonth')" class="filter-btn" id="filterMonth">
+          🗓️ This Month
+        </button>
+        <button onclick="filterRecords('all')" class="filter-btn filter-btn-active" id="filterAll">
+          📋 All
+        </button>
+        <div style="flex: 1; min-width: 200px;">
+          <input type="text" id="searchInput" placeholder="🔍 Search by name..." 
+                 style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;"
+                 onkeyup="searchRecords()">
+        </div>
+      </div>
+    </div>
 
     <!-- Records List -->
     <div id="recordsList" class="records-list no-print">
@@ -569,17 +615,17 @@
 
         <div class="form-row">
           <div class="form-label">Address</div>
-          <div class="form-value blank editable" contenteditable="true">........................................................................................</div>
+          <div class="form-value blank editable" contenteditable="true"></div>
         </div>
 
         <div class="form-row">
           <div class="form-label"></div>
-          <div class="form-value blank editable" contenteditable="true">........................................................................................</div>
+          <div class="form-value blank editable" contenteditable="true"></div>
         </div>
 
         <div class="form-row">
           <div class="form-label">Email id</div>
-          <div class="form-value blank editable" contenteditable="true">........................................................................................</div>
+          <div class="form-value blank editable" contenteditable="true"></div>
         </div>
 
         <div class="form-row">
@@ -594,22 +640,22 @@
 
         <div class="form-row">
           <div class="form-label">Nominee</div>
-          <div class="form-value blank editable" contenteditable="true">.......................................................... Age......</div>
+          <div class="form-value blank editable" contenteditable="true"> Age......</div>
         </div>
 
         <div class="form-row">
           <div class="form-label">Relation</div>
-          <div class="form-value blank editable" contenteditable="true">........................................................................................</div>
+          <div class="form-value blank editable" contenteditable="true"></div>
         </div>
 
         <div class="form-row">
           <div class="form-label">Aadhaar No.</div>
-          <div class="form-value blank editable" contenteditable="true">........................................................................................</div>
+          <div class="form-value blank editable" contenteditable="true"></div>
         </div>
 
         <div class="form-row">
           <div class="form-label">Pan Card No.</div>
-          <div class="form-value blank editable" contenteditable="true">........................................................................................</div>
+          <div class="form-value blank editable" contenteditable="true"></div>
         </div>
       </div>
 

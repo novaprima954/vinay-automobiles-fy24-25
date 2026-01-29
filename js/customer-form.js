@@ -4,6 +4,8 @@
 // ==========================================
 
 let currentRecord = null;
+let allRecords = []; // Store all records for filtering
+let currentFilter = 'all'; // Current active filter
 
 // ==========================================
 // PAGE INITIALIZATION
@@ -56,7 +58,8 @@ async function loadCustomerFormRecords() {
     
     if (response.success) {
       console.log('Number of records received:', response.records ? response.records.length : 0);
-      displayRecords(response.records);
+      allRecords = response.records || []; // Store all records
+      displayRecords(allRecords); // Display all initially
     } else {
       showMessage(response.message, 'error');
     }
@@ -106,6 +109,34 @@ function displayRecords(records) {
 }
 
 /**
+ * Parse accessories from database format
+ * Format: "Seat Cover: Yes, Guard: Yes, Handle Cover: No"
+ */
+function parseAccessories(accessoriesString) {
+  if (!accessoriesString || accessoriesString === 'None') {
+    return 'None';
+  }
+  
+  // Split by comma and filter only "Yes" items
+  const items = accessoriesString.split(',').map(item => item.trim());
+  const yesItems = [];
+  
+  items.forEach(function(item) {
+    // Extract name before colon
+    const parts = item.split(':');
+    if (parts.length === 2) {
+      const name = parts[0].trim();
+      const value = parts[1].trim().toLowerCase();
+      if (value === 'yes') {
+        yesItems.push(name);
+      }
+    }
+  });
+  
+  return yesItems.length > 0 ? yesItems.join(', ') : 'None';
+}
+
+/**
  * Open customer form - show all 3 pages in scrollable format
  */
 async function openCustomerForm(receiptNo) {
@@ -125,7 +156,10 @@ async function openCustomerForm(receiptNo) {
       
       // Populate Page 1 - Summary Section
       document.getElementById('formExecutive').textContent = currentRecord.executiveName || '-';
-      document.getElementById('formAccessories').textContent = currentRecord.accessories || 'None';
+      
+      // Parse and display accessories
+      const accessoriesList = parseAccessories(currentRecord.accessories);
+      document.getElementById('formAccessories').textContent = accessoriesList;
       
       // Populate Page 1 - Customer Details (Using variant instead of model)
       document.getElementById('formVariant').textContent = currentRecord.variant || '';
@@ -282,4 +316,101 @@ function showMessage(text, type) {
  */
 function goBack() {
   window.location.href = 'home.html';
+}
+
+/**
+ * Filter records by date
+ */
+function filterRecords(filterType) {
+  console.log('Filtering by:', filterType);
+  
+  currentFilter = filterType;
+  
+  // Update active button
+  document.querySelectorAll('.filter-btn').forEach(function(btn) {
+    btn.classList.remove('filter-btn-active');
+  });
+  document.getElementById('filter' + filterType.charAt(0).toUpperCase() + filterType.slice(1).replace('7days', 'Next7').replace('thisMonth', 'Month').replace('all', 'All')).classList.add('filter-btn-active');
+  
+  // Clear search
+  document.getElementById('searchInput').value = '';
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  let filtered = allRecords;
+  
+  if (filterType === 'today') {
+    // Filter for today's delivery date
+    filtered = allRecords.filter(function(record) {
+      if (!record.deliveryDate) return false;
+      const deliveryDate = parseDate(record.deliveryDate);
+      return deliveryDate && deliveryDate.getTime() === today.getTime();
+    });
+  } else if (filterType === 'next7days') {
+    // Filter for next 7 days
+    const next7Days = new Date(today);
+    next7Days.setDate(next7Days.getDate() + 7);
+    
+    filtered = allRecords.filter(function(record) {
+      if (!record.deliveryDate) return false;
+      const deliveryDate = parseDate(record.deliveryDate);
+      return deliveryDate && deliveryDate >= today && deliveryDate <= next7Days;
+    });
+  } else if (filterType === 'thisMonth') {
+    // Filter for this month
+    const thisMonth = today.getMonth();
+    const thisYear = today.getFullYear();
+    
+    filtered = allRecords.filter(function(record) {
+      if (!record.deliveryDate) return false;
+      const deliveryDate = parseDate(record.deliveryDate);
+      return deliveryDate && deliveryDate.getMonth() === thisMonth && deliveryDate.getFullYear() === thisYear;
+    });
+  }
+  
+  console.log('Filtered results:', filtered.length);
+  displayRecords(filtered);
+}
+
+/**
+ * Search records by customer name
+ */
+function searchRecords() {
+  const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+  
+  console.log('Searching for:', searchTerm);
+  
+  if (searchTerm === '') {
+    // If search is empty, apply current filter
+    filterRecords(currentFilter);
+    return;
+  }
+  
+  // Search in customer name
+  const filtered = allRecords.filter(function(record) {
+    return record.customerName && record.customerName.toLowerCase().includes(searchTerm);
+  });
+  
+  console.log('Search results:', filtered.length);
+  displayRecords(filtered);
+}
+
+/**
+ * Parse date from string (handles various formats)
+ */
+function parseDate(dateString) {
+  if (!dateString) return null;
+  
+  // Try to parse the date
+  const date = new Date(dateString);
+  
+  // Check if valid date
+  if (isNaN(date.getTime())) {
+    return null;
+  }
+  
+  // Reset time to midnight for comparison
+  date.setHours(0, 0, 0, 0);
+  return date;
 }
