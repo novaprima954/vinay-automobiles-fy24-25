@@ -115,7 +115,7 @@
       width: 210mm;
       min-height: 297mm;
       margin: 0 auto 30px auto;
-      padding: 15mm 20mm;
+      padding: 20mm 15mm;
       box-sizing: border-box;
       page-break-after: always;
     }
@@ -129,16 +129,37 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 25px;
+      margin-bottom: 20px;
       border-bottom: 3px solid #000;
-      padding-bottom: 20px;
+      padding-bottom: 15px;
     }
 
     .dealer-brand {
-      font-size: 32px;
+      font-size: 38px;
       font-weight: 900;
       font-style: italic;
       font-family: Arial, sans-serif;
+    }
+
+    /* Summary Section */
+    .form-summary {
+      margin-top: 15px;
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .summary-label {
+      font-weight: 600;
+      color: #333;
+      display: inline-block;
+      width: 120px;
+    }
+
+    .summary-value {
+      color: #555;
     }
 
     .vehicle-sticker-space {
@@ -158,18 +179,18 @@
 
     /* Form Grid */
     .form-grid {
-      margin-bottom: 25px;
+      margin-bottom: 20px;
     }
 
     .form-row {
       display: flex;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       align-items: baseline;
     }
 
     .form-label {
-      width: 160px;
-      font-size: 14px;
+      width: 150px;
+      font-size: 15px;
       font-weight: 600;
       color: #000;
       flex-shrink: 0;
@@ -177,11 +198,11 @@
 
     .form-value {
       flex: 1;
-      font-size: 14px;
+      font-size: 15px;
       color: #000;
       border-bottom: 1px dotted #666;
       padding-bottom: 3px;
-      min-height: 20px;
+      min-height: 22px;
       font-weight: 500;
     }
 
@@ -198,37 +219,39 @@
       cursor: text;
       border-radius: 2px;
       padding: 2px 4px;
+      color: #000;
     }
 
     .form-value.editable:focus {
       outline: 2px solid #667eea;
       background: #fff;
+      color: #000;
     }
 
     /* Footer */
     .form-footer {
-      margin-top: 40px;
-      padding-top: 20px;
+      margin-top: 35px;
+      padding-top: 15px;
       border-top: 3px solid #000;
       text-align: center;
     }
 
     .tvs-logo-text {
-      font-size: 36px;
+      font-size: 38px;
       font-weight: 900;
       font-style: italic;
       font-family: Arial, sans-serif;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .company-name {
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 700;
       margin-bottom: 8px;
     }
 
     .company-address {
-      font-size: 13px;
+      font-size: 14px;
       color: #333;
       line-height: 1.6;
     }
@@ -301,11 +324,13 @@
       cursor: text;
       border-radius: 2px;
       padding: 2px 4px;
+      color: #000;
     }
 
     .form60-field-value.editable:focus {
       outline: 2px solid #667eea;
       background: #fff;
+      color: #000;
     }
 
     .form60-field-value.uppercase {
@@ -497,7 +522,22 @@
     <!-- Page 1: Customer Details Form -->
     <div id="page1" class="printable-form">
       <div class="form-document-header">
-        <div class="dealer-brand">VINAY TVS</div>
+        <div>
+          <div class="dealer-brand">VINAY TVS</div>
+          
+          <!-- Summary Section -->
+          <div class="form-summary">
+            <div style="margin-bottom: 6px;">
+              <span class="summary-label">Executive Name:</span>
+              <span class="summary-value" id="formExecutive">-</span>
+            </div>
+            <div>
+              <span class="summary-label">Accessories:</span>
+              <span class="summary-value" id="formAccessories">-</span>
+            </div>
+          </div>
+        </div>
+        
         <div class="vehicle-sticker-space">
           Vehicle No.<br>
           (Paste QR Sticker Here)
@@ -677,8 +717,8 @@
       </div>
     </div>
 
-    <!-- Page 3: Form No. 60 (Part 2) - A4 Sized -->
-    <div id="page3" class="printable-form">
+    <!-- Page 3: Form No. 60 (Part 2) - A4 Sized - Hidden if Cash -->
+    <div id="page3" class="printable-form" style="display: none;">
       <div style="font-size: 11px; margin-bottom: 18px; line-height: 1.4;">
         <strong>Note :-</strong> The Motor Vehicle above described is :-<br>
         (i) Subject to hire purchase agreement/lease agreement with <span style="border-bottom: 1px dotted #666; display: inline-block; min-width: 180px;" contenteditable="true"></span><br>

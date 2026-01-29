@@ -123,7 +123,11 @@ async function openCustomerForm(receiptNo) {
     if (response.success) {
       currentRecord = response.record;
       
-      // Populate Page 1 (Customer Details) - Using variant instead of model
+      // Populate Page 1 - Summary Section
+      document.getElementById('formExecutive').textContent = currentRecord.executiveName || '-';
+      document.getElementById('formAccessories').textContent = currentRecord.accessories || 'None';
+      
+      // Populate Page 1 - Customer Details (Using variant instead of model)
       document.getElementById('formVariant').textContent = currentRecord.variant || '';
       document.getElementById('formColor').textContent = currentRecord.colour || '';
       document.getElementById('formEngineNo').textContent = currentRecord.engineNumber || '';
@@ -134,6 +138,20 @@ async function openCustomerForm(receiptNo) {
       
       // Populate Form 60 (Page 2)
       populateForm60();
+      
+      // Conditionally show Page 3 based on financer
+      const financierName = (currentRecord.financierName || 'Cash').toLowerCase().trim();
+      const isCash = financierName === 'cash' || financierName === '';
+      
+      if (isCash) {
+        // Hide Page 3 if payment is Cash
+        document.getElementById('page3').style.display = 'none';
+        console.log('✅ Page 3 hidden (Cash payment)');
+      } else {
+        // Show Page 3 if financed
+        document.getElementById('page3').style.display = 'block';
+        console.log('✅ Page 3 visible (Financed: ' + currentRecord.financierName + ')');
+      }
       
       // Hide records container, show forms
       document.getElementById('recordsContainer').style.display = 'none';
