@@ -253,6 +253,14 @@ async function filterByStatus(status) {
   const month = document.getElementById('monthSelector').value;
   const sessionId = SessionManager.getSessionId();
   
+  console.log('filterByStatus called - SessionId:', sessionId);
+  
+  if (!sessionId) {
+    console.error('No session ID found!');
+    showMessage('Session expired. Please refresh the page.', 'error');
+    return;
+  }
+  
   // Update active card
   document.querySelectorAll('.stat-card').forEach(function(card) {
     card.classList.remove('active');
@@ -523,6 +531,8 @@ function populateDetails(record, user) {
   document.getElementById('detailModel').textContent = record.model || '-';
   document.getElementById('detailVariant').textContent = record.variant || '-';
   document.getElementById('detailColour').textContent = record.colour || '-';
+  document.getElementById('detailEngineNo').textContent = record.engineNumber || '-';
+  document.getElementById('detailFrameNo').textContent = record.frameNumber || '-';
   document.getElementById('detailDeliveryDate').textContent = record.deliveryDate || '-';
   document.getElementById('detailSalesRemark').textContent = record.salesRemark || '-';
   document.getElementById('detailAccountantName').textContent = record.accountantName || '-';
