@@ -1,9 +1,11 @@
 // ==========================================
 // OPERATOR UPDATE PAGE LOGIC
+// With Month Filter, Engine/Chassis, Workflow Validation
 // ==========================================
 
 let currentUser = null;
 let currentRecord = null;
+let currentMonth = '';
 
 document.addEventListener('DOMContentLoaded', async function() {
   console.log('=== OPERATOR UPDATE PAGE ===');
@@ -20,16 +22,21 @@ document.addEventListener('DOMContentLoaded', async function() {
   currentUser = session.user;
   console.log('✅ User:', currentUser.name, '| Role:', currentUser.role);
   
+  // Populate month selector
+  populateMonthSelector();
+  
   // Load pending counts
   await loadPendingCounts();
   
-  // Setup number plate formatting
+  // Setup formatters
   document.getElementById('numberPlateDetails').addEventListener('input', formatNumberPlate);
+  document.getElementById('engineNumber').addEventListener('input', formatVehicleNumber);
+  document.getElementById('frameNumber').addEventListener('input', formatVehicleNumber);
   
   // Form submission
   document.getElementById('updateForm').addEventListener('submit', handleUpdate);
   
-  // Check if redirected from pending list
+  // Check if redirected with receipt number
   const urlParams = new URLSearchParams(window.location.search);
   const receiptNo = urlParams.get('receiptNo');
   if (receiptNo) {
@@ -38,16 +45,47 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 /**
- * Load pending counts
+ * Populate month selector
+ */
+function populateMonthSelector() {
+  const select = document.getElementById('monthFilter');
+  const currentDate = new Date();
+  
+  // Generate last 12 months
+  for (let i = 0; i < 12; i++) {
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const monthName = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+    
+    const option = document.createElement('option');
+    option.value = `${year}-${month}`;
+    option.textContent = monthName;
+    select.appendChild(option);
+  }
+  
+  // Set current month as default
+  currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+  select.value = currentMonth;
+}
+
+/**
+ * Load pending counts with month filter
  */
 async function loadPendingCounts() {
+  currentMonth = document.getElementById('monthFilter').value;
+  
+  console.log('Loading counts for month:', currentMonth);
+  
   try {
-    const response = await API.getOperatorPendingCounts();
+    const response = await API.getOperatorPendingCounts(currentMonth);
     
     if (response.success) {
       document.getElementById('dmsPendingCount').textContent = response.counts.dmsPending;
       document.getElementById('insurancePendingCount').textContent = response.counts.insurancePending;
       document.getElementById('vahanPendingCount').textContent = response.counts.vahanPending;
+      
+      console.log('Counts loaded:', response.counts);
     }
   } catch (error) {
     console.error('Load counts error:', error);
@@ -58,17 +96,19 @@ async function loadPendingCounts() {
  * Show pending list by type
  */
 async function showPendingList(type) {
+  console.log('Loading pending list for:', type, 'Month:', currentMonth);
+  
   showLoading(true);
   
   try {
-    const response = await API.getOperatorPendingList(type);
+    const response = await API.getOperatorPendingList(type, currentMonth);
     
     showLoading(false);
     
     if (response.success && response.results.length > 0) {
       displayResults(response.results);
     } else {
-      showMessage('No pending records found', 'error');
+      showMessage('No pending records found for selected month', 'error');
     }
   } catch (error) {
     showLoading(false);
@@ -113,7 +153,7 @@ async function searchRecords() {
 }
 
 /**
- * Display search results
+ * Display search results with engine and chassis numbers
  */
 function displayResults(results) {
   const resultsList = document.getElementById('resultsList');
@@ -128,6 +168,9 @@ function displayResults(results) {
         Receipt: ${record.receiptNo} • ${record.variant || record.model}<br>
         📱 ${record.mobileNo} • Executive: ${record.executiveName}
       </div>
+      <div class="result-vehicle-info">
+        🔧 Engine: ${record.engineNumber || 'Not Set'} | 🔩 Chassis: ${record.frameNumber || 'Not Set'}
+      </div>
     </div>
   `).join('');
   
@@ -141,6 +184,8 @@ function displayResults(results) {
  * Load record details for update
  */
 async function loadRecordDetails(receiptNo) {
+  console.log('Loading record:', receiptNo);
+  
   showLoading(true);
   
   try {
@@ -165,6 +210,9 @@ async function loadRecordDetails(receiptNo) {
  * Display update form with record details
  */
 function displayUpdateForm(record) {
+  console.log('=== Displaying Update Form ===');
+  console.log('Record:', record);
+  
   // Display customer details
   document.getElementById('customerDetails').innerHTML = `
     <div class="detail-row">
@@ -189,18 +237,25 @@ function displayUpdateForm(record) {
     </div>
   `;
   
-  // Setup DMS
-  setupStatusSection('dms', record.dmsStatus, record.dmsDate, record.dmsOperator);
+  // Check if ALL statuses are complete (locked state)
+  const allComplete = record.dmsStatus === 'Yes' && 
+                      record.insuranceStatus === 'Yes' && 
+                      record.vahanStatus === 'Yes';
   
-  // Setup Insurance
-  setupStatusSection('insurance', record.insuranceStatus, record.insuranceDate, record.insuranceOperator);
+  console.log('All Complete:', allComplete);
+  console.log('Statuses - DMS:', record.dmsStatus, 'Insurance:', record.insuranceStatus, 'Vahan:', record.vahanStatus);
   
-  // Setup Vahan
-  setupStatusSection('vahan', record.vahanStatus, record.vahanDate, record.vahanOperator);
+  // Setup Vehicle Numbers Section
+  setupVehicleNumbers(record.engineNumber, record.frameNumber, allComplete);
+  
+  // Setup Status Sections
+  setupStatusSection('dms', record.dmsStatus, record.dmsDate, record.dmsOperator, allComplete);
+  setupStatusSection('insurance', record.insuranceStatus, record.insuranceDate, record.insuranceOperator, allComplete);
+  setupStatusSection('vahan', record.vahanStatus, record.vahanDate, record.vahanOperator, allComplete);
   
   // Setup Number Plate
   document.getElementById('numberPlateDetails').value = record.numberPlateDetails || '';
-  setupStatusSection('numberPlate', record.numberPlateFitted, record.numberPlateDate, record.numberPlateOperator);
+  setupStatusSection('numberPlate', record.numberPlateFitted, record.numberPlateDate, record.numberPlateOperator, false);
   
   // Show update section
   document.getElementById('updateSection').style.display = 'block';
@@ -208,22 +263,61 @@ function displayUpdateForm(record) {
 }
 
 /**
+ * Setup vehicle numbers section with lock
+ */
+function setupVehicleNumbers(engineNumber, frameNumber, locked) {
+  const engineInput = document.getElementById('engineNumber');
+  const frameInput = document.getElementById('frameNumber');
+  const lockedBadge = document.getElementById('vehicleLockedBadge');
+  
+  engineInput.value = engineNumber || '';
+  frameInput.value = frameNumber || '';
+  
+  if (locked) {
+    // LOCK: All statuses complete
+    engineInput.disabled = true;
+    frameInput.disabled = true;
+    lockedBadge.style.display = 'inline-block';
+    
+    console.log('🔒 Vehicle numbers LOCKED (all statuses complete)');
+  } else {
+    // UNLOCK: Can edit
+    engineInput.disabled = false;
+    frameInput.disabled = false;
+    lockedBadge.style.display = 'none';
+    
+    console.log('🔓 Vehicle numbers UNLOCKED');
+  }
+}
+
+/**
  * Setup status section (DMS/Insurance/Vahan/NumberPlate)
  */
-function setupStatusSection(type, status, date, operator) {
+function setupStatusSection(type, status, date, operator, forceLocked) {
   const section = document.getElementById(type + 'Section');
   const badge = document.getElementById(type + 'Badge');
   const info = document.getElementById(type + 'Info');
   const yesRadio = document.getElementById(type + 'Yes');
   const noRadio = document.getElementById(type + 'No');
   
-  if (status === 'Yes') {
-    // Locked
+  // Individual status lock OR force lock (all complete)
+  const isLocked = (status === 'Yes') || forceLocked;
+  
+  console.log(`Setup ${type}: status=${status}, forceLocked=${forceLocked}, isLocked=${isLocked}`);
+  
+  if (isLocked) {
+    // LOCKED
     section.classList.add('locked');
     badge.textContent = 'COMPLETED ✅';
     badge.className = 'status-badge badge-locked';
-    info.textContent = `Completed on ${date} by ${operator}`;
-    yesRadio.checked = true;
+    
+    if (date && operator) {
+      info.textContent = `Completed on ${date} by ${operator}`;
+    } else if (forceLocked) {
+      info.textContent = 'All steps completed - Status locked';
+    }
+    
+    yesRadio.checked = (status === 'Yes');
     yesRadio.disabled = true;
     noRadio.disabled = true;
     
@@ -231,16 +325,35 @@ function setupStatusSection(type, status, date, operator) {
       document.getElementById('numberPlateDetails').disabled = true;
     }
   } else {
-    // Editable
+    // UNLOCKED
     section.classList.remove('locked');
     badge.textContent = 'PENDING';
     badge.className = 'status-badge badge-pending';
     info.textContent = '';
     
-    if (status === 'No') {
+    yesRadio.disabled = false;
+    noRadio.disabled = false;
+    
+    if (status === 'Yes') {
+      yesRadio.checked = true;
+    } else if (status === 'No') {
       noRadio.checked = true;
+    } else {
+      yesRadio.checked = false;
+      noRadio.checked = false;
+    }
+    
+    if (type === 'numberPlate') {
+      document.getElementById('numberPlateDetails').disabled = false;
     }
   }
+}
+
+/**
+ * Format vehicle number as user types
+ */
+function formatVehicleNumber(e) {
+  e.target.value = e.target.value.toUpperCase();
 }
 
 /**
@@ -252,23 +365,23 @@ function formatNumberPlate(e) {
   
   // XX-00-XX-0000
   if (value.length > 0) {
-    formatted = value.substring(0, 2); // First 2 letters
+    formatted = value.substring(0, 2);
   }
   if (value.length >= 3) {
-    formatted += '-' + value.substring(2, 4); // 2 digits
+    formatted += '-' + value.substring(2, 4);
   }
   if (value.length >= 5) {
-    formatted += '-' + value.substring(4, 6); // 2 letters
+    formatted += '-' + value.substring(4, 6);
   }
   if (value.length >= 7) {
-    formatted += '-' + value.substring(6, 10); // 4 digits
+    formatted += '-' + value.substring(6, 10);
   }
   
   e.target.value = formatted;
 }
 
 /**
- * Handle form submission
+ * Handle form submission with workflow validation
  */
 async function handleUpdate(e) {
   e.preventDefault();
@@ -278,11 +391,19 @@ async function handleUpdate(e) {
     insuranceStatus: document.querySelector('input[name="insuranceStatus"]:checked')?.value || '',
     vahanStatus: document.querySelector('input[name="vahanStatus"]:checked')?.value || '',
     numberPlateDetails: document.getElementById('numberPlateDetails').value.trim(),
-    numberPlateFitted: document.querySelector('input[name="numberPlateFitted"]:checked')?.value || ''
+    numberPlateFitted: document.querySelector('input[name="numberPlateFitted"]:checked')?.value || '',
+    engineNumber: document.getElementById('engineNumber').value.trim(),
+    frameNumber: document.getElementById('frameNumber').value.trim()
   };
   
+  console.log('=== Form Submission ===');
+  console.log('Form Data:', data);
+  console.log('Current Record:', currentRecord);
+  
   // Validate: at least one field filled
-  if (!data.dmsStatus && !data.insuranceStatus && !data.vahanStatus && !data.numberPlateDetails && !data.numberPlateFitted) {
+  if (!data.dmsStatus && !data.insuranceStatus && !data.vahanStatus && 
+      !data.numberPlateDetails && !data.numberPlateFitted && 
+      !data.engineNumber && !data.frameNumber) {
     showMessage('Please fill at least one field', 'error');
     return;
   }
@@ -296,18 +417,33 @@ async function handleUpdate(e) {
     }
   }
   
-  // Hierarchy validation (client-side check)
-  if (data.insuranceStatus === 'Yes' && currentRecord.dmsStatus !== 'Yes') {
-    if (!confirm('⚠️ DMS is not completed yet. Insurance should only be marked after DMS. Continue anyway?')) {
-      return;
-    }
+  // CRITICAL WORKFLOW VALIDATION
+  // Get current statuses (what's already in database)
+  const currentDMS = currentRecord.dmsStatus || '';
+  const currentInsurance = currentRecord.insuranceStatus || '';
+  const currentVahan = currentRecord.vahanStatus || '';
+  
+  // Get new statuses (what user is trying to set)
+  const newDMS = data.dmsStatus || currentDMS;
+  const newInsurance = data.insuranceStatus || currentInsurance;
+  const newVahan = data.vahanStatus || currentVahan;
+  
+  console.log('Current: DMS=' + currentDMS + ', Insurance=' + currentInsurance + ', Vahan=' + currentVahan);
+  console.log('New: DMS=' + newDMS + ', Insurance=' + newInsurance + ', Vahan=' + newVahan);
+  
+  // Rule 1: Insurance=Yes requires DMS=Yes
+  if (newInsurance === 'Yes' && newDMS !== 'Yes') {
+    showMessage('❌ Workflow Error: Insurance can only be "Yes" if DMS is "Yes"', 'error');
+    return;
   }
   
-  if (data.vahanStatus === 'Yes' && currentRecord.insuranceStatus !== 'Yes') {
-    if (!confirm('⚠️ Insurance is not completed yet. Vahan should only be marked after Insurance. Continue anyway?')) {
-      return;
-    }
+  // Rule 2: Vahan=Yes requires Insurance=Yes
+  if (newVahan === 'Yes' && newInsurance !== 'Yes') {
+    showMessage('❌ Workflow Error: Vahan can only be "Yes" if Insurance is "Yes"', 'error');
+    return;
   }
+  
+  console.log('✅ Workflow validation passed');
   
   showLoading(true);
   
