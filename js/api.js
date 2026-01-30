@@ -9,15 +9,20 @@ const API = {
    */
   async call(action, params = {}) {
     try {
-      // Check if we should use POST (for large data like base64)
-      const usePost = params.base64Data || params.data || 
-                      (params.records && JSON.stringify(params.records).length > 1000);
+      // Check if we should use POST (for large data like base64 or records array)
+      const hasArrayParam = Array.isArray(params.records);
+      const hasBase64 = !!params.base64Data;
+      const hasData = !!params.data;
+      const isTooLarge = JSON.stringify(params).length > 1000;
+      
+      const usePost = hasBase64 || hasData || hasArrayParam || isTooLarge;
       
       let response;
       
       if (usePost) {
         // POST request for large data
         console.log('API Call (POST):', action, Object.keys(params));
+        console.log('POST reason:', { hasBase64, hasData, hasArrayParam, isTooLarge });
         
         const formData = new URLSearchParams();
         formData.append('action', action);
