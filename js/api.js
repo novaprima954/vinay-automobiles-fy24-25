@@ -9,24 +9,56 @@ const API = {
    */
   async call(action, params = {}) {
     try {
-      // Build URL with parameters
-      const url = new URL(CONFIG.API_ENDPOINT);
-      url.searchParams.append('action', action);
+      // Check if we should use POST (for large data like base64)
+      const usePost = params.base64Data || params.data || 
+                      (params.records && JSON.stringify(params.records).length > 1000);
       
-      // Add all params to URL
-      for (const [key, value] of Object.entries(params)) {
-        if (value !== null && value !== undefined) {
-          url.searchParams.append(key, value);
+      let response;
+      
+      if (usePost) {
+        // POST request for large data
+        console.log('API Call (POST):', action, Object.keys(params));
+        
+        const formData = new URLSearchParams();
+        formData.append('action', action);
+        
+        for (const [key, value] of Object.entries(params)) {
+          if (value !== null && value !== undefined) {
+            if (typeof value === 'object') {
+              formData.append(key, JSON.stringify(value));
+            } else {
+              formData.append(key, value);
+            }
+          }
         }
+        
+        response = await fetch(CONFIG.API_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: formData.toString(),
+          redirect: 'follow'
+        });
+        
+      } else {
+        // GET request for small data
+        console.log('API Call (GET):', action, params);
+        
+        const url = new URL(CONFIG.API_ENDPOINT);
+        url.searchParams.append('action', action);
+        
+        for (const [key, value] of Object.entries(params)) {
+          if (value !== null && value !== undefined) {
+            url.searchParams.append(key, value);
+          }
+        }
+        
+        response = await fetch(url.toString(), {
+          method: 'GET',
+          redirect: 'follow'
+        });
       }
-      
-      console.log('API Call:', action, params);
-      
-      // Make request
-      const response = await fetch(url.toString(), {
-        method: 'GET',
-        redirect: 'follow'
-      });
       
       if (!response.ok) {
         throw new Error('Network response was not ok');
