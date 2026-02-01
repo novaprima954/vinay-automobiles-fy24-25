@@ -17,7 +17,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   const session = SessionManager.getSession();
   
   if (!session) {
-    window.location.href = 'login.html';
+    window.location.href = 'index.html';
     return;
   }
   
@@ -26,7 +26,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   
   if (!validation.success) {
     SessionManager.clearSession();
-    window.location.href = 'login.html';
+    window.location.href = 'index.html';
     return;
   }
   
