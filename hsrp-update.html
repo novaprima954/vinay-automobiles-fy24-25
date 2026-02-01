@@ -518,8 +518,23 @@
     // ==========================================
     const SessionManager = {
       getSession() {
-        const sessionData = localStorage.getItem('session');
-        return sessionData ? JSON.parse(sessionData) : null;
+        // Try different possible key names
+        const possibleKeys = ['session', 'userSession', 'vinay_session'];
+        
+        for (const key of possibleKeys) {
+          const sessionData = localStorage.getItem(key);
+          if (sessionData) {
+            console.log('Found session in key:', key);
+            try {
+              return JSON.parse(sessionData);
+            } catch (e) {
+              console.error('Error parsing session from key:', key, e);
+            }
+          }
+        }
+        
+        console.log('No session found in any key');
+        return null;
       },
       
       setSession(session) {
@@ -528,6 +543,8 @@
       
       clearSession() {
         localStorage.removeItem('session');
+        localStorage.removeItem('userSession');
+        localStorage.removeItem('vinay_session');
       }
     };
 
@@ -664,7 +681,13 @@
 
     // Check authentication
     window.addEventListener('DOMContentLoaded', async () => {
+      console.log('=== DEBUG SESSION INFO ===');
+      console.log('localStorage keys:', Object.keys(localStorage));
+      console.log('session value:', localStorage.getItem('session'));
+      console.log('userSession value:', localStorage.getItem('userSession'));
+      
       const session = SessionManager.getSession();
+      console.log('SessionManager.getSession():', session);
       
       if (!session) {
         alert('Please login first');
