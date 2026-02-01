@@ -578,5 +578,70 @@ bulkUpdateNumberPlates: async function(records, overwriteExisting) {
     records: records,
     overwriteExisting: overwriteExisting
   });
+},
+
+// ==========================================
+// API ADDITIONS FOR HSRP
+// Add these to your api.js file at the end (before the closing brace)
+// ==========================================
+
+/**
+ * Upload V301 file (Step 1)
+ */
+uploadV301File: async function(base64Data, fileName) {
+  const session = SessionManager.getSession();
+  if (!session) {
+    throw new Error('No session');
+  }
+  
+  return this.call('uploadV301File', {
+    sessionId: session.sessionId,
+    base64Data: base64Data,
+    fileName: fileName
+  });
+},
+
+/**
+ * Upload Registration file (Step 2)
+ */
+uploadRegistrationFile: async function(base64Data, fileName) {
+  const session = SessionManager.getSession();
+  if (!session) {
+    throw new Error('No session');
+  }
+  
+  return this.call('uploadRegistrationFile', {
+    sessionId: session.sessionId,
+    base64Data: base64Data,
+    fileName: fileName
+  });
+},
+
+/**
+ * Get HSRP data
+ */
+getHSRPData: async function() {
+  const session = SessionManager.getSession();
+  if (!session) {
+    throw new Error('No session');
+  }
+  
+  return this.call('getHSRPData', {
+    sessionId: session.sessionId
+  });
+},
+
+/**
+ * Download HSRP data
+ */
+downloadHSRPData: async function() {
+  const session = SessionManager.getSession();
+  if (!session) {
+    throw new Error('No session');
+  }
+  
+  return this.call('downloadHSRPData', {
+    sessionId: session.sessionId
+  });
 }
 };

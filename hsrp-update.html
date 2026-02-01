@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Update HSRP - Vinay Automobiles</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      color: #333;
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      color: #666;
+      font-size: 16px;
+    }
+
+    .step-card {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .step-card.locked {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #f0f0f0;
+    }
+
+    .step-number {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 18px;
+      margin-right: 15px;
+    }
+
+    .step-title {
+      flex: 1;
+    }
+
+    .step-title h2 {
+      color: #333;
+      font-size: 24px;
+      margin-bottom: 5px;
+    }
+
+    .step-title p {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .step-status {
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .step-status.pending {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .step-status.completed {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .upload-area {
+      border: 2px dashed #ddd;
+      border-radius: 8px;
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-bottom: 20px;
+    }
+
+    .upload-area:hover {
+      border-color: #667eea;
+      background: #f8f9ff;
+    }
+
+    .upload-area.dragover {
+      border-color: #667eea;
+      background: #f0f3ff;
+    }
+
+    .upload-icon {
+      font-size: 48px;
+      margin-bottom: 15px;
+      color: #667eea;
+    }
+
+    .upload-text {
+      font-size: 18px;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .upload-subtext {
+      font-size: 14px;
+      color: #999;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    .file-info {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .file-info.show {
+      display: block;
+    }
+
+    .file-info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .file-info-label {
+      color: #666;
+      font-weight: 600;
+    }
+
+    .file-info-value {
+      color: #333;
+    }
+
+    .btn {
+      padding: 12px 30px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #5a6268;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .results-card {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+      display: none;
+    }
+
+    .results-card.show {
+      display: block;
+    }
+
+    .results-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .stat-box {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 32px;
+      font-weight: bold;
+      color: #667eea;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: #666;
+      margin-top: 5px;
+    }
+
+    .results-section {
+      margin-top: 20px;
+    }
+
+    .results-section h3 {
+      color: #333;
+      font-size: 18px;
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #ddd;
+    }
+
+    .results-list {
+      max-height: 300px;
+      overflow-y: auto;
+      background: white;
+      border-radius: 6px;
+      padding: 15px;
+    }
+
+    .result-item {
+      padding: 10px;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .result-item:last-child {
+      border-bottom: none;
+    }
+
+    .message {
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .message.show {
+      display: block;
+    }
+
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .view-data-section {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    .data-table th,
+    .data-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .data-table th {
+      background: #f8f9fa;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .data-table tr:hover {
+      background: #f8f9fa;
+    }
+
+    .table-container {
+      max-height: 400px;
+      overflow-y: auto;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+    }
+
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+      display: none;
+    }
+
+    .spinner.show {
+      display: block;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>🚗 Update HSRP</h1>
+      <p>Upload invoice and registration files to manage HSRP data</p>
+    </div>
+
+    <!-- View Current Data -->
+    <div class="view-data-section">
+      <h2 style="margin-bottom: 20px;">📊 Current HSRP Data</h2>
+      <div class="btn-group">
+        <button class="btn btn-secondary" onclick="viewData()">
+          📋 View Data
+        </button>
+        <button class="btn btn-secondary" onclick="downloadData()">
+          ⬇️ Download CSV
+        </button>
+      </div>
+      <div id="dataTableContainer" style="display: none; margin-top: 20px;">
+        <div class="table-container">
+          <table class="data-table" id="dataTable">
+            <thead>
+              <tr>
+                <th>Sr No</th>
+                <th>Invoice No</th>
+                <th>Invoice Date</th>
+                <th>Status</th>
+                <th>Mobile No</th>
+                <th>Customer Name</th>
+                <th>Frame No</th>
+                <th>Registration No</th>
+                <th>Ref Customer</th>
+                <th>Model Name</th>
+                <th>Order Date</th>
+                <th>Fitment Date</th>
+              </tr>
+            </thead>
+            <tbody id="dataTableBody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 1: Upload V301 File -->
+    <div class="step-card" id="step1Card">
+      <div class="step-header">
+        <div class="step-number">1</div>
+        <div class="step-title">
+          <h2>Upload Invoice File (V301)</h2>
+          <p>Upload V301 CSV file to import invoice data</p>
+        </div>
+        <div class="step-status pending" id="step1Status">Pending</div>
+      </div>
+
+      <div class="message" id="step1Message"></div>
+
+      <div class="upload-area" id="step1UploadArea">
+        <div class="upload-icon">📄</div>
+        <div class="upload-text">Drop V301 CSV file here</div>
+        <div class="upload-subtext">or click to browse</div>
+        <input type="file" id="step1FileInput" class="file-input" accept=".csv">
+      </div>
+
+      <div class="file-info" id="step1FileInfo">
+        <div class="file-info-row">
+          <span class="file-info-label">File Name:</span>
+          <span class="file-info-value" id="step1FileName"></span>
+        </div>
+        <div class="file-info-row">
+          <span class="file-info-label">File Size:</span>
+          <span class="file-info-value" id="step1FileSize"></span>
+        </div>
+      </div>
+
+      <div class="spinner" id="step1Spinner"></div>
+
+      <div class="btn-group">
+        <button class="btn btn-primary" id="step1UploadBtn" style="display: none;" onclick="uploadStep1()">
+          ⬆️ Upload Invoice Data
+        </button>
+      </div>
+
+      <div class="results-card" id="step1Results"></div>
+    </div>
+
+    <!-- Step 2: Upload Registration File -->
+    <div class="step-card locked" id="step2Card">
+      <div class="step-header">
+        <div class="step-number">2</div>
+        <div class="step-title">
+          <h2>Upload Registration File</h2>
+          <p>Upload registration CSV file to update registration numbers</p>
+        </div>
+        <div class="step-status pending" id="step2Status">Locked</div>
+      </div>
+
+      <div class="message" id="step2Message"></div>
+
+      <div class="upload-area" id="step2UploadArea">
+        <div class="upload-icon">📄</div>
+        <div class="upload-text">Drop Registration CSV file here</div>
+        <div class="upload-subtext">or click to browse</div>
+        <input type="file" id="step2FileInput" class="file-input" accept=".csv">
+      </div>
+
+      <div class="file-info" id="step2FileInfo">
+        <div class="file-info-row">
+          <span class="file-info-label">File Name:</span>
+          <span class="file-info-value" id="step2FileName"></span>
+        </div>
+        <div class="file-info-row">
+          <span class="file-info-label">File Size:</span>
+          <span class="file-info-value" id="step2FileSize"></span>
+        </div>
+      </div>
+
+      <div class="spinner" id="step2Spinner"></div>
+
+      <div class="btn-group">
+        <button class="btn btn-primary" id="step2UploadBtn" style="display: none;" onclick="uploadStep2()">
+          ⬆️ Update Registration Numbers
+        </button>
+      </div>
+
+      <div class="results-card" id="step2Results"></div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="session.js"></script>
+  <script src="api.js"></script>
+  <script src="hsrp-update.js"></script>
+</body>
+</html>
