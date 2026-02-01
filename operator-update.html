@@ -583,13 +583,6 @@
     <div class="update-section" id="updateSection">
       <div class="search-header">📝 Update Status</div>
       
-      <!-- Workflow Warning -->
-      <div class="workflow-warning">
-        <strong>⚠️ Workflow Order:</strong>
-        DMS → Insurance → Vahan → Number Plate<br>
-        You can mark all as "Yes" at once, but incomplete steps in sequence will be rejected.
-      </div>
-
       <!-- Customer Details -->
       <div class="customer-details" id="customerDetails"></div>
 
@@ -689,13 +682,13 @@
           </div>
           
           <div class="form-group">
-            <label class="form-label">Number Plate Details (XX-00-XX-0000)</label>
+            <label class="form-label">Number Plate Details (XX00XX0000 - No Dashes)</label>
             <input 
               type="text" 
               id="numberPlateDetails" 
               class="form-input number-plate-input" 
-              placeholder="MH-31-AB-1234"
-              maxlength="14"
+              placeholder="MH31AB1234"
+              maxlength="10"
             >
           </div>
 
