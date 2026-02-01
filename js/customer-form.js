@@ -1,11 +1,12 @@
 // ==========================================
-// CUSTOMER FORM PAGE LOGIC
-// Shows all 3 forms in scrollable format
+// CUSTOMER FORM PAGE LOGIC - UPDATED
+// All fixes applied
 // ==========================================
 
 let currentRecord = null;
-let allRecords = []; // Store all records for filtering
-let currentFilter = 'all'; // Current active filter
+let allRecords = [];
+let currentFilter = 'today'; // FIXED: Default to 'today'
+let hasPAN = null;
 
 // ==========================================
 // PAGE INITIALIZATION
@@ -14,7 +15,6 @@ let currentFilter = 'all'; // Current active filter
 document.addEventListener('DOMContentLoaded', function() {
   console.log('=== CUSTOMER FORM PAGE ===');
   
-  // Check authentication
   const session = SessionManager.getSession();
   
   if (!session) {
@@ -26,7 +26,6 @@ document.addEventListener('DOMContentLoaded', function() {
   
   const user = session.user;
   
-  // Check role access (sales, admin, and accounts)
   if (user.role !== 'admin' && user.role !== 'sales' && user.role !== 'accounts') {
     console.log('❌ Access denied for role:', user.role);
     alert('Access denied. Only sales, admin, and accounts can access this page.');
@@ -36,13 +35,9 @@ document.addEventListener('DOMContentLoaded', function() {
   
   console.log('✅ Access granted:', user.name, '/', user.role);
   
-  // Load records that meet criteria
   loadCustomerFormRecords();
 });
 
-/**
- * Load records that meet customer form criteria
- */
 async function loadCustomerFormRecords() {
   const sessionId = SessionManager.getSessionId();
   const user = SessionManager.getCurrentUser();
@@ -58,8 +53,10 @@ async function loadCustomerFormRecords() {
     
     if (response.success) {
       console.log('Number of records received:', response.records ? response.records.length : 0);
-      allRecords = response.records || []; // Store all records
-      displayRecords(allRecords); // Display all initially
+      allRecords = response.records || [];
+      
+      // FIXED: Apply 'today' filter by default
+      filterRecords('today');
     } else {
       showMessage(response.message, 'error');
     }
@@ -69,9 +66,6 @@ async function loadCustomerFormRecords() {
   }
 }
 
-/**
- * Display records in list
- */
 function displayRecords(records) {
   const listContainer = document.getElementById('recordsList');
   const emptyState = document.getElementById('emptyState');
@@ -108,44 +102,27 @@ function displayRecords(records) {
   console.log('✅ Records displayed successfully');
 }
 
-/**
- * Parse accessories from database format
- * Format: "Seat Cover: Yes, Guard: Yes, Handle Cover: No"
- */
-function parseAccessories(accessoriesString) {
-  if (!accessoriesString || accessoriesString === 'None') {
-    return 'None';
-  }
+// FIXED: Parse accessories from individual fields
+function getAccessoriesList(record) {
+  const accessories = [];
   
-  // Split by comma and filter only "Yes" items
-  const items = accessoriesString.split(',').map(item => item.trim());
-  const yesItems = [];
+  if (record.guard === 'Yes') accessories.push('Guard');
+  if (record.gripcover === 'Yes' || record.gripCover === 'Yes') accessories.push('Grip Cover');
+  if (record.seatcover === 'Yes' || record.seatCover === 'Yes') accessories.push('Seat Cover');
+  if (record.matin === 'Yes') accessories.push('Matin');
+  if (record.tankcover === 'Yes' || record.tankCover === 'Yes') accessories.push('Tank Cover');
+  if (record.handlehook === 'Yes' || record.handleHook === 'Yes') accessories.push('Handle Hook');
+  if (record.helmet && record.helmet !== 'No') accessories.push('Helmet (' + record.helmet + ')');
   
-  items.forEach(function(item) {
-    // Extract name before colon
-    const parts = item.split(':');
-    if (parts.length === 2) {
-      const name = parts[0].trim();
-      const value = parts[1].trim().toLowerCase();
-      if (value === 'yes') {
-        yesItems.push(name);
-      }
-    }
-  });
-  
-  return yesItems.length > 0 ? yesItems.join(', ') : 'None';
+  return accessories.length > 0 ? accessories.join(', ') : 'None';
 }
 
-/**
- * Open customer form - show all 3 pages in scrollable format
- */
 async function openCustomerForm(receiptNo) {
   const sessionId = SessionManager.getSessionId();
   
   console.log('Opening customer form for receipt:', receiptNo);
   
   try {
-    // Get full record details
     const response = await API.call('getRecordByReceiptNo', {
       sessionId: sessionId,
       receiptNo: receiptNo
@@ -154,14 +131,16 @@ async function openCustomerForm(receiptNo) {
     if (response.success) {
       currentRecord = response.record;
       
-      // Populate Page 1 - Summary Section
+      console.log('Current record:', currentRecord);
+      
       document.getElementById('formExecutive').textContent = currentRecord.executiveName || '-';
       
-      // Parse and display accessories
-      const accessoriesList = parseAccessories(currentRecord.accessories);
+      // FIXED: Get accessories from individual fields
+      const accessoriesList = getAccessoriesList(currentRecord);
       document.getElementById('formAccessories').textContent = accessoriesList;
       
-      // Populate Page 1 - Customer Details (Using variant instead of model)
+      console.log('Accessories:', accessoriesList);
+      
       document.getElementById('formVariant').textContent = currentRecord.variant || '';
       document.getElementById('formColor').textContent = currentRecord.colour || '';
       document.getElementById('formEngineNo').textContent = currentRecord.engineNumber || '';
@@ -170,32 +149,19 @@ async function openCustomerForm(receiptNo) {
       document.getElementById('formMobileNo').textContent = currentRecord.mobileNo || '';
       document.getElementById('formFinancer').textContent = currentRecord.financierName || 'Cash';
       
-      // Populate Form 60 (Page 2)
-      populateForm60();
-      
-      // Conditionally show Page 3 based on financer
       const financierName = (currentRecord.financierName || 'Cash').toLowerCase().trim();
       const isCash = financierName === 'cash' || financierName === '';
       
       if (isCash) {
-        // Hide Page 3 if payment is Cash
         document.getElementById('page3').style.display = 'none';
         console.log('✅ Page 3 hidden (Cash payment)');
       } else {
-        // Show Page 3 if financed
         document.getElementById('page3').style.display = 'block';
         console.log('✅ Page 3 visible (Financed: ' + currentRecord.financierName + ')');
       }
       
-      // Hide records container, show forms
-      document.getElementById('recordsContainer').style.display = 'none';
-      document.getElementById('formsWrapper').classList.add('active');
-      document.getElementById('formActions').classList.add('active');
-      
-      // Scroll to top
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      
-      console.log('✅ All forms displayed');
+      // FIXED: Ask about PAN card
+      askAboutPAN();
       
     } else {
       showMessage(response.message, 'error');
@@ -206,9 +172,30 @@ async function openCustomerForm(receiptNo) {
   }
 }
 
-/**
- * Populate Form 60 with customer data and today's date
- */
+// FIXED: Ask about PAN card
+function askAboutPAN() {
+  const hasCustomerPAN = confirm('Does the customer have a PAN card?\n\nClick OK if YES (skip Form 60)\nClick Cancel if NO (show Form 60)');
+  
+  hasPAN = hasCustomerPAN;
+  
+  if (hasCustomerPAN) {
+    document.getElementById('page2').style.display = 'none';
+    console.log('✅ Page 2 hidden (Customer has PAN)');
+  } else {
+    document.getElementById('page2').style.display = 'block';
+    populateForm60();
+    console.log('✅ Page 2 visible (Customer does NOT have PAN)');
+  }
+  
+  document.getElementById('recordsContainer').style.display = 'none';
+  document.getElementById('formsWrapper').classList.add('active');
+  document.getElementById('formActions').classList.add('active');
+  
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  
+  console.log('✅ Forms displayed');
+}
+
 function populateForm60() {
   if (!currentRecord) {
     console.error('No current record to populate Form 60');
@@ -217,11 +204,9 @@ function populateForm60() {
   
   console.log('Populating Form 60 for:', currentRecord.customerName);
   
-  // Page 2: Name fields (uppercase)
   document.getElementById('form60Name1').textContent = currentRecord.customerName || '';
   document.getElementById('form60Name2').textContent = currentRecord.customerName || '';
   
-  // Page 2: Today's date
   const today = new Date();
   const day = String(today.getDate()).padStart(2, '0');
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 
@@ -236,64 +221,61 @@ function populateForm60() {
   console.log('✅ Form 60 populated with date:', day, month, '202' + year);
 }
 
-/**
- * Print all forms
- */
 function printAllForms() {
   console.log('🖨️ Printing all forms...');
   window.print();
 }
 
-/**
- * Share as PDF
- */
+// FIXED: Direct PDF download
 async function shareAsPDF() {
   console.log('📄 Generating PDF...');
   
-  // Check if Web Share API is supported
-  if (!navigator.share) {
-    alert('❌ Share feature not supported on this browser.\n\nPlease use the Print button and save as PDF instead.');
-    return;
-  }
-  
   try {
-    showMessage('⏳ Generating PDF... Please wait.', 'info');
-    
-    // Fallback: Guide user to print to PDF
-    alert('📄 Share as PDF\n\nTo share as PDF:\n1. Click "Print All Forms" button\n2. Select "Save as PDF" as the printer\n3. Save the file\n4. Share the saved PDF file');
-    
-    console.log('Showing print dialog for PDF generation');
-    window.print();
+    if (typeof html2pdf !== 'undefined') {
+      showMessage('⏳ Generating PDF... Please wait.', 'info');
+      
+      const element = document.getElementById('formsWrapper');
+      const opt = {
+        margin: 0.5,
+        filename: 'Customer_Form_' + currentRecord.receiptNo + '.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+      };
+      
+      await html2pdf().set(opt).from(element).save();
+      
+      showMessage('✅ PDF downloaded successfully!', 'success');
+      console.log('✅ PDF generated and downloaded');
+      
+    } else {
+      alert('📄 Generate PDF\n\nTo save as PDF:\n1. A print dialog will open\n2. Select "Save as PDF" as the printer\n3. Click Save\n4. Share the saved PDF file');
+      window.print();
+    }
     
   } catch (error) {
-    console.error('Share error:', error);
-    alert('❌ Failed to share PDF\n\nPlease use Print button and save as PDF instead.');
+    console.error('PDF generation error:', error);
+    alert('⚠️ Direct PDF generation not available.\n\nPlease use the Print button and select "Save as PDF".');
+    window.print();
   }
 }
 
-/**
- * Close all forms and return to records list
- */
 function closeAllForms() {
   console.log('Closing forms, returning to records list');
   
-  // Hide forms
   document.getElementById('formsWrapper').classList.remove('active');
   document.getElementById('formActions').classList.remove('active');
   
-  // Show records container
+  document.getElementById('page2').style.display = 'block';
+  
   document.getElementById('recordsContainer').style.display = 'block';
   
-  // Clear current record
   currentRecord = null;
+  hasPAN = null;
   
-  // Scroll to top
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-/**
- * Show message
- */
 function showMessage(text, type) {
   const msg = document.getElementById('statusMessage');
   if (!msg) return;
@@ -311,29 +293,39 @@ function showMessage(text, type) {
   }
 }
 
-/**
- * Go back to home
- */
 function goBack() {
   window.location.href = 'home.html';
 }
 
-/**
- * Filter records by date
- */
+// FIXED: Filter records with correct button IDs
 function filterRecords(filterType) {
   console.log('Filtering by:', filterType);
   
   currentFilter = filterType;
   
-  // Update active button
   document.querySelectorAll('.filter-btn').forEach(function(btn) {
     btn.classList.remove('filter-btn-active');
   });
-  document.getElementById('filter' + filterType.charAt(0).toUpperCase() + filterType.slice(1).replace('7days', 'Next7').replace('thisMonth', 'Month').replace('all', 'All')).classList.add('filter-btn-active');
   
-  // Clear search
-  document.getElementById('searchInput').value = '';
+  let activeBtn = null;
+  if (filterType === 'today') {
+    activeBtn = document.getElementById('filterToday');
+  } else if (filterType === 'next7days') {
+    activeBtn = document.getElementById('filterNext7');
+  } else if (filterType === 'thisMonth') {
+    activeBtn = document.getElementById('filterMonth');
+  } else if (filterType === 'all') {
+    activeBtn = document.getElementById('filterAll');
+  }
+  
+  if (activeBtn) {
+    activeBtn.classList.add('filter-btn-active');
+  }
+  
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    searchInput.value = '';
+  }
   
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -341,14 +333,13 @@ function filterRecords(filterType) {
   let filtered = allRecords;
   
   if (filterType === 'today') {
-    // Filter for today's delivery date
     filtered = allRecords.filter(function(record) {
       if (!record.deliveryDate) return false;
       const deliveryDate = parseDate(record.deliveryDate);
       return deliveryDate && deliveryDate.getTime() === today.getTime();
     });
+    console.log('Today filter: ' + filtered.length + ' records');
   } else if (filterType === 'next7days') {
-    // Filter for next 7 days
     const next7Days = new Date(today);
     next7Days.setDate(next7Days.getDate() + 7);
     
@@ -357,8 +348,8 @@ function filterRecords(filterType) {
       const deliveryDate = parseDate(record.deliveryDate);
       return deliveryDate && deliveryDate >= today && deliveryDate <= next7Days;
     });
+    console.log('Next 7 days filter: ' + filtered.length + ' records');
   } else if (filterType === 'thisMonth') {
-    // Filter for this month
     const thisMonth = today.getMonth();
     const thisYear = today.getFullYear();
     
@@ -367,27 +358,26 @@ function filterRecords(filterType) {
       const deliveryDate = parseDate(record.deliveryDate);
       return deliveryDate && deliveryDate.getMonth() === thisMonth && deliveryDate.getFullYear() === thisYear;
     });
+    console.log('This month filter: ' + filtered.length + ' records');
   }
   
   console.log('Filtered results:', filtered.length);
   displayRecords(filtered);
 }
 
-/**
- * Search records by customer name
- */
 function searchRecords() {
-  const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+  const searchInput = document.getElementById('searchInput');
+  if (!searchInput) return;
+  
+  const searchTerm = searchInput.value.toLowerCase().trim();
   
   console.log('Searching for:', searchTerm);
   
   if (searchTerm === '') {
-    // If search is empty, apply current filter
     filterRecords(currentFilter);
     return;
   }
   
-  // Search in customer name
   const filtered = allRecords.filter(function(record) {
     return record.customerName && record.customerName.toLowerCase().includes(searchTerm);
   });
@@ -396,21 +386,15 @@ function searchRecords() {
   displayRecords(filtered);
 }
 
-/**
- * Parse date from string (handles various formats)
- */
 function parseDate(dateString) {
   if (!dateString) return null;
   
-  // Try to parse the date
   const date = new Date(dateString);
   
-  // Check if valid date
   if (isNaN(date.getTime())) {
     return null;
   }
   
-  // Reset time to midnight for comparison
   date.setHours(0, 0, 0, 0);
   return date;
 }
