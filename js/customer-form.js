@@ -230,23 +230,80 @@ function printAllForms() {
 async function shareAsPDF() {
   console.log('📄 Generating PDF...');
   
+  if (!currentRecord || !currentRecord.customerName) {
+    alert('⚠️ No customer data available');
+    return;
+  }
+  
   try {
     if (typeof html2pdf !== 'undefined') {
       showMessage('⏳ Generating PDF... Please wait.', 'info');
       
-      const element = document.getElementById('formsWrapper');
+      // Get all visible pages only
+      const pages = [];
+      
+      const page1 = document.getElementById('page1');
+      if (page1 && page1.style.display !== 'none') {
+        pages.push(page1);
+      }
+      
+      const page2 = document.getElementById('page2');
+      if (page2 && page2.style.display !== 'none') {
+        pages.push(page2);
+      }
+      
+      const page3 = document.getElementById('page3');
+      if (page3 && page3.style.display !== 'none') {
+        pages.push(page3);
+      }
+      
+      if (pages.length === 0) {
+        alert('⚠️ No pages to export');
+        return;
+      }
+      
+      console.log('📄 Exporting ' + pages.length + ' pages');
+      
+      // Create customer name for filename
+      const customerName = currentRecord.customerName
+        .replace(/[^a-zA-Z0-9\s]/g, '')
+        .replace(/\s+/g, '_')
+        .toUpperCase();
+      
+      const filename = customerName + '.pdf';
+      
+      // PDF options for A4
       const opt = {
-        margin: 0.5,
-        filename: 'Customer_Form_' + currentRecord.receiptNo + '.pdf',
+        margin: [10, 10, 10, 10],
+        filename: filename,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+        html2canvas: { 
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          windowWidth: 794,
+          windowHeight: 1123
+        },
+        jsPDF: { 
+          unit: 'mm', 
+          format: 'a4', 
+          orientation: 'portrait'
+        }
       };
       
-      await html2pdf().set(opt).from(element).save();
+      // Generate PDF page by page
+      let pdfWorker = html2pdf().set(opt).from(pages[0]);
       
-      showMessage('✅ PDF downloaded successfully!', 'success');
-      console.log('✅ PDF generated and downloaded');
+      for (let i = 1; i < pages.length; i++) {
+        pdfWorker = pdfWorker.get('pdf').then(function(pdf) {
+          pdf.addPage();
+        }).from(pages[i]).toContainer().toCanvas().toPdf();
+      }
+      
+      await pdfWorker.save();
+      
+      showMessage('✅ PDF downloaded: ' + filename, 'success');
+      console.log('✅ PDF generated: ' + filename);
       
     } else {
       alert('📄 Generate PDF\n\nTo save as PDF:\n1. A print dialog will open\n2. Select "Save as PDF" as the printer\n3. Click Save\n4. Share the saved PDF file');
