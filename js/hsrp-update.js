@@ -360,9 +360,17 @@ async function uploadStep2() {
     const base64Data = await fileToBase64(step2File);
     console.log('File converted to base64, sending to backend...');
     
-    // NEW: Get order date from input (optional)
+    // NEW: Get order date from input (MANDATORY)
     const orderDateInput = document.getElementById('orderDateInput').value;
-    console.log('Order Date selected:', orderDateInput || 'None');
+    
+    if (!orderDateInput || orderDateInput.trim() === '') {
+      showMessage('step2', 'Please select an Order Date', 'error');
+      document.getElementById('step2Spinner').classList.remove('show');
+      document.getElementById('step2UploadBtn').disabled = false;
+      return;
+    }
+    
+    console.log('Order Date selected:', orderDateInput);
     
     // Call API with order date parameter
     const response = await API.uploadRegistrationFile(base64Data, step2File.name, orderDateInput);
@@ -449,7 +457,8 @@ function displayDataTable(data) {
     
     // NEW: Status as dropdown
     html += '<td>';
-    html += `<select class="status-dropdown" data-sr-no="${row.srNo}" data-original="${row.status || ''}" onchange="updateStatus(this)">`;
+    const isFitted = row.status === 'Fitted';
+    html += `<select class="status-dropdown" data-sr-no="${row.srNo}" data-original="${row.status || ''}" onchange="updateStatus(this)" ${isFitted ? 'disabled' : ''}>`;
     html += `<option value="" ${!row.status ? 'selected' : ''}>-- Select --</option>`;
     html += `<option value="Ordered" ${row.status === 'Ordered' ? 'selected' : ''}>Ordered</option>`;
     html += `<option value="Received" ${row.status === 'Received' ? 'selected' : ''}>Received</option>`;
