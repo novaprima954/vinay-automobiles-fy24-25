@@ -693,15 +693,7 @@ function generatePdfDownload(records, fromDate, toDate) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('landscape', 'mm', 'a4');
     
-    // Add title
-    doc.setFontSize(20);
-    doc.setFont(undefined, 'bold');
-    doc.text('HSRP Registration Details', doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
-    
-    // Add date range
-    doc.setFontSize(12);
-    doc.setFont(undefined, 'normal');
-    doc.text('Invoice Date: ' + fromDate + ' to ' + toDate, doc.internal.pageSize.getWidth() / 2, 23, { align: 'center' });
+    // NO TITLE OR DATE RANGE - Start table immediately
     
     // Prepare table data (WITHOUT Sr No, WITH Model Name and Mobile)
     const tableData = records.map(function(record) {
@@ -720,7 +712,7 @@ function generatePdfDownload(records, fromDate, toDate) {
     
     // Generate table (9 columns now: removed Sr No, added Mobile & Model)
     doc.autoTable({
-      startY: 30,
+      startY: 10,                        // Start from top (was 30)
       head: [['Invoice No', 'Invoice Date', 'Customer Name', 'Mobile No', 'Model Name', 'Frame No', 'Plate No', 'Remark', 'Sign & Date']],
       body: tableData,
       theme: 'grid',
@@ -729,49 +721,30 @@ function generatePdfDownload(records, fromDate, toDate) {
         textColor: 255,
         fontStyle: 'bold',
         halign: 'center',
-        fontSize: 11,              // Increased from 9
+        fontSize: 11,
         cellPadding: 4
       },
       bodyStyles: {
-        fontSize: 10,              // Increased from 8
-        cellPadding: 4,            // Increased padding
-        minCellHeight: 12          // Increased row height
+        fontSize: 10,
+        cellPadding: 4,
+        minCellHeight: 12
       },
       alternateRowStyles: {
         fillColor: [248, 249, 250]
       },
       columnStyles: {
-        0: { cellWidth: 28 },      // Invoice No - wider
-        1: { cellWidth: 28 },      // Invoice Date - wider
-        2: { cellWidth: 50 },      // Customer Name - wider
-        3: { cellWidth: 28 },      // Mobile No - NEW
-        4: { cellWidth: 35 },      // Model Name - NEW
-        5: { cellWidth: 38 },      // Frame No - wider
-        6: { cellWidth: 28, fontStyle: 'bold' }, // Plate No - wider
-        7: { cellWidth: 28 },      // Remark - wider
-        8: { cellWidth: 28 }       // Sign & Date - wider
+        0: { cellWidth: 24 },      // Invoice No - decreased by 4 (was 28)
+        1: { cellWidth: 28 },      // Invoice Date
+        2: { cellWidth: 50 },      // Customer Name
+        3: { cellWidth: 28 },      // Mobile No
+        4: { cellWidth: 35 },      // Model Name
+        5: { cellWidth: 38 },      // Frame No
+        6: { cellWidth: 30, fontStyle: 'bold' }, // Plate No - increased by 2 (was 28)
+        7: { cellWidth: 28 },      // Remark
+        8: { cellWidth: 28 }       // Sign & Date
       },
-      margin: { top: 30, right: 8, bottom: 20, left: 8 },
-      didDrawPage: function(data) {
-        // Add footer with page number and total
-        const pageCount = doc.internal.getNumberOfPages();
-        const pageSize = doc.internal.pageSize;
-        const pageHeight = pageSize.height ? pageSize.height : pageSize.getHeight();
-        
-        doc.setFontSize(10);
-        doc.text(
-          'Total Records: ' + records.length,
-          pageSize.width - 15,
-          pageHeight - 10,
-          { align: 'right' }
-        );
-        
-        doc.text(
-          'Page ' + data.pageNumber + ' of ' + pageCount,
-          15,
-          pageHeight - 10
-        );
-      }
+      margin: { top: 10, right: 8, bottom: 10, left: 8 }  // Reduced margins
+      // NO didDrawPage function - removes page numbers and total
     });
     
     // Save PDF
