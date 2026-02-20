@@ -597,3 +597,107 @@ function hideMessage(step) {
   const messageEl = document.getElementById(`${step}Message`);
   messageEl.classList.remove('show');
 }
+// ==========================================
+// PDF EXPORT FUNCTIONS
+// ==========================================
+
+/**
+ * Show PDF export modal
+ */
+function showPdfExportModal() {
+  document.getElementById('pdfExportModal').style.display = 'flex';
+  
+  // Set default dates (this month)
+  const today = new Date();
+  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  
+  document.getElementById('pdfFromDate').value = formatDateForInput(firstDay);
+  document.getElementById('pdfToDate').value = formatDateForInput(lastDay);
+}
+
+/**
+ * Close PDF export modal
+ */
+function closePdfExportModal() {
+  document.getElementById('pdfExportModal').style.display = 'none';
+  document.getElementById('pdfExportMessage').style.display = 'none';
+}
+
+/**
+ * Format date for input field (YYYY-MM-DD)
+ */
+function formatDateForInput(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return year + '-' + month + '-' + day;
+}
+
+/**
+ * Export HSRP data to PDF
+ */
+async function exportToPdf() {
+  const fromDate = document.getElementById('pdfFromDate').value;
+  const toDate = document.getElementById('pdfToDate').value;
+  
+  if (!fromDate || !toDate) {
+    showPdfMessage('Please select both from and to dates', 'error');
+    return;
+  }
+  
+  if (new Date(fromDate) > new Date(toDate)) {
+    showPdfMessage('From date cannot be after To date', 'error');
+    return;
+  }
+  
+  console.log('Exporting HSRP to PDF:', fromDate, 'to', toDate);
+  
+  document.getElementById('pdfExportSpinner').classList.add('show');
+  document.getElementById('pdfExportConfirmBtn').disabled = true;
+  hidePdfMessage();
+  
+  try {
+    const response = await API.exportHSRPToPdf(fromDate, toDate);
+    
+    document.getElementById('pdfExportSpinner').classList.remove('show');
+    document.getElementById('pdfExportConfirmBtn').disabled = false;
+    
+    if (response.success && response.pdfUrl) {
+      showPdfMessage('PDF generated successfully! Opening in new tab...', 'success');
+      
+      // Open PDF in new tab
+      setTimeout(() => {
+        window.open(response.pdfUrl, '_blank');
+        closePdfExportModal();
+      }, 1500);
+      
+    } else {
+      showPdfMessage('Error: ' + (response.message || 'Failed to generate PDF'), 'error');
+    }
+    
+  } catch (error) {
+    console.error('Error exporting PDF:', error);
+    document.getElementById('pdfExportSpinner').classList.remove('show');
+    document.getElementById('pdfExportConfirmBtn').disabled = false;
+    showPdfMessage('Error: ' + error.message, 'error');
+  }
+}
+
+/**
+ * Show message in PDF modal
+ */
+function showPdfMessage(text, type) {
+  const messageEl = document.getElementById('pdfExportMessage');
+  messageEl.textContent = text;
+  messageEl.className = 'message ' + type + ' show';
+  messageEl.style.display = 'block';
+}
+
+/**
+ * Hide message in PDF modal
+ */
+function hidePdfMessage() {
+  const messageEl = document.getElementById('pdfExportMessage');
+  messageEl.style.display = 'none';
+}

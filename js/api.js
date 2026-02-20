@@ -637,6 +637,22 @@ updateHSRPStatus: async function(srNo, newStatus) {
 },
 
 /**
+ * Export HSRP to PDF
+ */
+exportHSRPToPdf: async function(fromDate, toDate) {
+  const session = SessionManager.getSession();
+  if (!session) {
+    throw new Error('No session');
+  }
+  
+  return this.call('exportHSRPToPdf', {
+    sessionId: session.sessionId,
+    fromDate: fromDate,
+    toDate: toDate
+  });
+},
+
+/**
  * Get HSRP data
  */
 getHSRPData: async function() {
