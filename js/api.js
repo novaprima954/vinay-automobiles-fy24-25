@@ -697,4 +697,128 @@ searchHSRPData: async function(searchBy, searchValue, dateFilter, customDate) {
     customDate: customDate || ''
   });
 }
+},
+
+/**
+ * Get Vehicle Mileage Dashboard
+ */
+getVehicleMileageDashboard: async function() {
+  const session = SessionManager.getSession();
+  if (!session) {
+    throw new Error('No session');
+  }
+  
+  return this.call('getVehicleMileageDashboard', {
+    sessionId: session.sessionId
+  });
+},
+ 
+/**
+ * Get last KM reading for vehicle (auto-fetch)
+ */
+getLastKmReading: async function(vehicleName) {
+  const session = SessionManager.getSession();
+  if (!session) {
+    throw new Error('No session');
+  }
+  
+  return this.call('getLastKmReading', {
+    sessionId: session.sessionId,
+    vehicleName: vehicleName
+  });
+},
+ 
+/**
+ * Add fuel entry
+ */
+addFuelEntry: async function(data) {
+  const session = SessionManager.getSession();
+  if (!session) {
+    throw new Error('No session');
+  }
+  
+  return this.call('addFuelEntry', {
+    sessionId: session.sessionId,
+    data: JSON.stringify(data)
+  });
+},
+ 
+/**
+ * Get vehicle mileage history
+ */
+getVehicleMileageHistory: async function(vehicleName, dateFrom, dateTo) {
+  const session = SessionManager.getSession();
+  if (!session) {
+    throw new Error('No session');
+  }
+  
+  return this.call('getVehicleMileageHistory', {
+    sessionId: session.sessionId,
+    vehicleName: vehicleName || '',
+    dateFrom: dateFrom || '',
+    dateTo: dateTo || ''
+  });
+},
+ 
+/**
+ * Get all fuel entries
+ */
+getAllFuelEntries: async function(dateFrom, dateTo) {
+  const session = SessionManager.getSession();
+  if (!session) {
+    throw new Error('No session');
+  }
+  
+  return this.call('getAllFuelEntries', {
+    sessionId: session.sessionId,
+    dateFrom: dateFrom || '',
+    dateTo: dateTo || ''
+  });
+},
+ 
+/**
+ * Get HPCL wallet transaction history
+ */
+getHPCLWalletHistory: async function() {
+  const session = SessionManager.getSession();
+  if (!session) {
+    throw new Error('No session');
+  }
+  
+  return this.call('getHPCLWalletHistory', {
+    sessionId: session.sessionId
+  });
+},
+ 
+/**
+ * Add HPCL wallet top-up
+ */
+addHPCLWalletTopup: async function(amount, notes) {
+  const session = SessionManager.getSession();
+  if (!session) {
+    throw new Error('No session');
+  }
+  
+  return this.call('addHPCLWalletTopup', {
+    sessionId: session.sessionId,
+    amount: amount,
+    notes: notes || ''
+  });
+},
+ 
+/**
+ * Export vehicle mileage to Excel
+ */
+exportVehicleMileageToExcel: async function(vehicleName, dateFrom, dateTo) {
+  const session = SessionManager.getSession();
+  if (!session) {
+    throw new Error('No session');
+  }
+  
+  return this.call('exportVehicleMileageToExcel', {
+    sessionId: session.sessionId,
+    vehicleName: vehicleName || '',
+    dateFrom: dateFrom || '',
+    dateTo: dateTo || ''
+  });
 };
